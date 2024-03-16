@@ -271,9 +271,9 @@ export default function Contacts({ initialContacts, page, contactsCount, search 
       </section>
 
       <section class='mx-auto max-w-7xl my-8'>
-        <table class='w-full border-collapse bg-slate-700 text-left text-sm text-slate-500 shadow-sm'>
-          <thead class='bg-gray-900'>
-            <tr>
+        <table class='w-full border-collapse bg-gray-900 text-left text-sm text-slate-500 shadow-sm rounded-t-md'>
+          <thead>
+            <tr class='border-b border-slate-600'>
               <th scope='col' class='px-6 py-4 font-medium text-white'>First Name</th>
               <th scope='col' class='px-6 py-4 font-medium text-white'>Last Name</th>
               <th scope='col' class='px-6 py-4 font-medium text-white w-20'></th>
@@ -281,7 +281,7 @@ export default function Contacts({ initialContacts, page, contactsCount, search 
           </thead>
           <tbody class='divide-y divide-slate-600 border-t border-slate-600'>
             {contacts.value.map((contact) => (
-              <tr class='hover:bg-slate-600 group'>
+              <tr class='bg-slate-700 hover:bg-slate-600 group'>
                 <td class='flex gap-3 px-6 py-4 font-normal text-white'>
                   <a href={`/contacts/${contact.id}`}>{contact.first_name}</a>
                 </td>

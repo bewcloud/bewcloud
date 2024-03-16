@@ -60,7 +60,7 @@ export const handler = [
   async function handleLogging(request: Request, context: FreshContext<FreshContextState>) {
     const response = await context.next();
 
-    console.info(`${new Date().toISOString()} - ${request.method} ${request.url} [${response.status}]`);
+    console.info(`${new Date().toISOString()} - [${response.status}] ${request.method} ${request.url}`);
     if (request.url.includes('/dav/')) {
       console.info(`Request`, request.headers);
       console.info((await request.clone().text()) || '<No Body>');

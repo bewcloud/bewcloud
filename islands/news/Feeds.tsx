@@ -283,8 +283,8 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
       </section>
 
       <section class='mx-auto max-w-7xl my-8'>
-        <table class='w-full border-collapse bg-slate-700 text-left text-sm text-slate-500 shadow-sm'>
-          <thead class='bg-gray-900'>
+        <table class='w-full border-collapse bg-gray-900 text-left text-sm text-slate-500 shadow-sm rounded-t-md'>
+          <thead>
             <tr>
               <th scope='col' class='px-6 py-4 font-medium text-white'>Title & URL</th>
               <th scope='col' class='px-6 py-4 font-medium text-white'>Last Crawl</th>
@@ -294,7 +294,7 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
           </thead>
           <tbody class='divide-y divide-slate-600 border-t border-slate-600'>
             {feeds.value.map((newsFeed) => (
-              <tr class='hover:bg-slate-600 group'>
+              <tr class='bg-slate-700 hover:bg-slate-600 group'>
                 <td class='flex gap-3 px-6 py-4 font-normal text-white'>
                   <div class='text-sm'>
                     <div class='font-medium text-white'>{newsFeed.extra.title || 'N/A'}</div>

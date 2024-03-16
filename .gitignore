@@ -1,0 +1,11 @@
+# Fresh build directory
+_fresh/
+
+# npm dependencies
+node_modules/
+
+# Database
+db/
+
+# Env var
+.env

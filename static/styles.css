@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+h1 {
+  @apply text-4xl font-bold;
+}
+
+a {
+  @apply text-[#51A4FB] no-underline hover:underline font-semibold;
+}
+
+main {
+  @apply mx-auto max-w-7xl py-6 sm:px-6 lg:px-8 text-white;
+}
+
+form {
+  @apply px-4 py-8 max-w-screen-md mx-auto lg:min-w-96;
+}
+
+.button {
+  @apply inline-block rounded text-white bg-[#51A4FB] hover:bg-sky-400 hover:shadow-sm px-4 py-2 !important;
+}
+
+.button-secondary {
+  @apply inline-block rounded text-white bg-slate-600 hover:text-slate-900 hover:bg-slate-400 hover:shadow-sm px-4 py-2 !important;
+}
+
+.button-danger {
+  @apply inline-block rounded text-slate-50 bg-red-600 hover:text-slate-900 hover:bg-red-400 hover:shadow-md px-4 py-2 !important;
+}
+
+.input-field {
+  @apply block w-full p-2 rounded-md text-white bg-slate-700 border-transparent border focus:border-[#51A4FB] focus:bg-slate-700 outline-none focus:ring-0 shadow-sm !important;
+}
+
+.input-field[type="range"] {
+  @apply w-auto !important;
+}
+
+.input-field:required:invalid:not(:placeholder-shown) {
+  @apply bg-red-100 !important;
+}
+
+.notification-error {
+  @apply bg-red-700 rounded text-white px-6 py-8 shadow-md mt-2 mb-6 w-full hover:shadow-lg;
+}
+
+.notification-error h3 {
+  @apply text-4xl text-white mb-6;
+}
+
+.notification-success {
+  @apply bg-green-600 rounded text-white px-6 py-8 shadow-md mt-2 mb-6 w-full hover:shadow-lg;
+}
+
+.notification-success h3 {
+  @apply text-4xl text-white mb-6;
+}
+
+img.white {
+  filter: invert(100%) sepia(0%) saturate(7500%) hue-rotate(42deg) brightness(99%) contrast(112%);
+}
+
+img.green {
+  filter: invert(47%) sepia(19%) saturate(6698%) hue-rotate(114deg) brightness(91%) contrast(83%);
+}
+
+img.red {
+  filter: invert(18%) sepia(45%) saturate(3518%) hue-rotate(337deg) brightness(110%) contrast(101%);
+}
+
+img.gray {
+  filter: invert(30%) sepia(46%) saturate(356%) hue-rotate(174deg) brightness(90%) contrast(82%);
+}

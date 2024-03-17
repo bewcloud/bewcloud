@@ -28,7 +28,7 @@ export default function Error404({ state }: PageProps<Data, FreshContextState>) 
             )
             : null}
           <p class='my-4'>
-            The page you were looking for doesn"t exist.
+            The page you were looking for doesn't exist.
           </p>
           <a href='/'>Go back home</a>
         </section>

@@ -129,3 +129,41 @@ export interface ContactField {
   value: string;
   type: ContactFieldType;
 }
+
+// TODO: Finish (more fields)
+export interface Calendar {
+  id: string;
+  user_id: string;
+  revision: string;
+  name: string;
+  color: string;
+  is_visible: boolean;
+  extra: {
+    shared_read_user_ids?: string[];
+    shared_write_user_ids?: string[];
+    default_visibility: 'private';
+  };
+  updated_at: Date;
+  created_at: Date;
+}
+
+// NOTE: I don't really invite people to events in my private calendars, so I don't think I'll need that complexity
+// TODO: Finish (more fields)
+export interface CalendarEvent {
+  id: string;
+  user_id: string;
+  calendar_id: string;
+  revision: string;
+  title: string;
+  start_date: Date;
+  end_date: Date;
+  is_all_day: boolean;
+  status: 'scheduled' | 'pending' | 'canceled';
+  extra: {
+    description?: string;
+    location?: string;
+    visibility: 'default' | 'public' | 'private';
+  };
+  updated_at: Date;
+  created_at: Date;
+}

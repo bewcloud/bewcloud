@@ -624,3 +624,7 @@ export function parseVCardFromTextContents(text: string): Partial<Contact>[] {
 
   return partialContacts;
 }
+
+export const capitalizeWord = (string: string) => {
+  return `${string.charAt(0).toLocaleUpperCase()}${string.slice(1)}`;
+};

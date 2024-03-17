@@ -212,7 +212,7 @@ export default function Contacts({ initialContacts, page, contactsCount, search 
               <button
                 type='button'
                 class='inline-flex w-full justify-center gap-x-1.5 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-600'
-                id='filter-button'
+                id='import-export-button'
                 aria-expanded='true'
                 aria-haspopup='true'
                 onClick={() => toggleOptionsDropdown()}
@@ -234,7 +234,7 @@ export default function Contacts({ initialContacts, page, contactsCount, search 
               }`}
               role='menu'
               aria-orientation='vertical'
-              aria-labelledby='filter-button'
+              aria-labelledby='import-export-button'
               tabindex={-1}
             >
               <div class='py-1'>

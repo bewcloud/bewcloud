@@ -330,6 +330,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
   // TODO: Send in / consider user timezone
   const weeks = view === 'month' ? getWeeksForMonth(new Date(startDate)) : [];
+
   const hours: { date: Date; isCurrentHour: boolean }[] = view === 'day'
     ? Array.from({ length: 24 }).map((_, index) => {
       const hourNumber = index;
@@ -345,6 +346,50 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
         date,
         isCurrentHour,
       };
+    })
+    : [];
+
+  const allDayEvents: CalendarEvent[] = view === 'day'
+    ? calendarEvents.value.filter((calendarEvent) => {
+      if (!calendarEvent.is_all_day) {
+        return false;
+      }
+
+      const startDayDate = new Date(startDate);
+      const endDayDate = new Date(startDate);
+      endDayDate.setHours(23);
+      endDayDate.setMinutes(59);
+      endDayDate.setSeconds(59);
+      endDayDate.setMilliseconds(999);
+
+      const eventStartDate = new Date(calendarEvent.start_date);
+      const eventEndDate = new Date(calendarEvent.end_date);
+
+      // Event starts and ends on this day
+      if (eventStartDate >= startDayDate && eventEndDate <= endDayDate) {
+        return true;
+      }
+
+      // Event starts before and ends after this day
+      if (eventStartDate <= startDayDate && eventEndDate >= endDayDate) {
+        return true;
+      }
+
+      // Event starts on and ends after this day
+      if (
+        eventStartDate >= startDayDate && eventStartDate <= endDayDate && eventEndDate >= endDayDate
+      ) {
+        return true;
+      }
+
+      // Event starts before and ends on this day
+      if (
+        eventStartDate <= startDayDate && eventEndDate >= startDayDate && eventEndDate <= endDayDate
+      ) {
+        return true;
+      }
+
+      return false;
     })
     : [];
 
@@ -540,6 +585,35 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
               </section>
               <section class='flex bg-slate-500 text-sm text-white lg:flex-auto rounded-b-md'>
                 <section class='w-full rounded-b-md'>
+                  {allDayEvents.length > 0
+                    ? (
+                      <section
+                        class={`relative bg-slate-700 min-h-16 px-3 py-2 text-slate-100 border-b border-b-slate-600`}
+                      >
+                        <time datetime={new Date(startDate).toISOString().substring(0, 10)}>
+                          All-day
+                        </time>
+                        <ol class='mt-2'>
+                          {allDayEvents.map((calendarEvent) => (
+                            <li class='mb-1'>
+                              <a
+                                href='javascript:void(0);'
+                                class={`flex px-2 py-2 rounded-md hover:no-underline hover:opacity-60 ${
+                                  visibleCalendars.find((calendar) => calendar.id === calendarEvent.calendar_id)
+                                    ?.color || 'bg-gray-700'
+                                }`}
+                                onClick={() => openEvent.value = calendarEvent}
+                              >
+                                <p class='flex-auto truncate font-medium text-white'>
+                                  {calendarEvent.title}
+                                </p>
+                              </a>
+                            </li>
+                          ))}
+                        </ol>
+                      </section>
+                    )
+                    : null}
                   {hours.map((hour, hourIndex) => {
                     const shortIsoDate = hour.date.toISOString().substring(0, 10);
 
@@ -554,6 +628,10 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
                     const isLastHour = hourIndex === 23;
 
                     const hourEvents = calendarEvents.value.filter((calendarEvent) => {
+                      if (calendarEvent.is_all_day) {
+                        return false;
+                      }
+
                       const eventStartDate = new Date(calendarEvent.start_date);
                       const eventEndDate = new Date(calendarEvent.end_date);
                       eventEndDate.setSeconds(eventEndDate.getSeconds() - 1); // Take one second back so events don't bleed into the next hour

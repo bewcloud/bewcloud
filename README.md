@@ -41,7 +41,7 @@ $ make build # generates all static files for production deploy
 
 - Routes defined at `routes/`.
 - Static files are defined at `static/`.
-- Static frontent components are defined at `components/`.
+- Static frontend components are defined at `components/`.
 - Interactive frontend components are defined at `islands/`.
 - Cron jobs are defined at `crons/`.
 - Reusable bits of code are defined at `lib/`.

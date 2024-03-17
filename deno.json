@@ -23,7 +23,7 @@
         "fresh",
         "recommended"
       ],
-      "exclude": ["no-explicit-any", "no-empty-interface", "ban-types"]
+      "exclude": ["no-explicit-any", "no-empty-interface", "ban-types", "no-window"]
     }
   },
   "exclude": [

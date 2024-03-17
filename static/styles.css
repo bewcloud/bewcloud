@@ -39,7 +39,7 @@ form {
 }
 
 .input-field:required:invalid:not(:placeholder-shown) {
-  @apply bg-red-100 !important;
+  @apply bg-red-400 !important;
 }
 
 .notification-error {

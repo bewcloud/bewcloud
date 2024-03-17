@@ -1,6 +1,16 @@
 import { Contact, ContactAddress, ContactField } from './types.ts';
 
-export const baseUrl = 'https://app.bewcloud.com';
+let BASE_URL = typeof window !== 'undefined' && window.location
+  ? `${window.location.protocol}//${window.location.host}`
+  : '';
+
+if (typeof Deno !== 'undefined') {
+  await import('std/dotenv/load.ts');
+
+  BASE_URL = Deno.env.get('BASE_URL') || '';
+}
+
+export const baseUrl = BASE_URL || 'http://localhost:8000';
 export const defaultTitle = 'bewCloud is a modern and simpler alternative to Nextcloud and ownCloud';
 export const defaultDescription = `Have your calendar, contacts, tasks, and files under your own control.`;
 export const helpEmail = 'help@bewcloud.com';

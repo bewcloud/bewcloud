@@ -54,7 +54,7 @@ async function getCalendarEvents(userId: string, calendarIds: string[]): Promise
     {
       id: 'event-2',
       user_id: userId,
-      calendar_id: 'personal-1',
+      calendar_id: 'family-1',
       revision: 'fake-rev',
       title: 'Dermatologist',
       start_date: new Date('2024-03-17T16:30:00.000Z'),
@@ -83,6 +83,22 @@ async function getCalendarEvents(userId: string, calendarIds: string[]): Promise
       updated_at: new Date(),
       created_at: new Date(),
     },
+    {
+      id: 'event-4',
+      user_id: userId,
+      calendar_id: 'personal-1',
+      revision: 'fake-rev',
+      title: 'Schedule server updates',
+      start_date: new Date('2024-03-18T09:00:00.000Z'),
+      end_date: new Date('2024-03-18T21:00:00.000Z'),
+      is_all_day: true,
+      status: 'scheduled',
+      extra: {
+        visibility: 'default',
+      },
+      updated_at: new Date(),
+      created_at: new Date(),
+    },
   ];
 }
 
@@ -101,7 +117,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const searchParams = new URL(request.url).searchParams;
 
-    const view = (searchParams.get('view') as Data['view']) || 'week';
+    const view = (searchParams.get('view') as Data['view']) || 'month';
     const startDate = searchParams.get('startDate') || new Date().toISOString().substring(0, 10);
 
     const userCalendars = await getCalendars(context.state.user.id);

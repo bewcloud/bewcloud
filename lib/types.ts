@@ -147,7 +147,6 @@ export interface Calendar {
   created_at: Date;
 }
 
-// NOTE: I don't really invite people to events in my private calendars, so I don't think I'll need that complexity
 // TODO: Finish (more fields)
 export interface CalendarEvent {
   id: string;
@@ -162,8 +161,17 @@ export interface CalendarEvent {
   extra: {
     description?: string;
     location?: string;
+    attendees?: CalendarEventAttendee[];
     visibility: 'default' | 'public' | 'private';
+    is_recurring?: boolean;
+    recurring_rrule?: string;
   };
   updated_at: Date;
   created_at: Date;
+}
+
+export interface CalendarEventAttendee {
+  email: string;
+  status: 'accepted' | 'rejected' | 'invited';
+  name?: string;
 }

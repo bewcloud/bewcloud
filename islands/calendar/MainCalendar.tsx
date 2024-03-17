@@ -26,9 +26,19 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
   const isImportExportOptionsDropdownOpen = useSignal<boolean>(false);
   const calendarEvents = useSignal<CalendarEvent[]>(initialCalendarEvents);
   const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
+  const openEvent = useSignal<CalendarEvent | null>(null);
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long' });
   const hourFormat = new Intl.DateTimeFormat('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
+  const eventDateFormat = new Intl.DateTimeFormat('en-GB', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const allDayEventDateFormat = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
   const today = new Date().toISOString().substring(0, 10);
 
   function onClickAddEvent() {
@@ -111,6 +121,8 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
       // }
 
       isDeleting.value = false;
+
+      openEvent.value = null;
     }
   }
 
@@ -501,127 +513,147 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
       </section>
 
       <section class='mx-auto max-w-7xl my-8'>
-        <section>
-          <section class='shadow-md lg:flex lg:flex-auto lg:flex-col rounded-md'>
-            <section class='grid grid-cols-7 gap-px border-b border-slate-500 bg-slate-700 text-center text-xs font-semibold text-white lg:flex-none rounded-t-md'>
-              <div class='flex justify-center bg-gray-900 py-2 rounded-tl-md'>
-                <span>M</span>
-                <span class='sr-only sm:not-sr-only'>on</span>
-              </div>
-              <div class='flex justify-center bg-gray-900 py-2'>
-                <span>T</span>
-                <span class='sr-only sm:not-sr-only'>ue</span>
-              </div>
-              <div class='flex justify-center bg-gray-900 py-2'>
-                <span>W</span>
-                <span class='sr-only sm:not-sr-only'>ed</span>
-              </div>
-              <div class='flex justify-center bg-gray-900 py-2'>
-                <span>T</span>
-                <span class='sr-only sm:not-sr-only'>hu</span>
-              </div>
-              <div class='flex justify-center bg-gray-900 py-2'>
-                <span>F</span>
-                <span class='sr-only sm:not-sr-only'>ri</span>
-              </div>
-              <div class='flex justify-center bg-gray-900 py-2'>
-                <span>S</span>
-                <span class='sr-only sm:not-sr-only'>at</span>
-              </div>
-              <div class='flex justify-center bg-gray-900 py-2 rounded-tr-md'>
-                <span>S</span>
-                <span class='sr-only sm:not-sr-only'>un</span>
-              </div>
+        {view === 'day'
+          ? (
+            <section>
+              TODO: Build day view
             </section>
-            <section class='flex bg-slate-500 text-xs leading-6 text-white lg:flex-auto rounded-b-md'>
-              <section class='w-full grid lg:grid-cols-7 lg:grid-rows-5 lg:gap-px rounded-b-md'>
-                {weeks.map((week, weekIndex) =>
-                  week.map((day, dayIndex) => {
-                    const shortIsoDate = day.date.toISOString().substring(0, 10);
+          )
+          : null}
+        {view === 'week'
+          ? (
+            <section>
+              TODO: Build week view
+            </section>
+          )
+          : null}
+        {view === 'month'
+          ? (
+            <section>
+              <section class='shadow-md lg:flex lg:flex-auto lg:flex-col rounded-md'>
+                <section class='grid grid-cols-7 gap-px border-b border-slate-500 bg-slate-700 text-center text-xs font-semibold text-white lg:flex-none rounded-t-md'>
+                  <div class='flex justify-center bg-gray-900 py-2 rounded-tl-md'>
+                    <span>M</span>
+                    <span class='sr-only sm:not-sr-only'>on</span>
+                  </div>
+                  <div class='flex justify-center bg-gray-900 py-2'>
+                    <span>T</span>
+                    <span class='sr-only sm:not-sr-only'>ue</span>
+                  </div>
+                  <div class='flex justify-center bg-gray-900 py-2'>
+                    <span>W</span>
+                    <span class='sr-only sm:not-sr-only'>ed</span>
+                  </div>
+                  <div class='flex justify-center bg-gray-900 py-2'>
+                    <span>T</span>
+                    <span class='sr-only sm:not-sr-only'>hu</span>
+                  </div>
+                  <div class='flex justify-center bg-gray-900 py-2'>
+                    <span>F</span>
+                    <span class='sr-only sm:not-sr-only'>ri</span>
+                  </div>
+                  <div class='flex justify-center bg-gray-900 py-2'>
+                    <span>S</span>
+                    <span class='sr-only sm:not-sr-only'>at</span>
+                  </div>
+                  <div class='flex justify-center bg-gray-900 py-2 rounded-tr-md'>
+                    <span>S</span>
+                    <span class='sr-only sm:not-sr-only'>un</span>
+                  </div>
+                </section>
+                <section class='flex bg-slate-500 text-xs leading-6 text-white lg:flex-auto rounded-b-md'>
+                  <section class='w-full grid lg:grid-cols-7 lg:grid-rows-5 lg:gap-px rounded-b-md'>
+                    {weeks.map((week, weekIndex) =>
+                      week.map((day, dayIndex) => {
+                        const shortIsoDate = day.date.toISOString().substring(0, 10);
 
-                    const startDayDate = new Date(shortIsoDate);
-                    const endDayDate = new Date(shortIsoDate);
-                    endDayDate.setHours(23);
-                    endDayDate.setMinutes(59);
-                    endDayDate.setSeconds(59);
-                    endDayDate.setMilliseconds(999);
+                        const startDayDate = new Date(shortIsoDate);
+                        const endDayDate = new Date(shortIsoDate);
+                        endDayDate.setHours(23);
+                        endDayDate.setMinutes(59);
+                        endDayDate.setSeconds(59);
+                        endDayDate.setMilliseconds(999);
 
-                    const isBottomLeftDay = weekIndex === weeks.length - 1 && dayIndex === 0;
-                    const isBottomRightDay = weekIndex === weeks.length - 1 && dayIndex === week.length - 1;
+                        const isBottomLeftDay = weekIndex === weeks.length - 1 && dayIndex === 0;
+                        const isBottomRightDay = weekIndex === weeks.length - 1 && dayIndex === week.length - 1;
 
-                    const isToday = today === shortIsoDate;
+                        const isToday = today === shortIsoDate;
 
-                    // TODO: Consider events that span multiple days
-                    const dayEvents = calendarEvents.value.filter((calendarEvent) =>
-                      new Date(calendarEvent.start_date) >= startDayDate &&
-                      new Date(calendarEvent.end_date) <= endDayDate
-                    );
+                        // TODO: Consider events that span multiple days
+                        const dayEvents = calendarEvents.value.filter((calendarEvent) =>
+                          new Date(calendarEvent.start_date) >= startDayDate &&
+                          new Date(calendarEvent.end_date) <= endDayDate
+                        );
 
-                    return (
-                      <section
-                        class={`relative ${day.isSameMonth ? 'bg-slate-600' : 'bg-slate-700'} min-h-16 px-3 py-2 ${
-                          day.isSameMonth ? '' : 'text-slate-100'
-                        } ${isBottomLeftDay ? 'rounded-bl-md' : ''} ${isBottomRightDay ? 'rounded-br-md' : ''}`}
-                      >
-                        <time
-                          datetime={shortIsoDate}
-                          class={`${
-                            isToday
-                              ? 'flex h-6 w-6 items-center justify-center rounded-full bg-[#51A4FB] font-semibold'
-                              : ''
-                          }`}
-                        >
-                          {day.date.getDate()}
-                        </time>
-                        {dayEvents.length > 0
-                          ? (
-                            <ol class='mt-2'>
-                              {[...dayEvents].slice(0, 2).map((dayEvent) => (
-                                <li class='mb-1'>
-                                  <a
-                                    href='#'
-                                    class={`flex px-2 py-0 rounded-md hover:no-underline hover:opacity-60 ${
-                                      visibleCalendars.find((calendar) => calendar.id === dayEvent.calendar_id)
-                                        ?.color || 'bg-gray-700'
-                                    }`}
-                                  >
-                                    <time
-                                      datetime={new Date(dayEvent.start_date).toISOString()}
-                                      class='mr-2 flex-none text-slate-100 block'
-                                    >
-                                      {hourFormat.format(new Date(dayEvent.start_date))}
-                                    </time>
-                                    <p class='flex-auto truncate font-medium text-white'>
-                                      {dayEvent.title}
-                                    </p>
-                                  </a>
-                                </li>
-                              ))}
-                              {dayEvents.length > 2
-                                ? (
-                                  <li class='mb-1'>
-                                    <a
-                                      href='#'
-                                      class='flex bg-purple-600 px-2 py-0 rounded-md hover:no-underline hover:bg-purple-500'
-                                    >
-                                      <p class='flex-auto truncate font-medium text-white'>
-                                        ...{dayEvents.length - 2} more event{dayEvents.length - 2 === 1 ? '' : 's'}
-                                      </p>
-                                    </a>
-                                  </li>
-                                )
-                                : null}
-                            </ol>
-                          )
-                          : null}
-                      </section>
-                    );
-                  })
-                )}
+                        return (
+                          <section
+                            class={`relative ${day.isSameMonth ? 'bg-slate-600' : 'bg-slate-700'} min-h-16 px-3 py-2 ${
+                              day.isSameMonth ? '' : 'text-slate-100'
+                            } ${isBottomLeftDay ? 'rounded-bl-md' : ''} ${isBottomRightDay ? 'rounded-br-md' : ''}`}
+                          >
+                            <time
+                              datetime={shortIsoDate}
+                              class={`${
+                                isToday
+                                  ? 'flex h-6 w-6 items-center justify-center rounded-full bg-[#51A4FB] font-semibold'
+                                  : ''
+                              }`}
+                            >
+                              {day.date.getDate()}
+                            </time>
+                            {dayEvents.length > 0
+                              ? (
+                                <ol class='mt-2'>
+                                  {[...dayEvents].slice(0, 2).map((dayEvent) => (
+                                    <li class='mb-1'>
+                                      <a
+                                        href='javascript:void(0);'
+                                        class={`flex px-2 py-0 rounded-md hover:no-underline hover:opacity-60 ${
+                                          visibleCalendars.find((calendar) => calendar.id === dayEvent.calendar_id)
+                                            ?.color || 'bg-gray-700'
+                                        }`}
+                                        onClick={() => openEvent.value = dayEvent}
+                                      >
+                                        <time
+                                          datetime={new Date(dayEvent.start_date).toISOString()}
+                                          class='mr-2 flex-none text-slate-100 block'
+                                        >
+                                          {hourFormat.format(new Date(dayEvent.start_date))}
+                                        </time>
+                                        <p class='flex-auto truncate font-medium text-white'>
+                                          {dayEvent.title}
+                                        </p>
+                                      </a>
+                                    </li>
+                                  ))}
+                                  {dayEvents.length > 2
+                                    ? (
+                                      <li class='mb-1'>
+                                        <a
+                                          href={`/calendar/view=day&startDate=${shortIsoDate}`}
+                                          class='flex bg-gray-700 px-2 py-0 rounded-md hover:no-underline hover:opacity-60'
+                                          target='_blank'
+                                        >
+                                          <p class='flex-auto truncate font-medium text-white'>
+                                            ...{dayEvents.length - 2} more event{dayEvents.length - 2 === 1 ? '' : 's'}
+                                          </p>
+                                        </a>
+                                      </li>
+                                    )
+                                    : null}
+                                </ol>
+                              )
+                              : null}
+                          </section>
+                        );
+                      })
+                    )}
+                  </section>
+                </section>
               </section>
             </section>
-          </section>
-        </section>
+          )
+          : null}
 
         <span
           class={`flex justify-end items-center text-sm mt-1 mx-2 text-slate-100`}
@@ -655,6 +687,60 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
         <span class='font-semibold'>CalDAV URLs:</span>{' '}
         <code class='bg-slate-600 mx-2 px-2 py-1 rounded-md'>{baseUrl}/dav/principals/</code>{' '}
         <code class='bg-slate-600 mx-2 px-2 py-1 rounded-md'>{baseUrl}/dav/calendars/</code>
+      </section>
+
+      <section
+        class={`fixed ${openEvent.value ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900 bg-opacity-60`}
+      >
+      </section>
+
+      <section
+        class={`fixed ${
+          openEvent.value ? 'block' : 'hidden'
+        } z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-600 text-white rounded-md px-8 py-6 space-y-5 drop-shadow-lg`}
+      >
+        <h1 class='text-2xl font-semibold'>{openEvent.value?.title || ''}</h1>
+        <header class='py-5 border-t border-b border-slate-500 font-semibold flex justify-between'>
+          <span>
+            {openEvent.value?.start_date ? allDayEventDateFormat.format(new Date(openEvent.value.start_date)) : ''}
+          </span>
+          {openEvent.value?.is_all_day ? <span>All-day</span> : (
+            <span>
+              {openEvent.value?.start_date ? hourFormat.format(new Date(openEvent.value.start_date)) : ''} -{' '}
+              {openEvent.value?.end_date ? hourFormat.format(new Date(openEvent.value.end_date)) : ''}
+            </span>
+          )}
+        </header>
+        {openEvent.value?.extra.description
+          ? (
+            <section class='py-5 border-b border-slate-500'>
+              <p>{openEvent.value.extra.description}</p>
+            </section>
+          )
+          : null}
+        <section class='py-5 border-b border-slate-500'>
+          <p>TODO: location, calendar, recurrence, reminders</p>
+        </section>
+        <footer class='flex justify-between'>
+          <button
+            class='px-5 py-2 bg-slate-600 hover:bg-red-600 text-white cursor-pointer rounded-md'
+            onClick={() => onClickDeleteEvent(openEvent.value?.id || '')}
+          >
+            Delete
+          </button>
+          <a
+            href={`/calendar/events/${openEvent.value?.id}`}
+            class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md'
+          >
+            Edit
+          </a>
+          <button
+            class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md'
+            onClick={() => openEvent.value = null}
+          >
+            Close
+          </button>
+        </footer>
       </section>
     </>
   );

@@ -628,3 +628,40 @@ export function parseVCardFromTextContents(text: string): Partial<Contact>[] {
 export const capitalizeWord = (string: string) => {
   return `${string.charAt(0).toLocaleUpperCase()}${string.slice(1)}`;
 };
+
+// NOTE: Considers weeks starting Monday, not Sunday
+export function getWeeksForMonth(date: Date): { date: Date; isSameMonth: boolean }[][] {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  const firstOfMonth = new Date(year, month, 1);
+  const lastOfMonth = new Date(year, month + 1, 0);
+
+  const daysToShow = firstOfMonth.getDay() + (firstOfMonth.getDay() === 0 ? 6 : -1) + lastOfMonth.getDate();
+
+  const weekCount = Math.ceil(daysToShow / 7);
+
+  const weeks: { date: Date; isSameMonth: boolean }[][] = [];
+
+  const startingDate = new Date(firstOfMonth);
+  startingDate.setDate(
+    startingDate.getDate() - Math.abs(firstOfMonth.getDay() === 0 ? 6 : (firstOfMonth.getDay() - 1)),
+  );
+
+  for (let weekIndex = 0; weeks.length < weekCount; ++weekIndex) {
+    for (let dayIndex = 0; dayIndex < 7; ++dayIndex) {
+      if (!Array.isArray(weeks[weekIndex])) {
+        weeks[weekIndex] = [];
+      }
+
+      const weekDayDate = new Date(startingDate);
+      weekDayDate.setDate(weekDayDate.getDate() + (dayIndex + weekIndex * 7));
+
+      const isSameMonth = weekDayDate.getMonth() === month;
+
+      weeks[weekIndex].push({ date: weekDayDate, isSameMonth });
+    }
+  }
+
+  return weeks;
+}

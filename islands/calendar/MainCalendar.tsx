@@ -2,7 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Calendar, CalendarEvent } from '/lib/types.ts';
-import { baseUrl, capitalizeWord } from '/lib/utils.ts';
+import { baseUrl, capitalizeWord, getWeeksForMonth } from '/lib/utils.ts';
 // import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/routes/api/contacts/get.tsx';
 // import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/contacts/add.tsx';
 // import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/contacts/delete.tsx';
@@ -28,6 +28,8 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
   const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long' });
+  const hourFormat = new Intl.DateTimeFormat('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
+  const today = new Date().toISOString().substring(0, 10);
 
   function onClickAddEvent() {
     if (isAdding.value) {
@@ -113,7 +115,6 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
   }
 
   function onClickChangeStartDate(changeTo: 'previous' | 'next' | 'today') {
-    const today = new Date().toISOString().substring(0, 10);
     const previousDay = new Date(new Date(startDate).setUTCDate(new Date(startDate).getUTCDate() - 1)).toISOString()
       .substring(0, 10);
     const nextDay = new Date(new Date(startDate).setUTCDate(new Date(startDate).getUTCDate() + 1)).toISOString()
@@ -315,6 +316,11 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
   const visibleCalendars = calendars.value.filter((calendar) => calendar.is_visible);
 
+  const visibleCalendarEvents = calendarEvents.value;
+
+  // TODO: Send in / consider user timezone
+  const weeks = getWeeksForMonth(new Date(startDate));
+
   return (
     <>
       <section class='flex flex-row items-center justify-between mb-4'>
@@ -497,7 +503,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
       <section class='mx-auto max-w-7xl my-8'>
         <section>
           <section class='shadow-md lg:flex lg:flex-auto lg:flex-col rounded-md'>
-            <div class='grid grid-cols-7 gap-px border-b border-slate-500 bg-slate-700 text-center text-xs font-semibold text-white lg:flex-none rounded-t-md'>
+            <section class='grid grid-cols-7 gap-px border-b border-slate-500 bg-slate-700 text-center text-xs font-semibold text-white lg:flex-none rounded-t-md'>
               <div class='flex justify-center bg-gray-900 py-2 rounded-tl-md'>
                 <span>M</span>
                 <span class='sr-only sm:not-sr-only'>on</span>
@@ -526,165 +532,94 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
                 <span>S</span>
                 <span class='sr-only sm:not-sr-only'>un</span>
               </div>
-            </div>
-            <div class='flex bg-slate-500 text-xs leading-6 text-white lg:flex-auto rounded-b-md'>
-              <div class='w-full grid lg:grid-cols-7 lg:grid-rows-5 lg:gap-px rounded-b-md'>
-                <div class='relative bg-slate-700 px-3 py-2 text-slate-100'>
-                  <time datetime='2024-02-28'>26</time>
-                </div>
-                <div class='relative bg-slate-700 px-3 py-2 text-slate-100'>
-                  <time datetime='2024-02-28'>27</time>
-                </div>
-                <div class='relative bg-slate-700 px-3 py-2 text-slate-100'>
-                  <time datetime='2024-02-28'>28</time>
-                </div>
-                <div class='relative bg-slate-700 px-3 py-2 text-slate-100'>
-                  <time datetime='2024-02-29'>29</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-01'>1</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-02'>2</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-03'>3</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-04'>4</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-05'>5</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-06'>6</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-07'>7</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-08'>8</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-09'>9</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-10'>10</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-11'>11</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-12'>12</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-13'>13</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-14'>14</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-15'>15</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-16'>16</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time
-                    datetime='2024-03-17'
-                    class='flex h-6 w-6 items-center justify-center rounded-full bg-[#51A4FB] font-semibold'
-                  >
-                    17
-                  </time>
-                  <ol class='mt-2'>
-                    <li class='mb-1'>
-                      <a
-                        href='#'
-                        class='flex bg-purple-600 px-2 py-0 rounded-md hover:no-underline hover:bg-purple-500'
+            </section>
+            <section class='flex bg-slate-500 text-xs leading-6 text-white lg:flex-auto rounded-b-md'>
+              <section class='w-full grid lg:grid-cols-7 lg:grid-rows-5 lg:gap-px rounded-b-md'>
+                {weeks.map((week, weekIndex) =>
+                  week.map((day, dayIndex) => {
+                    const shortIsoDate = day.date.toISOString().substring(0, 10);
+
+                    const startDayDate = new Date(shortIsoDate);
+                    const endDayDate = new Date(shortIsoDate);
+                    endDayDate.setHours(23);
+                    endDayDate.setMinutes(59);
+                    endDayDate.setSeconds(59);
+                    endDayDate.setMilliseconds(999);
+
+                    const isBottomLeftDay = weekIndex === weeks.length - 1 && dayIndex === 0;
+                    const isBottomRightDay = weekIndex === weeks.length - 1 && dayIndex === week.length - 1;
+
+                    const isToday = today === shortIsoDate;
+
+                    // TODO: Consider events that span multiple days
+                    const dayEvents = calendarEvents.value.filter((calendarEvent) =>
+                      new Date(calendarEvent.start_date) >= startDayDate &&
+                      new Date(calendarEvent.end_date) <= endDayDate
+                    );
+
+                    return (
+                      <section
+                        class={`relative ${day.isSameMonth ? 'bg-slate-600' : 'bg-slate-700'} min-h-16 px-3 py-2 ${
+                          day.isSameMonth ? '' : 'text-slate-100'
+                        } ${isBottomLeftDay ? 'rounded-bl-md' : ''} ${isBottomRightDay ? 'rounded-br-md' : ''}`}
                       >
                         <time
-                          datetime='2024-03-17T14:00'
-                          class='mr-2 flex-none text-slate-100 block'
+                          datetime={shortIsoDate}
+                          class={`${
+                            isToday
+                              ? 'flex h-6 w-6 items-center justify-center rounded-full bg-[#51A4FB] font-semibold'
+                              : ''
+                          }`}
                         >
-                          14:00
+                          {day.date.getDate()}
                         </time>
-                        <p class='flex-auto truncate font-medium text-white'>
-                          Dentist
-                        </p>
-                      </a>
-                    </li>
-                    <li class='mb-1'>
-                      <a
-                        href='#'
-                        class='flex bg-purple-600 px-2 py-0 rounded-md hover:no-underline hover:bg-purple-500'
-                      >
-                        <time
-                          datetime='2024-03-17T16:30'
-                          class='mr-2 flex-none text-slate-100 block'
-                        >
-                          16:30
-                        </time>
-                        <p class='flex-auto truncate font-medium text-white'>
-                          Dermatologist
-                        </p>
-                      </a>
-                    </li>
-                    <li class='mb-1'>
-                      <a
-                        href='#'
-                        class='flex bg-purple-600 px-2 py-0 rounded-md hover:no-underline hover:bg-purple-500'
-                      >
-                        <p class='flex-auto truncate font-medium text-white'>
-                          ...3 more events
-                        </p>
-                      </a>
-                    </li>
-                  </ol>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-18'>18</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-19'>19</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-20'>20</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-21'>21</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-22'>22</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-23'>23</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-24'>24</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-25'>25</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-26'>26</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-27'>27</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-28'>28</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-29'>29</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2'>
-                  <time datetime='2024-03-30'>30</time>
-                </div>
-                <div class='relative bg-slate-600 px-3 py-2 rounded-br-md'>
-                  <time datetime='2024-03-31'>31</time>
-                </div>
-              </div>
-            </div>
+                        {dayEvents.length > 0
+                          ? (
+                            <ol class='mt-2'>
+                              {[...dayEvents].slice(0, 2).map((dayEvent) => (
+                                <li class='mb-1'>
+                                  <a
+                                    href='#'
+                                    class={`flex px-2 py-0 rounded-md hover:no-underline hover:opacity-60 ${
+                                      visibleCalendars.find((calendar) => calendar.id === dayEvent.calendar_id)
+                                        ?.color || 'bg-gray-700'
+                                    }`}
+                                  >
+                                    <time
+                                      datetime={new Date(dayEvent.start_date).toISOString()}
+                                      class='mr-2 flex-none text-slate-100 block'
+                                    >
+                                      {hourFormat.format(new Date(dayEvent.start_date))}
+                                    </time>
+                                    <p class='flex-auto truncate font-medium text-white'>
+                                      {dayEvent.title}
+                                    </p>
+                                  </a>
+                                </li>
+                              ))}
+                              {dayEvents.length > 2
+                                ? (
+                                  <li class='mb-1'>
+                                    <a
+                                      href='#'
+                                      class='flex bg-purple-600 px-2 py-0 rounded-md hover:no-underline hover:bg-purple-500'
+                                    >
+                                      <p class='flex-auto truncate font-medium text-white'>
+                                        ...{dayEvents.length - 2} more event{dayEvents.length - 2 === 1 ? '' : 's'}
+                                      </p>
+                                    </a>
+                                  </li>
+                                )
+                                : null}
+                            </ol>
+                          )
+                          : null}
+                      </section>
+                    );
+                  })
+                )}
+              </section>
+            </section>
           </section>
         </section>
 

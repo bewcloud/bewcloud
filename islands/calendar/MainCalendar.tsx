@@ -2,7 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Calendar, CalendarEvent } from '/lib/types.ts';
-import { baseUrl, capitalizeWord, getWeeksForMonth } from '/lib/utils.ts';
+import { baseUrl, capitalizeWord, getDaysForWeek, getWeeksForMonth } from '/lib/utils.ts';
 // import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/routes/api/contacts/get.tsx';
 // import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/contacts/add.tsx';
 // import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/contacts/delete.tsx';
@@ -36,6 +36,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
     month: 'long',
     year: 'numeric',
   });
+  const weekDayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short' });
   const allDayEventDateFormat = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
   const today = new Date().toISOString().substring(0, 10);
 
@@ -326,9 +327,6 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
   const visibleCalendars = calendars.value.filter((calendar) => calendar.is_visible);
 
-  const visibleCalendarEvents = calendarEvents.value;
-
-  // TODO: Send in / consider user timezone
   const weeks = view === 'month' ? getWeeksForMonth(new Date(startDate)) : [];
 
   const hours: { date: Date; isCurrentHour: boolean }[] = view === 'day'
@@ -393,7 +391,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
     })
     : [];
 
-  // TODO: days with hours
+  const days = view === 'week' ? getDaysForWeek(new Date(startDate)) : [];
 
   return (
     <>
@@ -577,13 +575,13 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
       <section class='mx-auto max-w-7xl my-8'>
         {view === 'day'
           ? (
-            <section class='shadow-md lg:flex lg:flex-auto lg:flex-col rounded-md'>
-              <section class='border-b border-slate-500 bg-slate-700 text-center text-base font-semibold text-white lg:flex-none rounded-t-md'>
+            <section class='shadow-md flex flex-auto flex-col rounded-md'>
+              <section class='border-b border-slate-500 bg-slate-700 text-center text-base font-semibold text-white flex-none rounded-t-md'>
                 <div class='flex justify-center bg-gray-900 py-2 rounded-t-md'>
                   <span>{dayFormat.format(new Date(startDate))}</span>
                 </div>
               </section>
-              <section class='flex bg-slate-500 text-sm text-white lg:flex-auto rounded-b-md'>
+              <section class='flex bg-slate-500 text-sm text-white flex-auto rounded-b-md'>
                 <section class='w-full rounded-b-md'>
                   {allDayEvents.length > 0
                     ? (
@@ -665,9 +663,11 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
                     return (
                       <section
-                        class={`relative ${hour.isCurrentHour ? 'bg-slate-600' : 'bg-slate-700'} min-h-16 px-3 py-2 ${
-                          hour.isCurrentHour ? '' : 'text-slate-100'
-                        } ${isLastHour ? 'rounded-b-md' : ''} border-b border-b-slate-600`}
+                        class={`relative ${hour.isCurrentHour ? 'bg-slate-600' : 'bg-slate-700'} ${
+                          hourIndex <= 6 ? 'min-h-8' : 'min-h-16'
+                        } px-3 py-2 ${hour.isCurrentHour ? '' : 'text-slate-100'} ${
+                          isLastHour ? 'rounded-b-md' : ''
+                        } border-b border-b-slate-600`}
                       >
                         <time datetime={startHourDate.toISOString()}>
                           {hourFormat.format(startHourDate)}
@@ -710,15 +710,197 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
           : null}
         {view === 'week'
           ? (
-            <section>
-              TODO: Build week view
+            <section class='shadow-md flex flex-auto flex-col rounded-md'>
+              <section class='w-full grid gap-px grid-flow-col rounded-md text-white text-xs bg-slate-600 calendar-week-view-days'>
+                {days.map((day, dayIndex) => {
+                  const allDayEvents: CalendarEvent[] = calendarEvents.value.filter((calendarEvent) => {
+                    if (!calendarEvent.is_all_day) {
+                      return false;
+                    }
+
+                    const startDayDate = new Date(day.date);
+                    const endDayDate = new Date(day.date);
+                    endDayDate.setHours(23);
+                    endDayDate.setMinutes(59);
+                    endDayDate.setSeconds(59);
+                    endDayDate.setMilliseconds(999);
+
+                    const eventStartDate = new Date(calendarEvent.start_date);
+                    const eventEndDate = new Date(calendarEvent.end_date);
+
+                    // Event starts and ends on this day
+                    if (eventStartDate >= startDayDate && eventEndDate <= endDayDate) {
+                      return true;
+                    }
+
+                    // Event starts before and ends after this day
+                    if (eventStartDate <= startDayDate && eventEndDate >= endDayDate) {
+                      return true;
+                    }
+
+                    // Event starts on and ends after this day
+                    if (
+                      eventStartDate >= startDayDate && eventStartDate <= endDayDate && eventEndDate >= endDayDate
+                    ) {
+                      return true;
+                    }
+
+                    // Event starts before and ends on this day
+                    if (
+                      eventStartDate <= startDayDate && eventEndDate >= startDayDate && eventEndDate <= endDayDate
+                    ) {
+                      return true;
+                    }
+
+                    return false;
+                  });
+
+                  const isFirstDay = dayIndex === 0;
+                  const isLastDay = dayIndex === 6;
+
+                  return (
+                    <>
+                      <section
+                        class={`flex justify-center bg-gray-900 py-2 ${isFirstDay ? 'rounded-tl-md' : ''} ${
+                          isLastDay ? 'rounded-tr-md' : ''
+                        } text-center text-xs font-semibold text-white`}
+                      >
+                        <span>{weekDayFormat.format(day.date)}</span>
+                      </section>
+                      <section
+                        class={`relative bg-slate-700 min-h-8 px-3 py-2 text-slate-100`}
+                      >
+                        <time datetime={new Date(startDate).toISOString().substring(0, 10)}>
+                          All-day
+                        </time>
+                        {allDayEvents.length > 0
+                          ? (
+                            <ol class='mt-2'>
+                              {allDayEvents.map((calendarEvent) => (
+                                <li class='mb-1'>
+                                  <a
+                                    href='javascript:void(0);'
+                                    class={`flex px-2 py-2 rounded-md hover:no-underline hover:opacity-60 ${
+                                      visibleCalendars.find((calendar) => calendar.id === calendarEvent.calendar_id)
+                                        ?.color || 'bg-gray-700'
+                                    }`}
+                                    onClick={() => openEvent.value = calendarEvent}
+                                  >
+                                    <p class='flex-auto truncate font-medium text-white'>
+                                      {calendarEvent.title}
+                                    </p>
+                                  </a>
+                                </li>
+                              ))}
+                            </ol>
+                          )
+                          : null}
+                      </section>
+                      {day.hours.map((hour, hourIndex) => {
+                        const shortIsoDate = hour.date.toISOString().substring(0, 10);
+
+                        const startHourDate = new Date(shortIsoDate);
+                        startHourDate.setHours(hour.date.getHours());
+                        const endHourDate = new Date(shortIsoDate);
+                        endHourDate.setHours(hour.date.getHours());
+                        endHourDate.setMinutes(59);
+                        endHourDate.setSeconds(59);
+                        endHourDate.setMilliseconds(999);
+
+                        const isLastHourOfFirstDay = hourIndex === 23 && dayIndex === 0;
+                        const isLastHourOfLastDay = hourIndex === 23 && dayIndex === 6;
+
+                        const hourEvents = calendarEvents.value.filter((calendarEvent) => {
+                          if (calendarEvent.is_all_day) {
+                            return false;
+                          }
+
+                          const eventStartDate = new Date(calendarEvent.start_date);
+                          const eventEndDate = new Date(calendarEvent.end_date);
+                          eventEndDate.setSeconds(eventEndDate.getSeconds() - 1); // Take one second back so events don't bleed into the next hour
+
+                          // Event starts and ends on this hour
+                          if (eventStartDate >= startHourDate && eventEndDate <= endHourDate) {
+                            return true;
+                          }
+
+                          // Event starts before and ends after this hour
+                          if (eventStartDate <= startHourDate && eventEndDate >= endHourDate) {
+                            return true;
+                          }
+
+                          // Event starts on and ends after this hour
+                          if (
+                            eventStartDate >= startHourDate && eventStartDate <= endHourDate &&
+                            eventEndDate >= endHourDate
+                          ) {
+                            return true;
+                          }
+
+                          // Event starts before and ends on this hour
+                          if (
+                            eventStartDate <= startHourDate && eventEndDate >= startHourDate &&
+                            eventEndDate <= endHourDate
+                          ) {
+                            return true;
+                          }
+
+                          return false;
+                        });
+
+                        return (
+                          <section
+                            class={`relative ${
+                              hour.isCurrentHour ? 'bg-slate-600' : 'bg-slate-700'
+                            } min-h-8 px-3 py-2 ${hour.isCurrentHour ? '' : 'text-slate-100'} ${
+                              isLastHourOfFirstDay ? 'rounded-bl-md' : ''
+                            } ${isLastHourOfLastDay ? 'rounded-br-md' : ''}`}
+                          >
+                            <time datetime={startHourDate.toISOString()}>
+                              {hourFormat.format(startHourDate)}
+                            </time>
+                            {hourEvents.length > 0
+                              ? (
+                                <ol class='mt-2'>
+                                  {hourEvents.map((hourEvent) => (
+                                    <li class='mb-1'>
+                                      <a
+                                        href='javascript:void(0);'
+                                        class={`flex px-2 py-2 rounded-md hover:no-underline hover:opacity-60 ${
+                                          visibleCalendars.find((calendar) => calendar.id === hourEvent.calendar_id)
+                                            ?.color || 'bg-gray-700'
+                                        }`}
+                                        onClick={() => openEvent.value = hourEvent}
+                                      >
+                                        <time
+                                          datetime={new Date(hourEvent.start_date).toISOString()}
+                                          class='mr-2 flex-none text-slate-100 block'
+                                        >
+                                          {hourFormat.format(new Date(hourEvent.start_date))}
+                                        </time>
+                                        <p class='flex-auto truncate font-medium text-white'>
+                                          {hourEvent.title}
+                                        </p>
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ol>
+                              )
+                              : null}
+                          </section>
+                        );
+                      })}
+                    </>
+                  );
+                })}
+              </section>
             </section>
           )
           : null}
         {view === 'month'
           ? (
-            <section class='shadow-md lg:flex lg:flex-auto lg:flex-col rounded-md'>
-              <section class='grid grid-cols-7 gap-px border-b border-slate-500 bg-slate-700 text-center text-xs font-semibold text-white lg:flex-none rounded-t-md'>
+            <section class='shadow-md flex flex-auto flex-col rounded-md'>
+              <section class='grid grid-cols-7 gap-px border-b border-slate-500 bg-slate-700 text-center text-xs font-semibold text-white flex-none rounded-t-md'>
                 <div class='flex justify-center bg-gray-900 py-2 rounded-tl-md'>
                   <span>Mon</span>
                 </div>
@@ -741,8 +923,8 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
                   <span>Sun</span>
                 </div>
               </section>
-              <section class='flex bg-slate-500 text-xs text-white lg:flex-auto rounded-b-md'>
-                <section class='w-full grid lg:grid-cols-7 lg:grid-rows-5 lg:gap-px rounded-b-md'>
+              <section class='flex bg-slate-500 text-xs text-white flex-auto rounded-b-md'>
+                <section class='w-full grid grid-cols-7 grid-rows-5 gap-px rounded-b-md'>
                   {weeks.map((week, weekIndex) =>
                     week.map((day, dayIndex) => {
                       const shortIsoDate = day.date.toISOString().substring(0, 10);

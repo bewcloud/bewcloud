@@ -41,8 +41,8 @@ async function getCalendarEvents(userId: string, calendarIds: string[]): Promise
       calendar_id: 'family-1',
       revision: 'fake-rev',
       title: 'Dentist',
-      start_date: new Date('2024-03-17T14:00:00.000Z'),
-      end_date: new Date('2024-03-17T15:00:00.000Z'),
+      start_date: new Date('2024-03-18T14:00:00.000Z'),
+      end_date: new Date('2024-03-18T15:00:00.000Z'),
       is_all_day: false,
       status: 'scheduled',
       extra: {
@@ -57,8 +57,8 @@ async function getCalendarEvents(userId: string, calendarIds: string[]): Promise
       calendar_id: 'family-1',
       revision: 'fake-rev',
       title: 'Dermatologist',
-      start_date: new Date('2024-03-17T16:30:00.000Z'),
-      end_date: new Date('2024-03-17T17:30:00.000Z'),
+      start_date: new Date('2024-03-18T16:30:00.000Z'),
+      end_date: new Date('2024-03-18T17:30:00.000Z'),
       is_all_day: false,
       status: 'scheduled',
       extra: {
@@ -73,8 +73,8 @@ async function getCalendarEvents(userId: string, calendarIds: string[]): Promise
       calendar_id: 'house-chores-1',
       revision: 'fake-rev',
       title: 'Vacuum',
-      start_date: new Date('2024-03-16T15:00:00.000Z'),
-      end_date: new Date('2024-03-16T16:00:00.000Z'),
+      start_date: new Date('2024-03-19T15:00:00.000Z'),
+      end_date: new Date('2024-03-19T16:00:00.000Z'),
       is_all_day: false,
       status: 'scheduled',
       extra: {
@@ -89,8 +89,8 @@ async function getCalendarEvents(userId: string, calendarIds: string[]): Promise
       calendar_id: 'personal-1',
       revision: 'fake-rev',
       title: 'Schedule server updates',
-      start_date: new Date('2024-03-18T09:00:00.000Z'),
-      end_date: new Date('2024-03-18T21:00:00.000Z'),
+      start_date: new Date('2024-03-20T09:00:00.000Z'),
+      end_date: new Date('2024-03-20T21:00:00.000Z'),
       is_all_day: true,
       status: 'scheduled',
       extra: {
@@ -117,7 +117,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const searchParams = new URL(request.url).searchParams;
 
-    const view = (searchParams.get('view') as Data['view']) || 'month';
+    const view = (searchParams.get('view') as Data['view']) || 'week';
     const startDate = searchParams.get('startDate') || new Date().toISOString().substring(0, 10);
 
     const userCalendars = await getCalendars(context.state.user.id);

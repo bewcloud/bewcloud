@@ -665,3 +665,42 @@ export function getWeeksForMonth(date: Date): { date: Date; isSameMonth: boolean
 
   return weeks;
 }
+
+// NOTE: Considers week starting Monday, not Sunday
+export function getDaysForWeek(
+  date: Date,
+): { date: Date; isSameDay: boolean; hours: { date: Date; isCurrentHour: boolean }[] }[] {
+  const shortIsoDate = date.toISOString().substring(0, 10);
+  const currentHour = new Date().getHours();
+
+  const days: { date: Date; isSameDay: boolean; hours: { date: Date; isCurrentHour: boolean }[] }[] = [];
+
+  const startingDate = new Date(date);
+  startingDate.setDate(
+    startingDate.getDate() - Math.abs(startingDate.getDay() === 0 ? 6 : (startingDate.getDay() - 1)),
+  );
+
+  for (let dayIndex = 0; days.length < 7; ++dayIndex) {
+    const dayDate = new Date(startingDate);
+    dayDate.setDate(dayDate.getDate() + dayIndex);
+
+    const isSameDay = dayDate.toISOString() === shortIsoDate;
+
+    days[dayIndex] = {
+      date: dayDate,
+      isSameDay,
+      hours: [],
+    };
+
+    for (let hourIndex = 0; hourIndex < 24; ++hourIndex) {
+      const dayHourDate = new Date(dayDate);
+      dayHourDate.setHours(hourIndex);
+
+      const isCurrentHour = isSameDay && hourIndex === currentHour;
+
+      days[dayIndex].hours.push({ date: dayHourDate, isCurrentHour });
+    }
+  }
+
+  return days;
+}

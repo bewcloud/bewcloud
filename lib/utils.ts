@@ -1,4 +1,4 @@
-import { Contact, ContactAddress, ContactField } from './types.ts';
+import { Calendar, CalendarEvent, Contact, ContactAddress, ContactField } from './types.ts';
 
 let BASE_URL = typeof window !== 'undefined' && window.location
   ? `${window.location.protocol}//${window.location.host}`
@@ -17,9 +17,11 @@ export const helpEmail = 'help@bewcloud.com';
 
 export const CONTACTS_PER_PAGE_COUNT = 20;
 
-export const DAV_RESPONSE_HEADER = '1, 3, 4, addressbook';
-// '1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, oc-resource-sharing, addressbook, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar'
-// '1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-resource-sharing, oc-calendar-publishing, calendarserver-sharing, addressbook, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
+export const DAV_RESPONSE_HEADER = '1, 2, 3, 4, addressbook, calendar-access';
+// Response headers from Nextcloud:
+// 1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, oc-resource-sharing, addressbook, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
+// 1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-resource-sharing, oc-calendar-publishing, calendarserver-sharing, addressbook, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
+// 1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-resource-sharing, oc-calendar-publishing, calendarserver-sharing, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
 
 export function isRunningLocally(request: Request) {
   return request.url.includes('localhost');
@@ -388,8 +390,8 @@ export function parseVCardFromTextContents(text: string): Partial<Contact>[] {
     }
 
     if (vCardVersion !== '2.1' && vCardVersion !== '3.0' && vCardVersion !== '4.0') {
-      vCardVersion = '2.1';
       console.warn(`Invalid vCard version found: "${vCardVersion}". Defaulting to 2.1 parser.`);
+      vCardVersion = '2.1';
     }
 
     if (line.startsWith('UID:')) {
@@ -625,6 +627,105 @@ export function parseVCardFromTextContents(text: string): Partial<Contact>[] {
   return partialContacts;
 }
 
+// TODO: Build this
+export function formatCalendarEventsToVCalendar(calendarEvents: CalendarEvent[], _calendar: Calendar): string {
+  const vCalendarText = calendarEvents.map((calendarEvent) =>
+    `BEGIN:VEVENT
+DTSTAMP:${calendarEvent.start_date.toISOString().substring(0, 19).replaceAll('T', '').replaceAll(':', '')}
+DTSTART:${calendarEvent.start_date.toISOString().substring(0, 19).replaceAll('T', '').replaceAll(':', '')}
+DTEND:${calendarEvent.end_date.toISOString().substring(0, 19).replaceAll('T', '').replaceAll(':', '')}
+ORGANIZER;CN=:MAILTO:${calendarEvent.extra.organizer_email}
+SUMMARY:${calendarEvent.title}
+${calendarEvent.extra.uid ? `UID:${calendarEvent.extra.uid}` : ''}
+END:VEVENT`
+  ).join('\n');
+
+  return `BEGIN:VCALENDAR\nVERSION:2.0\nCALSCALE:GREGORIAN\n${vCalendarText}\nEND:VCALENDAR`.split('\n').map((line) =>
+    line.trim()
+  ).filter(
+    Boolean,
+  ).join('\n');
+}
+
+type VCalendarVersion = '1.0' | '2.0';
+
+export function parseVCalendarFromTextContents(text: string): Partial<CalendarEvent>[] {
+  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+
+  const partialCalendarEvents: Partial<CalendarEvent>[] = [];
+
+  let partialCalendarEvent: Partial<CalendarEvent> = {};
+  let vCalendarVersion: VCalendarVersion = '2.0';
+
+  // Loop through every line
+  for (const line of lines) {
+    // Start new vCard version
+    if (line.startsWith('BEGIN:VCALENDAR')) {
+      vCalendarVersion = '2.0';
+      continue;
+    }
+
+    // Start new event
+    if (line.startsWith('BEGIN:VEVENT')) {
+      partialCalendarEvent = {};
+      continue;
+    }
+
+    // Finish contact
+    if (line.startsWith('END:VCARD')) {
+      partialCalendarEvents.push(partialCalendarEvent);
+      continue;
+    }
+
+    // Select proper vCalendar version
+    if (line.startsWith('VERSION:')) {
+      if (line.startsWith('VERSION:1.0')) {
+        vCalendarVersion = '1.0';
+      } else if (line.startsWith('VERSION:2.0')) {
+        vCalendarVersion = '2.0';
+      } else {
+        // Default to 2.0, log warning
+        vCalendarVersion = '2.0';
+        console.warn(`Invalid vCalendar version found: "${line}". Defaulting to 2.0 parser.`);
+      }
+
+      continue;
+    }
+
+    if (vCalendarVersion !== '1.0' && vCalendarVersion !== '2.0') {
+      console.warn(`Invalid vCalendar version found: "${vCalendarVersion}". Defaulting to 2.0 parser.`);
+      vCalendarVersion = '2.0';
+    }
+
+    if (line.startsWith('UID:')) {
+      const uid = line.replace('UID:', '');
+
+      if (!uid) {
+        continue;
+      }
+
+      partialCalendarEvent.extra = {
+        ...(partialCalendarEvent.extra! || {}),
+        uid,
+      };
+
+      continue;
+    }
+
+    // TODO: Build this ( https://en.wikipedia.org/wiki/ICalendar#List_of_components,_properties,_and_parameters )
+
+    if (line.startsWith('SUMMARY:')) {
+      const title = line.split('SUMMARY:')[1] || '';
+
+      partialCalendarEvent.title = title;
+
+      continue;
+    }
+  }
+
+  return partialCalendarEvents;
+}
+
 export const capitalizeWord = (string: string) => {
   return `${string.charAt(0).toLocaleUpperCase()}${string.slice(1)}`;
 };
@@ -684,7 +785,7 @@ export function getDaysForWeek(
     const dayDate = new Date(startingDate);
     dayDate.setDate(dayDate.getDate() + dayIndex);
 
-    const isSameDay = dayDate.toISOString() === shortIsoDate;
+    const isSameDay = dayDate.toISOString().substring(0, 10) === shortIsoDate;
 
     days[dayIndex] = {
       date: dayDate,

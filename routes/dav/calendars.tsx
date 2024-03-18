@@ -1,8 +1,9 @@
 import { Handler } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { convertObjectToDavXml, DAV_RESPONSE_HEADER } from '/lib/utils.ts';
+import { convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml } from '/lib/utils.ts';
 import { createSessionCookie } from '/lib/auth.ts';
+import { getCalendars } from '/lib/data/calendar.ts';
 
 interface Data {}
 
@@ -10,26 +11,20 @@ interface DavResponse {
   'd:href': string;
   'd:propstat': {
     'd:prop': {
-      'd:resourcetype': {
-        'd:collection'?: {};
-        'd:principal': {};
+      'd:resourcetype'?: {
+        'd:collection': {};
+        'cal:calendar'?: {};
       };
-      'd:displayname'?: string;
-      'card:addressbook-home-set'?: {
-        'd:href': string;
-      };
-      'cal:calendar-home-set'?: {
-        'd:href': string;
-      };
+      'd:displayname'?: string | {};
+      'd:getetag'?: string | {};
+      'cs:getctag'?: string | {};
       'd:current-user-principal'?: {
         'd:href': string;
       };
-      'd:principal-URL'?: {
-        'd:href': string;
-      };
+      'd:principal-URL'?: {};
     };
     'd:status': string;
-  };
+  }[];
 }
 
 interface DavMultiStatusResponse {
@@ -40,10 +35,9 @@ interface DavMultiStatusResponse {
     'xmlns:d': string;
     'xmlns:s': string;
     'xmlns:cal': string;
-    'xmlns:cs': string;
-    'xmlns:card': string;
     'xmlns:oc': string;
     'xmlns:nc': string;
+    'xmlns:cs': string;
   };
 }
 
@@ -67,58 +61,60 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
   const responseBody: ResponseBody = {
     'd:multistatus': {
-      'd:response': [],
+      'd:response': [
+        {
+          'd:href': '/dav/calendars/',
+          'd:propstat': [{
+            'd:prop': {
+              'd:resourcetype': {
+                'd:collection': {},
+              },
+              'd:current-user-principal': {
+                'd:href': '/dav/principals/',
+              },
+            },
+            'd:status': 'HTTP/1.1 200 OK',
+          }, {
+            'd:prop': { 'd:principal-URL': {}, 'd:displayname': {}, 'cs:getctag': {} },
+            'd:status': 'HTTP/1.1 404 Not Found',
+          }],
+        },
+      ],
     },
     'd:multistatus_attributes': {
       'xmlns:d': 'DAV:',
       'xmlns:s': 'http://sabredav.org/ns',
       'xmlns:cal': 'urn:ietf:params:xml:ns:caldav',
-      'xmlns:cs': 'http://calendarserver.org/ns/',
-      'xmlns:card': 'urn:ietf:params:xml:ns:carddav',
       'xmlns:oc': 'http://owncloud.org/ns',
       'xmlns:nc': 'http://nextcloud.org/ns',
+      'xmlns:cs': 'http://calendarserver.org/ns/',
     },
   };
 
-  if (request.method === 'PROPFIND') {
-    const propResponse: DavResponse = {
-      'd:href': '/dav/principals/',
-      'd:propstat': {
+  const calendars = await getCalendars(context.state.user.id);
+
+  for (const calendar of calendars) {
+    responseBody['d:multistatus']['d:response'].push({
+      'd:href': `/dav/calendars/${calendar.id}`,
+      'd:propstat': [{
         'd:prop': {
           'd:resourcetype': {
             'd:collection': {},
-            'd:principal': {},
+            'cal:calendar': {},
           },
+          'd:displayname': calendar.name,
+          'd:getetag': escapeHtml(`"${calendar.revision}"`),
+          'cs:getctag': calendar.revision,
           'd:current-user-principal': {
-            'd:href': '/dav/principals/',
-          },
-          'd:principal-URL': {
             'd:href': '/dav/principals/',
           },
         },
         'd:status': 'HTTP/1.1 200 OK',
-      },
-    };
-
-    const requestBody = (await request.clone().text()).toLowerCase();
-
-    if (requestBody.includes('displayname')) {
-      propResponse['d:propstat']['d:prop']['d:displayname'] = `${context.state.user.email}`;
-    }
-
-    if (requestBody.includes('addressbook-home-set')) {
-      propResponse['d:propstat']['d:prop']['card:addressbook-home-set'] = {
-        'd:href': `/dav/addressbooks/`,
-      };
-    }
-
-    if (requestBody.includes('calendar-home-set')) {
-      propResponse['d:propstat']['d:prop']['cal:calendar-home-set'] = {
-        'd:href': `/dav/calendars/`,
-      };
-    }
-
-    responseBody['d:multistatus']['d:response'].push(propResponse);
+      }, {
+        'd:prop': { 'd:principal-URL': {} },
+        'd:status': 'HTTP/1.1 404 Not Found',
+      }],
+    });
   }
 
   const response = new Response(convertObjectToDavXml(responseBody, true), {

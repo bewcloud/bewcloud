@@ -2,6 +2,7 @@
 // This file SHOULD be checked into source version control.
 // This file is automatically updated during development when running `dev.ts`.
 
+import * as $_well_known_caldav from './routes/.well-known/caldav.tsx';
 import * as $_well_known_carddav from './routes/.well-known/carddav.tsx';
 import * as $_404 from './routes/_404.tsx';
 import * as $_app from './routes/_app.tsx';
@@ -24,6 +25,9 @@ import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav_addressbooks from './routes/dav/addressbooks.tsx';
 import * as $dav_addressbooks_contacts from './routes/dav/addressbooks/contacts.tsx';
 import * as $dav_addressbooks_contacts_contactId_vcf from './routes/dav/addressbooks/contacts/[contactId].vcf.tsx';
+import * as $dav_calendars from './routes/dav/calendars.tsx';
+import * as $dav_calendars_calendarId_ from './routes/dav/calendars/[calendarId].tsx';
+import * as $dav_calendars_calendarId_calendarEventId_ics from './routes/dav/calendars/[calendarId]/[calendarEventId].ics.tsx';
 import * as $dav_files from './routes/dav/files.tsx';
 import * as $dav_index from './routes/dav/index.tsx';
 import * as $dav_principals from './routes/dav/principals.tsx';
@@ -47,6 +51,7 @@ import { type Manifest } from '$fresh/server.ts';
 
 const manifest = {
   routes: {
+    './routes/.well-known/caldav.tsx': $_well_known_caldav,
     './routes/.well-known/carddav.tsx': $_well_known_carddav,
     './routes/_404.tsx': $_404,
     './routes/_app.tsx': $_app,
@@ -69,6 +74,9 @@ const manifest = {
     './routes/dav/addressbooks.tsx': $dav_addressbooks,
     './routes/dav/addressbooks/contacts.tsx': $dav_addressbooks_contacts,
     './routes/dav/addressbooks/contacts/[contactId].vcf.tsx': $dav_addressbooks_contacts_contactId_vcf,
+    './routes/dav/calendars.tsx': $dav_calendars,
+    './routes/dav/calendars/[calendarId].tsx': $dav_calendars_calendarId_,
+    './routes/dav/calendars/[calendarId]/[calendarEventId].ics.tsx': $dav_calendars_calendarId_calendarEventId_ics,
     './routes/dav/files.tsx': $dav_files,
     './routes/dav/index.tsx': $dav_index,
     './routes/dav/principals.tsx': $dav_principals,

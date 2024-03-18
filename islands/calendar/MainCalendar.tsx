@@ -757,13 +757,14 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
                   const isFirstDay = dayIndex === 0;
                   const isLastDay = dayIndex === 6;
+                  const isToday = new Date(day.date).toISOString().substring(0, 10) === today;
 
                   return (
                     <>
                       <section
-                        class={`flex justify-center bg-gray-900 py-2 ${isFirstDay ? 'rounded-tl-md' : ''} ${
-                          isLastDay ? 'rounded-tr-md' : ''
-                        } text-center text-xs font-semibold text-white`}
+                        class={`flex justify-center ${isToday ? 'bg-[#51A4FB]' : 'bg-gray-900'} py-2 ${
+                          isFirstDay ? 'rounded-tl-md' : ''
+                        } ${isLastDay ? 'rounded-tr-md' : ''} text-center text-xs font-semibold text-white`}
                       >
                         <span>{weekDayFormat.format(day.date)}</span>
                       </section>
@@ -1083,9 +1084,9 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
       <section
         class={`fixed ${
           openEvent.value ? 'block' : 'hidden'
-        } z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-600 text-white rounded-md px-8 py-6 space-y-5 drop-shadow-lg`}
+        } z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-600 text-white rounded-md px-8 py-6 drop-shadow-lg`}
       >
-        <h1 class='text-2xl font-semibold'>{openEvent.value?.title || ''}</h1>
+        <h1 class='text-2xl font-semibold my-5'>{openEvent.value?.title || ''}</h1>
         <header class='py-5 border-t border-b border-slate-500 font-semibold flex justify-between'>
           <span>
             {openEvent.value?.start_date ? allDayEventDateFormat.format(new Date(openEvent.value.start_date)) : ''}
@@ -1097,15 +1098,40 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
             </span>
           )}
         </header>
+        <section class='py-5 my-0 border-b border-slate-500'>
+          <p>TODO: calendar, recurrence</p>
+        </section>
         {openEvent.value?.extra.description
           ? (
-            <section class='py-5 border-b border-slate-500'>
+            <section class='py-5 my-0 border-b border-slate-500'>
               <p>{openEvent.value.extra.description}</p>
             </section>
           )
           : null}
-        <section class='py-5 border-b border-slate-500'>
-          <p>TODO: location, calendar, recurrence, reminders</p>
+        {openEvent.value?.extra.url
+          ? (
+            <section class='py-5 my-0 border-b border-slate-500'>
+              <a href={openEvent.value.extra.url} target='_blank' rel='noopener noreferrer'>
+                {openEvent.value.extra.url}
+              </a>
+            </section>
+          )
+          : null}
+        {openEvent.value?.extra.location
+          ? (
+            <section class='py-5 my-0 border-b border-slate-500'>
+              <a
+                href={`https://maps.google.com/maps?q=${encodeURIComponent(openEvent.value.extra.location)}`}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                {openEvent.value.extra.location}
+              </a>
+            </section>
+          )
+          : null}
+        <section class='py-5 my-0 border-b border-slate-500'>
+          <p>TODO: reminders</p>
         </section>
         <footer class='flex justify-between'>
           <button

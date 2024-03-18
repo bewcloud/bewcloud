@@ -141,7 +141,8 @@ export interface Calendar {
   extra: {
     shared_read_user_ids?: string[];
     shared_write_user_ids?: string[];
-    default_visibility: 'private';
+    default_transparency: 'opaque' | 'transparent';
+    calendar_timezone?: string;
   };
   updated_at: Date;
   created_at: Date;
@@ -159,12 +160,23 @@ export interface CalendarEvent {
   is_all_day: boolean;
   status: 'scheduled' | 'pending' | 'canceled';
   extra: {
+    organizer_email: string;
     description?: string;
     location?: string;
+    url?: string;
     attendees?: CalendarEventAttendee[];
-    visibility: 'default' | 'public' | 'private';
+    transparency: 'default' | Calendar['extra']['default_transparency'];
     is_recurring?: boolean;
+    recurring_id?: string;
+    recurring_sequence?: number;
     recurring_rrule?: string;
+    recurring_rdate?: string;
+    recurring_exdate?: string;
+    is_task?: boolean;
+    task_due_date?: string;
+    task_completed_at?: string;
+    uid?: string;
+    reminders?: CalendarEventReminder[];
   };
   updated_at: Date;
   created_at: Date;
@@ -174,4 +186,11 @@ export interface CalendarEventAttendee {
   email: string;
   status: 'accepted' | 'rejected' | 'invited';
   name?: string;
+}
+
+export interface CalendarEventReminder {
+  uid?: string;
+  start_date: string;
+  type: 'email' | 'sound';
+  acknowledged_at?: string;
 }

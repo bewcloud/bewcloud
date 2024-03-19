@@ -7,6 +7,9 @@ import * as $_well_known_carddav from './routes/.well-known/carddav.tsx';
 import * as $_404 from './routes/_404.tsx';
 import * as $_app from './routes/_app.tsx';
 import * as $_middleware from './routes/_middleware.tsx';
+import * as $api_calendar_add from './routes/api/calendar/add.tsx';
+import * as $api_calendar_delete from './routes/api/calendar/delete.tsx';
+import * as $api_calendar_update from './routes/api/calendar/update.tsx';
 import * as $api_contacts_add from './routes/api/contacts/add.tsx';
 import * as $api_contacts_delete from './routes/api/contacts/delete.tsx';
 import * as $api_contacts_get from './routes/api/contacts/get.tsx';
@@ -19,6 +22,7 @@ import * as $api_news_import_feeds from './routes/api/news/import-feeds.tsx';
 import * as $api_news_mark_read from './routes/api/news/mark-read.tsx';
 import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.tsx';
 import * as $calendar from './routes/calendar.tsx';
+import * as $calendars from './routes/calendars.tsx';
 import * as $contacts from './routes/contacts.tsx';
 import * as $contacts_contactId_ from './routes/contacts/[contactId].tsx';
 import * as $dashboard from './routes/dashboard.tsx';
@@ -40,6 +44,7 @@ import * as $remote_php_davRoute_ from './routes/remote.php/[davRoute].tsx';
 import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
+import * as $calendar_Calendars from './islands/calendar/Calendars.tsx';
 import * as $calendar_MainCalendar from './islands/calendar/MainCalendar.tsx';
 import * as $contacts_Contacts from './islands/contacts/Contacts.tsx';
 import * as $contacts_ViewContact from './islands/contacts/ViewContact.tsx';
@@ -56,6 +61,9 @@ const manifest = {
     './routes/_404.tsx': $_404,
     './routes/_app.tsx': $_app,
     './routes/_middleware.tsx': $_middleware,
+    './routes/api/calendar/add.tsx': $api_calendar_add,
+    './routes/api/calendar/delete.tsx': $api_calendar_delete,
+    './routes/api/calendar/update.tsx': $api_calendar_update,
     './routes/api/contacts/add.tsx': $api_contacts_add,
     './routes/api/contacts/delete.tsx': $api_contacts_delete,
     './routes/api/contacts/get.tsx': $api_contacts_get,
@@ -68,6 +76,7 @@ const manifest = {
     './routes/api/news/mark-read.tsx': $api_news_mark_read,
     './routes/api/news/refresh-articles.tsx': $api_news_refresh_articles,
     './routes/calendar.tsx': $calendar,
+    './routes/calendars.tsx': $calendars,
     './routes/contacts.tsx': $contacts,
     './routes/contacts/[contactId].tsx': $contacts_contactId_,
     './routes/dashboard.tsx': $dashboard,
@@ -91,6 +100,7 @@ const manifest = {
   },
   islands: {
     './islands/Settings.tsx': $Settings,
+    './islands/calendar/Calendars.tsx': $calendar_Calendars,
     './islands/calendar/MainCalendar.tsx': $calendar_MainCalendar,
     './islands/contacts/Contacts.tsx': $contacts_Contacts,
     './islands/contacts/ViewContact.tsx': $contacts_ViewContact,

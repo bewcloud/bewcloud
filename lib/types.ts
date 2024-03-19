@@ -130,7 +130,6 @@ export interface ContactField {
   type: ContactFieldType;
 }
 
-// TODO: Finish (more fields)
 export interface Calendar {
   id: string;
   user_id: string;
@@ -148,7 +147,6 @@ export interface Calendar {
   created_at: Date;
 }
 
-// TODO: Finish (more fields)
 export interface CalendarEvent {
   id: string;
   user_id: string;

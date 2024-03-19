@@ -70,6 +70,10 @@ export default function Header({ route, user }: Data) {
       pageLabel = 'Settings';
     }
 
+    if (route.startsWith('/calendars')) {
+      pageLabel = 'Calendars';
+    }
+
     return (
       <>
         <Head>

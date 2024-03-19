@@ -271,7 +271,7 @@ export default function Contacts({ initialContacts, page, contactsCount, search 
       </section>
 
       <section class='mx-auto max-w-7xl my-8'>
-        <table class='w-full border-collapse bg-gray-900 text-left text-sm text-slate-500 shadow-sm rounded-t-md'>
+        <table class='w-full border-collapse bg-gray-900 text-left text-sm text-slate-500 shadow-sm rounded-md'>
           <thead>
             <tr class='border-b border-slate-600'>
               <th scope='col' class='px-6 py-4 font-medium text-white'>First Name</th>

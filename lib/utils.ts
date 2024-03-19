@@ -23,6 +23,29 @@ export const DAV_RESPONSE_HEADER = '1, 2, 3, 4, addressbook, calendar-access';
 // 1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-resource-sharing, oc-calendar-publishing, calendarserver-sharing, addressbook, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
 // 1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-resource-sharing, oc-calendar-publishing, calendarserver-sharing, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
 
+export const CALENDAR_COLOR_OPTIONS = [
+  'bg-red-700',
+  'bg-red-950',
+  'bg-orange-700',
+  'bg-orange-950',
+  'bg-amber-700',
+  'bg-yellow-800',
+  'bg-lime-700',
+  'bg-lime-950',
+  'bg-green-700',
+  'bg-emerald-800',
+  'bg-teal-700',
+  'bg-cyan-700',
+  'bg-sky-800',
+  'bg-blue-900',
+  'bg-indigo-700',
+  'bg-violet-700',
+  'bg-purple-800',
+  'bg-fuchsia-700',
+  'bg-pink-800',
+  'bg-rose-700',
+] as const;
+
 export function isRunningLocally(request: Request) {
   return request.url.includes('localhost');
 }
@@ -804,4 +827,8 @@ export function getDaysForWeek(
   }
 
   return days;
+}
+
+export function getRandomItem<T>(items: Readonly<Array<T>>): T {
+  return items[Math.floor(Math.random() * items.length)];
 }

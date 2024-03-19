@@ -1,17 +1,17 @@
 import { Handlers } from 'fresh/server.ts';
 
-import { FreshContextState, NewsFeed } from '/lib/types.ts';
-import { deleteNewsFeed, getNewsFeed, getNewsFeeds } from '/lib/data/news.ts';
+import { Calendar, FreshContextState } from '/lib/types.ts';
+import { deleteCalendar, getCalendar, getCalendars } from '/lib/data/calendar.ts';
 
 interface Data {}
 
 export interface RequestBody {
-  feedId: string;
+  calendarId: string;
 }
 
 export interface ResponseBody {
   success: boolean;
-  newFeeds: NewsFeed[];
+  newCalendars: Calendar[];
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -22,19 +22,19 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const requestBody = await request.clone().json() as RequestBody;
 
-    if (requestBody.feedId) {
-      const newsFeed = await getNewsFeed(requestBody.feedId, context.state.user.id);
+    if (requestBody.calendarId) {
+      const calendar = await getCalendar(requestBody.calendarId, context.state.user.id);
 
-      if (!newsFeed) {
+      if (!calendar) {
         return new Response('Not found', { status: 404 });
       }
 
-      await deleteNewsFeed(requestBody.feedId, context.state.user.id);
+      await deleteCalendar(requestBody.calendarId, context.state.user.id);
     }
 
-    const newFeeds = await getNewsFeeds(context.state.user.id);
+    const newCalendars = await getCalendars(context.state.user.id);
 
-    const responseBody: ResponseBody = { success: true, newFeeds };
+    const responseBody: ResponseBody = { success: true, newCalendars };
 
     return new Response(JSON.stringify(responseBody));
   },

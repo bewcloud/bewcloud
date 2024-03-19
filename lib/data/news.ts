@@ -105,18 +105,20 @@ export async function updateNewsFeed(newsFeed: NewsFeed) {
   );
 }
 
-export async function deleteNewsFeed(id: string) {
+export async function deleteNewsFeed(id: string, userId: string) {
   await db.query(
-    sql`DELETE FROM "bewcloud_news_feed_articles" WHERE "feed_id" = $1`,
+    sql`DELETE FROM "bewcloud_news_feed_articles" WHERE "feed_id" = $1 AND "user_id" = $2`,
     [
       id,
+      userId,
     ],
   );
 
   await db.query(
-    sql`DELETE FROM "bewcloud_news_feeds" WHERE "id" = $1`,
+    sql`DELETE FROM "bewcloud_news_feeds" WHERE "id" = $1 AND "user_id" = $2`,
     [
       id,
+      userId,
     ],
   );
 }

@@ -398,7 +398,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
       <section class='flex flex-row items-center justify-between mb-4'>
         <section class='relative inline-block text-left mr-2'>
           <section class='flex flex-row items-center justify-start'>
-            <a href='/calendar/manage' class='mr-4 whitespace-nowrap'>Manage calendars</a>
+            <a href='/calendars' class='mr-4 whitespace-nowrap'>Manage calendars</a>
             <input
               class='input-field w-72 mr-2'
               type='search'

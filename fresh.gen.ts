@@ -7,7 +7,9 @@ import * as $_well_known_carddav from './routes/.well-known/carddav.tsx';
 import * as $_404 from './routes/_404.tsx';
 import * as $_app from './routes/_app.tsx';
 import * as $_middleware from './routes/_middleware.tsx';
+import * as $api_calendar_add_event from './routes/api/calendar/add-event.tsx';
 import * as $api_calendar_add from './routes/api/calendar/add.tsx';
+import * as $api_calendar_delete_event from './routes/api/calendar/delete-event.tsx';
 import * as $api_calendar_delete from './routes/api/calendar/delete.tsx';
 import * as $api_calendar_update from './routes/api/calendar/update.tsx';
 import * as $api_contacts_add from './routes/api/contacts/add.tsx';
@@ -44,8 +46,8 @@ import * as $remote_php_davRoute_ from './routes/remote.php/[davRoute].tsx';
 import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
+import * as $calendar_CalendarWrapper from './islands/calendar/CalendarWrapper.tsx';
 import * as $calendar_Calendars from './islands/calendar/Calendars.tsx';
-import * as $calendar_MainCalendar from './islands/calendar/MainCalendar.tsx';
 import * as $contacts_Contacts from './islands/contacts/Contacts.tsx';
 import * as $contacts_ViewContact from './islands/contacts/ViewContact.tsx';
 import * as $dashboard_Links from './islands/dashboard/Links.tsx';
@@ -61,7 +63,9 @@ const manifest = {
     './routes/_404.tsx': $_404,
     './routes/_app.tsx': $_app,
     './routes/_middleware.tsx': $_middleware,
+    './routes/api/calendar/add-event.tsx': $api_calendar_add_event,
     './routes/api/calendar/add.tsx': $api_calendar_add,
+    './routes/api/calendar/delete-event.tsx': $api_calendar_delete_event,
     './routes/api/calendar/delete.tsx': $api_calendar_delete,
     './routes/api/calendar/update.tsx': $api_calendar_update,
     './routes/api/contacts/add.tsx': $api_contacts_add,
@@ -100,8 +104,8 @@ const manifest = {
   },
   islands: {
     './islands/Settings.tsx': $Settings,
+    './islands/calendar/CalendarWrapper.tsx': $calendar_CalendarWrapper,
     './islands/calendar/Calendars.tsx': $calendar_Calendars,
-    './islands/calendar/MainCalendar.tsx': $calendar_MainCalendar,
     './islands/contacts/Contacts.tsx': $contacts_Contacts,
     './islands/contacts/ViewContact.tsx': $contacts_ViewContact,
     './islands/dashboard/Links.tsx': $dashboard_Links,

@@ -1,7 +1,7 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { Calendar, CalendarEvent } from '/lib/types.ts';
 import { CALENDAR_COLOR_OPTIONS, getRandomItem } from '/lib/utils.ts';
-// import { getUserById } from './user.ts';
+import { getUserById } from './user.ts';
 
 const db = new Database();
 
@@ -16,16 +16,34 @@ export async function getCalendars(userId: string): Promise<Calendar[]> {
   return calendars;
 }
 
-export async function getCalendarEvents(userId: string, calendarIds: string[]): Promise<CalendarEvent[]> {
-  const calendarEvents = await db.query<CalendarEvent>(
-    sql`SELECT * FROM "bewcloud_calendar_events" WHERE "user_id" = $1 AND "calendar_id" = ANY($2) ORDER BY "start_date" ASC`,
-    [
-      userId,
-      calendarIds,
-    ],
-  );
+export async function getCalendarEvents(
+  userId: string,
+  calendarIds: string[],
+  dateRange?: { start: Date; end: Date },
+): Promise<CalendarEvent[]> {
+  if (!dateRange) {
+    const calendarEvents = await db.query<CalendarEvent>(
+      sql`SELECT * FROM "bewcloud_calendar_events" WHERE "user_id" = $1 AND "calendar_id" = ANY($2) ORDER BY "start_date" ASC`,
+      [
+        userId,
+        calendarIds,
+      ],
+    );
 
-  return calendarEvents;
+    return calendarEvents;
+  } else {
+    const calendarEvents = await db.query<CalendarEvent>(
+      sql`SELECT * FROM "bewcloud_calendar_events" WHERE "user_id" = $1 AND "calendar_id" = ANY($2) AND (("start_date" >= $3 OR "end_date" <= $4) OR ("start_date" < $3 AND "end_date" > $4)) ORDER BY "start_date" ASC`,
+      [
+        userId,
+        calendarIds,
+        dateRange.start,
+        dateRange.end,
+      ],
+    );
+
+    return calendarEvents;
+  }
 }
 
 export async function getCalendarEvent(id: string, calendarId: string, userId: string): Promise<CalendarEvent> {
@@ -127,4 +145,97 @@ export async function deleteCalendar(id: string, userId: string) {
   );
 }
 
-// TODO: When creating, updating, or deleting events, also update the calendar's revision
+async function updateCalendarRevision(calendar: Calendar) {
+  const revision = crypto.randomUUID();
+
+  await db.query(
+    sql`UPDATE "bewcloud_calendars" SET
+        "revision" = $3,
+        "updated_at" = now()
+      WHERE "id" = $1 AND "revision" = $2`,
+    [
+      calendar.id,
+      calendar.revision,
+      revision,
+    ],
+  );
+}
+
+export async function createCalendarEvent(
+  userId: string,
+  calendarId: string,
+  title: string,
+  startDate: Date,
+  endDate: Date,
+  isAllDay = false,
+) {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const calendar = await getCalendar(calendarId, userId);
+
+  if (!calendar) {
+    throw new Error('Calendar not found');
+  }
+
+  const extra: CalendarEvent['extra'] = {
+    organizer_email: user.email,
+    transparency: 'default',
+  };
+
+  const revision = crypto.randomUUID();
+
+  const status: CalendarEvent['status'] = 'scheduled';
+
+  const newCalendar = (await db.query<Calendar>(
+    sql`INSERT INTO "bewcloud_calendar_events" (
+      "user_id",
+      "calendar_id",
+      "revision",
+      "title",
+      "start_date",
+      "end_date",
+      "is_all_day",
+      "status",
+      "extra"
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    RETURNING *`,
+    [
+      userId,
+      calendarId,
+      revision,
+      title,
+      startDate,
+      endDate,
+      isAllDay,
+      status,
+      JSON.stringify(extra),
+    ],
+  ))[0];
+
+  await updateCalendarRevision(calendar);
+
+  return newCalendar;
+}
+
+export async function deleteCalendarEvent(id: string, calendarId: string, userId: string) {
+  const calendar = await getCalendar(calendarId, userId);
+
+  if (!calendar) {
+    throw new Error('Calendar not found');
+  }
+
+  await db.query(
+    sql`DELETE FROM "bewcloud_calendar_events" WHERE "id" = $1 AND "calendar_id" = $2 AND "user_id" = $3`,
+    [
+      id,
+      calendarId,
+      userId,
+    ],
+  );
+
+  await updateCalendarRevision(calendar);
+}

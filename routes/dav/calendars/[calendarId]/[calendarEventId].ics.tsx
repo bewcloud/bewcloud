@@ -83,7 +83,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
   }
 
   try {
-    calendarEvent = await getCalendarEvent(calendarEventId, calendarId, context.state.user.id);
+    calendarEvent = await getCalendarEvent(calendarEventId, context.state.user.id);
   } catch (error) {
     console.error(error);
   }

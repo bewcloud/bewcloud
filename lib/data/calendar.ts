@@ -46,12 +46,11 @@ export async function getCalendarEvents(
   }
 }
 
-export async function getCalendarEvent(id: string, calendarId: string, userId: string): Promise<CalendarEvent> {
+export async function getCalendarEvent(id: string, userId: string): Promise<CalendarEvent> {
   const calendarEvents = await db.query<CalendarEvent>(
-    sql`SELECT * FROM "bewcloud_calendar_events" WHERE "id" = $1 AND "calendar_id" = $2 AND "user_id" = $3 LIMIT 1`,
+    sql`SELECT * FROM "bewcloud_calendar_events" WHERE "id" = $1 AND "user_id" = $2 LIMIT 1`,
     [
       id,
-      calendarId,
       userId,
     ],
   );
@@ -219,6 +218,56 @@ export async function createCalendarEvent(
   await updateCalendarRevision(calendar);
 
   return newCalendar;
+}
+
+export async function updateCalendarEvent(calendarEvent: CalendarEvent, oldCalendarId?: string) {
+  const revision = crypto.randomUUID();
+
+  const user = await getUserById(calendarEvent.user_id);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const calendar = await getCalendar(calendarEvent.calendar_id, user.id);
+
+  if (!calendar) {
+    throw new Error('Calendar not found');
+  }
+
+  const oldCalendar = oldCalendarId ? await getCalendar(oldCalendarId, user.id) : null;
+
+  await db.query(
+    sql`UPDATE "bewcloud_calendar_events" SET
+        "revision" = $3,
+        "calendar_id" = $4,
+        "title" = $5,
+        "start_date" = $6,
+        "end_date" = $7,
+        "is_all_day" = $8,
+        "status" = $9,
+        "extra" = $10,
+        "updated_at" = now()
+      WHERE "id" = $1 AND "revision" = $2`,
+    [
+      calendarEvent.id,
+      calendarEvent.revision,
+      revision,
+      calendarEvent.calendar_id,
+      calendarEvent.title,
+      calendarEvent.start_date,
+      calendarEvent.end_date,
+      calendarEvent.is_all_day,
+      calendarEvent.status,
+      JSON.stringify(calendarEvent.extra),
+    ],
+  );
+
+  await updateCalendarRevision(calendar);
+
+  if (oldCalendar) {
+    await updateCalendarRevision(oldCalendar);
+  }
 }
 
 export async function deleteCalendarEvent(id: string, calendarId: string, userId: string) {

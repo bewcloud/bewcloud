@@ -42,11 +42,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const calendarEvent = await getCalendarEvent(
       requestBody.calendarEventId,
-      requestBody.calendarId,
       context.state.user.id,
     );
 
-    if (!calendarEvent) {
+    if (!calendarEvent || requestBody.calendarId !== calendarEvent.calendar_id) {
       return new Response('Not Found', { status: 404 });
     }
 

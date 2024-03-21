@@ -94,8 +94,9 @@ export default function ViewEventModal(
             Delete
           </button>
           <a
-            href={`/calendar/events/${calendarEvent.id}`}
+            href={`/calendar/${calendarEvent.id}`}
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md'
+            target='_blank'
           >
             Edit
           </a>

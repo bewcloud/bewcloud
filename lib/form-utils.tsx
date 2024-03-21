@@ -11,6 +11,7 @@ export interface FormField {
     | 'tel'
     | 'url'
     | 'date'
+    | 'datetime-local'
     | 'number'
     | 'range'
     | 'select'

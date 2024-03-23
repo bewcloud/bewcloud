@@ -1,5 +1,4 @@
 import { useSignal } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
 
 import { Calendar, CalendarEvent } from '/lib/types.ts';
 import { baseUrl, capitalizeWord } from '/lib/utils.ts';
@@ -15,6 +14,7 @@ import CalendarViewWeek from './CalendarViewWeek.tsx';
 import CalendarViewMonth from './CalendarViewMonth.tsx';
 import AddEventModal, { NewCalendarEvent } from './AddEventModal.tsx';
 import ViewEventModal from './ViewEventModal.tsx';
+import SearchEvents from './SearchEvents.tsx';
 
 interface MainCalendarProps {
   initialCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible'>[];
@@ -28,12 +28,10 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
   const isDeleting = useSignal<boolean>(false);
   const isExporting = useSignal<boolean>(false);
   const isImporting = useSignal<boolean>(false);
-  const isSearching = useSignal<boolean>(false);
   const calendars = useSignal<Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible'>[]>(initialCalendars);
   const isViewOptionsDropdownOpen = useSignal<boolean>(false);
   const isImportExportOptionsDropdownOpen = useSignal<boolean>(false);
   const calendarEvents = useSignal<CalendarEvent[]>(initialCalendarEvents);
-  const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
   const openEventModal = useSignal<
     { isOpen: boolean; calendar?: typeof initialCalendars[number]; calendarEvent?: CalendarEvent }
   >({ isOpen: false });
@@ -344,44 +342,6 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
     isExporting.value = false;
   }
 
-  function searchEvents(searchTerms: string) {
-    if (searchTimeout.value) {
-      clearTimeout(searchTimeout.value);
-    }
-
-    searchTimeout.value = setTimeout(async () => {
-      isSearching.value = true;
-
-      // TODO: Remove this
-      await new Promise((resolve) => setTimeout(() => resolve(true), 1000));
-
-      // try {
-      //   const requestBody: RequestBody = { search: searchTerms };
-      //   const response = await fetch(`/api/calendar/search-events`, {
-      //     method: 'POST',
-      //     body: JSON.stringify(requestBody),
-      //   });
-      //   const result = await response.json() as ResponseBody;
-
-      //   if (!result.success) {
-      //     throw new Error('Failed to search events!');
-      //   }
-      // } catch (error) {
-      //   console.error(error);
-      // }
-
-      isSearching.value = false;
-    }, 500);
-  }
-
-  useEffect(() => {
-    return () => {
-      if (searchTimeout.value) {
-        clearTimeout(searchTimeout.value);
-      }
-    };
-  }, []);
-
   const visibleCalendars = calendars.value.filter((calendar) => calendar.is_visible);
 
   return (
@@ -390,14 +350,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
         <section class='relative inline-block text-left mr-2'>
           <section class='flex flex-row items-center justify-start'>
             <a href='/calendars' class='mr-4 whitespace-nowrap'>Manage calendars</a>
-            <input
-              class='input-field w-72 mr-2'
-              type='search'
-              name='search'
-              placeholder='Search events...'
-              onInput={(event) => searchEvents(event.currentTarget.value)}
-            />
-            {isSearching.value ? <img src='/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
+            <SearchEvents calendars={calendars.value} onClickOpenEvent={onClickOpenEvent} />
           </section>
         </section>
 

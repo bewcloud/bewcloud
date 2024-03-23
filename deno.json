@@ -10,30 +10,15 @@
     "update": "deno run -A -r https://fresh.deno.dev/update .",
     "test": "deno test -A --check"
   },
-  "fmt": {
-    "useTabs": false,
-    "lineWidth": 120,
-    "indentWidth": 2,
-    "singleQuote": true,
-    "proseWrap": "preserve"
-  },
+  "fmt": { "useTabs": false, "lineWidth": 120, "indentWidth": 2, "singleQuote": true, "proseWrap": "preserve" },
   "lint": {
     "rules": {
-      "tags": [
-        "fresh",
-        "recommended"
-      ],
+      "tags": ["fresh", "recommended"],
       "exclude": ["no-explicit-any", "no-empty-interface", "ban-types", "no-window"]
     }
   },
-  "exclude": [
-    "./_fresh/*",
-    "./node_modules/*"
-  ],
-  "importMap": "./import_map.json",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
-  },
-  "nodeModulesDir": true
+  "exclude": ["./_fresh/*", "./node_modules/*", "**/_fresh/*"],
+  "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
+  "nodeModulesDir": true,
+  "importMap": "./import_map.json"
 }

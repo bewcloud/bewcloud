@@ -288,3 +288,20 @@ export async function deleteCalendarEvent(id: string, calendarId: string, userId
 
   await updateCalendarRevision(calendar);
 }
+
+export async function searchCalendarEvents(
+  searchTerm: string,
+  userId: string,
+  calendarIds: string[],
+): Promise<CalendarEvent[]> {
+  const calendarEvents = await db.query<CalendarEvent>(
+    sql`SELECT * FROM "bewcloud_calendar_events" WHERE "user_id" = $1 AND "calendar_id" = ANY($2) AND ("title" ILIKE $3 OR "extra"::text ILIKE $3) ORDER BY "start_date" ASC`,
+    [
+      userId,
+      calendarIds,
+      `%${searchTerm.split(' ').join('%')}%`,
+    ],
+  );
+
+  return calendarEvents;
+}

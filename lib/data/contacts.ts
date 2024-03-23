@@ -28,13 +28,13 @@ export async function getContactsCount(userId: string) {
   return Number(results[0]?.count || 0);
 }
 
-export async function searchContacts(search: string, userId: string, pageIndex: number) {
+export async function searchContacts(searchTerm: string, userId: string, pageIndex: number) {
   const contacts = await db.query<Pick<Contact, 'id' | 'first_name' | 'last_name'>>(
     sql`SELECT "id", "first_name", "last_name" FROM "bewcloud_contacts" WHERE "user_id" = $1 AND ("first_name" ILIKE $3 OR "last_name" ILIKE $3 OR "extra"::text ILIKE $3) ORDER BY "first_name" ASC, "last_name" ASC LIMIT ${CONTACTS_PER_PAGE_COUNT} OFFSET $2`,
     [
       userId,
       pageIndex * CONTACTS_PER_PAGE_COUNT,
-      `%${search}%`,
+      `%${searchTerm.split(' ').join('%')}%`,
     ],
   );
 

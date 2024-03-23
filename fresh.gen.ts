@@ -11,6 +11,7 @@ import * as $api_calendar_add_event from './routes/api/calendar/add-event.tsx';
 import * as $api_calendar_add from './routes/api/calendar/add.tsx';
 import * as $api_calendar_delete_event from './routes/api/calendar/delete-event.tsx';
 import * as $api_calendar_delete from './routes/api/calendar/delete.tsx';
+import * as $api_calendar_search_events from './routes/api/calendar/search-events.tsx';
 import * as $api_calendar_update from './routes/api/calendar/update.tsx';
 import * as $api_contacts_add from './routes/api/contacts/add.tsx';
 import * as $api_contacts_delete from './routes/api/contacts/delete.tsx';
@@ -69,6 +70,7 @@ const manifest = {
     './routes/api/calendar/add.tsx': $api_calendar_add,
     './routes/api/calendar/delete-event.tsx': $api_calendar_delete_event,
     './routes/api/calendar/delete.tsx': $api_calendar_delete,
+    './routes/api/calendar/search-events.tsx': $api_calendar_search_events,
     './routes/api/calendar/update.tsx': $api_calendar_update,
     './routes/api/contacts/add.tsx': $api_contacts_add,
     './routes/api/contacts/delete.tsx': $api_contacts_delete,

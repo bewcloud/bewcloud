@@ -651,12 +651,15 @@ export function parseVCardFromTextContents(text: string): Partial<Contact>[] {
 }
 
 // TODO: Build this
-export function formatCalendarEventsToVCalendar(calendarEvents: CalendarEvent[], _calendar: Calendar): string {
+export function formatCalendarEventsToVCalendar(
+  calendarEvents: CalendarEvent[],
+  _calendars: Pick<Calendar, 'id' | 'color' | 'is_visible'>[],
+): string {
   const vCalendarText = calendarEvents.map((calendarEvent) =>
     `BEGIN:VEVENT
-DTSTAMP:${calendarEvent.start_date.toISOString().substring(0, 19).replaceAll('T', '').replaceAll(':', '')}
-DTSTART:${calendarEvent.start_date.toISOString().substring(0, 19).replaceAll('T', '').replaceAll(':', '')}
-DTEND:${calendarEvent.end_date.toISOString().substring(0, 19).replaceAll('T', '').replaceAll(':', '')}
+DTSTAMP:${new Date(calendarEvent.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
+DTSTART:${new Date(calendarEvent.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
+DTEND:${new Date(calendarEvent.end_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 ORGANIZER;CN=:MAILTO:${calendarEvent.extra.organizer_email}
 SUMMARY:${calendarEvent.title}
 ${calendarEvent.extra.uid ? `UID:${calendarEvent.extra.uid}` : ''}

@@ -118,7 +118,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
   const calendarEvents = await getCalendarEvents(context.state.user.id, [calendar.id]);
 
   if (request.method === 'GET') {
-    const response = new Response(formatCalendarEventsToVCalendar(calendarEvents, calendar), {
+    const response = new Response(formatCalendarEventsToVCalendar(calendarEvents, [calendar]), {
       status: 200,
     });
 
@@ -172,7 +172,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
     if (includeVCalendar) {
       parsedCalendarEvent['d:propstat'][0]['d:prop']['cal:calendar-data'] = escapeXml(
-        formatCalendarEventsToVCalendar([calendarEvent], calendar!),
+        formatCalendarEventsToVCalendar([calendarEvent], [calendar!]),
       );
     }
 

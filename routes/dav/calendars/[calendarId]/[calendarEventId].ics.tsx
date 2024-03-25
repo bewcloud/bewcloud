@@ -10,7 +10,7 @@ import {
   formatCalendarEventsToVCalendar,
   parseVCalendarFromTextContents,
 } from '/lib/utils.ts';
-import { getCalendar, getCalendarEvent, getCalendarEvents } from '/lib/data/calendar.ts';
+import { getCalendar, getCalendarEvent, getCalendarEvents, updateCalendarEvent } from '/lib/data/calendar.ts';
 import { createSessionCookie } from '/lib/auth.ts';
 
 interface Data {}
@@ -157,7 +157,15 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
   // }
 
   if (request.method === 'GET') {
-    const response = new Response(formatCalendarEventsToVCalendar([calendarEvent], calendar), {
+    // Set a UID if there isn't one
+    if (!calendarEvent.extra.uid) {
+      calendarEvent.extra.uid = crypto.randomUUID();
+      await updateCalendarEvent(calendarEvent);
+
+      calendarEvent = await getCalendarEvent(calendarEventId, context.state.user.id);
+    }
+
+    const response = new Response(formatCalendarEventsToVCalendar([calendarEvent], [calendar]), {
       status: 200,
     });
 
@@ -195,7 +203,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
   if (includeVCalendar) {
     parsedCalendarEvent['d:propstat'][0]['d:prop']['cal:calendar-data'] = escapeXml(
-      formatCalendarEventsToVCalendar([calendarEvent], calendar!),
+      formatCalendarEventsToVCalendar([calendarEvent], [calendar!]),
     );
   }
 

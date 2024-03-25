@@ -1,8 +1,8 @@
 import { useSignal } from '@preact/signals';
 
 import { Calendar, CalendarEvent } from '/lib/types.ts';
-import { baseUrl, capitalizeWord } from '/lib/utils.ts';
-// import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/routes/api/calendar/get.tsx';
+import { baseUrl, capitalizeWord, formatCalendarEventsToVCalendar } from '/lib/utils.ts';
+import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/routes/api/calendar/get-events.tsx';
 import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/calendar/add-event.tsx';
 import {
   RequestBody as DeleteRequestBody,
@@ -42,6 +42,8 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
   const dateFormat = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long' });
   const today = new Date().toISOString().substring(0, 10);
 
+  const visibleCalendars = calendars.value.filter((calendar) => calendar.is_visible);
+
   function onClickAddEvent(startDate = new Date(), isAllDay = false) {
     if (newEventModal.value.isOpen) {
       newEventModal.value = {
@@ -75,7 +77,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
     try {
       const requestBody: AddRequestBody = {
-        calendarIds: calendars.value.map((calendar) => calendar.id),
+        calendarIds: visibleCalendars.map((calendar) => calendar.id),
         calendarView: view,
         calendarStartDate: startDate,
         calendarId: newEvent.calendar_id,
@@ -147,7 +149,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
       try {
         const requestBody: DeleteRequestBody = {
-          calendarIds: calendars.value.map((calendar) => calendar.id),
+          calendarIds: visibleCalendars.map((calendar) => calendar.id),
           calendarView: view,
           calendarStartDate: startDate,
           calendarEventId,
@@ -299,7 +301,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
     };
   }
 
-  function onClickExportICS() {
+  async function onClickExportICS() {
     isImportExportOptionsDropdownOpen.value = false;
 
     if (isExporting.value) {
@@ -308,41 +310,39 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
     isExporting.value = true;
 
-    // const fileName = ['calendars-', new Date().toISOString().substring(0, 19).replace(/:/g, '-'), '.ics']
-    //   .join('');
+    const fileName = ['calendar-', new Date().toISOString().substring(0, 19).replace(/:/g, '-'), '.ics']
+      .join('');
 
-    // try {
-    //   const requestBody: GetRequestBody = {};
-    //   const response = await fetch(`/api/calendar/get`, {
-    //     method: 'POST',
-    //     body: JSON.stringify(requestBody),
-    //   });
-    //   const result = await response.json() as GetResponseBody;
+    try {
+      const requestBody: GetRequestBody = { calendarIds: visibleCalendars.map((calendar) => calendar.id) };
+      const response = await fetch(`/api/calendar/get-events`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      });
+      const result = await response.json() as GetResponseBody;
 
-    //   if (!result.success) {
-    //     throw new Error('Failed to get contact!');
-    //   }
+      if (!result.success) {
+        throw new Error('Failed to get contact!');
+      }
 
-    //   const exportContents = formatContactToVCard([...result.contacts]);
+      const exportContents = formatCalendarEventsToVCalendar([...result.calendarEvents], calendars.value);
 
-    //   // Add content-type
-    //   const vCardContent = ['data:text/vcard; charset=utf-8,', encodeURIComponent(exportContents)].join('');
+      // Add content-type
+      const vCardContent = ['data:text/calendar; charset=utf-8,', encodeURIComponent(exportContents)].join('');
 
-    //   // Download the file
-    //   const data = vCardContent;
-    //   const link = document.createElement('a');
-    //   link.setAttribute('href', data);
-    //   link.setAttribute('download', fileName);
-    //   link.click();
-    //   link.remove();
-    // } catch (error) {
-    //   console.error(error);
-    // }
+      // Download the file
+      const data = vCardContent;
+      const link = document.createElement('a');
+      link.setAttribute('href', data);
+      link.setAttribute('download', fileName);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error(error);
+    }
 
     isExporting.value = false;
   }
-
-  const visibleCalendars = calendars.value.filter((calendar) => calendar.is_visible);
 
   return (
     <>
@@ -350,7 +350,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
         <section class='relative inline-block text-left mr-2'>
           <section class='flex flex-row items-center justify-start'>
             <a href='/calendars' class='mr-4 whitespace-nowrap'>Manage calendars</a>
-            <SearchEvents calendars={calendars.value} onClickOpenEvent={onClickOpenEvent} />
+            <SearchEvents calendars={visibleCalendars} onClickOpenEvent={onClickOpenEvent} />
           </section>
         </section>
 

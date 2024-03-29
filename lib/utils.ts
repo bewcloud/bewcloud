@@ -657,7 +657,7 @@ export function formatCalendarEventsToVCalendar(
 ): string {
   const vCalendarText = calendarEvents.map((calendarEvent) =>
     `BEGIN:VEVENT
-DTSTAMP:${new Date(calendarEvent.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
+DTSTAMP:${new Date(calendarEvent.created_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 DTSTART:${new Date(calendarEvent.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 DTEND:${new Date(calendarEvent.end_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 ORGANIZER;CN=:MAILTO:${calendarEvent.extra.organizer_email}
@@ -698,7 +698,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
     }
 
     // Finish contact
-    if (line.startsWith('END:VCARD')) {
+    if (line.startsWith('END:VEVENT')) {
       partialCalendarEvents.push(partialCalendarEvent);
       continue;
     }
@@ -744,6 +744,44 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
       const title = line.split('SUMMARY:')[1] || '';
 
       partialCalendarEvent.title = title;
+
+      continue;
+    }
+
+    if (line.startsWith('DTSTART')) {
+      const startDateInfo = line.split(':')[1] || '';
+      const [dateInfo, hourInfo] = startDateInfo.split('T');
+
+      const year = dateInfo.substring(0, 4);
+      const month = dateInfo.substring(4, 6);
+      const day = dateInfo.substring(6, 8);
+
+      const hours = hourInfo.substring(0, 2);
+      const minutes = hourInfo.substring(2, 4);
+      const seconds = hourInfo.substring(4, 6);
+
+      const startDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`);
+
+      partialCalendarEvent.start_date = startDate;
+
+      continue;
+    }
+
+    if (line.startsWith('DTEND')) {
+      const endDateInfo = line.split(':')[1] || '';
+      const [dateInfo, hourInfo] = endDateInfo.split('T');
+
+      const year = dateInfo.substring(0, 4);
+      const month = dateInfo.substring(4, 6);
+      const day = dateInfo.substring(6, 8);
+
+      const hours = hourInfo.substring(0, 2);
+      const minutes = hourInfo.substring(2, 4);
+      const seconds = hourInfo.substring(4, 6);
+
+      const endDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`);
+
+      partialCalendarEvent.end_date = endDate;
 
       continue;
     }

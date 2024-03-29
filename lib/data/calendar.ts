@@ -189,7 +189,7 @@ export async function createCalendarEvent(
 
   const status: CalendarEvent['status'] = 'scheduled';
 
-  const newCalendar = (await db.query<Calendar>(
+  const newCalendarEvent = (await db.query<CalendarEvent>(
     sql`INSERT INTO "bewcloud_calendar_events" (
       "user_id",
       "calendar_id",
@@ -217,7 +217,7 @@ export async function createCalendarEvent(
 
   await updateCalendarRevision(calendar);
 
-  return newCalendar;
+  return newCalendarEvent;
 }
 
 export async function updateCalendarEvent(calendarEvent: CalendarEvent, oldCalendarId?: string) {

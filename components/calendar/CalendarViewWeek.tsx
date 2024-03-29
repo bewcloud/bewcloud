@@ -15,7 +15,7 @@ export default function CalendarViewWeek(
   const today = new Date().toISOString().substring(0, 10);
 
   const hourFormat = new Intl.DateTimeFormat('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
-  const weekDayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short' });
+  const weekDayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: '2-digit' });
 
   const days = getDaysForWeek(new Date(startDate));
 

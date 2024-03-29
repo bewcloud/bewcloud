@@ -1,20 +1,26 @@
 import { useSignal } from '@preact/signals';
 
 import { Calendar, CalendarEvent } from '/lib/types.ts';
-import { baseUrl, capitalizeWord, formatCalendarEventsToVCalendar } from '/lib/utils.ts';
+import {
+  baseUrl,
+  capitalizeWord,
+  formatCalendarEventsToVCalendar,
+  parseVCalendarFromTextContents,
+} from '/lib/utils.ts';
 import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/routes/api/calendar/get-events.tsx';
 import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/calendar/add-event.tsx';
 import {
   RequestBody as DeleteRequestBody,
   ResponseBody as DeleteResponseBody,
 } from '/routes/api/calendar/delete-event.tsx';
-// import { RequestBody as ImportRequestBody, ResponseBody as ImportResponseBody } from '/routes/api/calendar/import-events.tsx';
+import { RequestBody as ImportRequestBody, ResponseBody as ImportResponseBody } from '/routes/api/calendar/import.tsx';
 import CalendarViewDay from './CalendarViewDay.tsx';
 import CalendarViewWeek from './CalendarViewWeek.tsx';
 import CalendarViewMonth from './CalendarViewMonth.tsx';
 import AddEventModal, { NewCalendarEvent } from './AddEventModal.tsx';
 import ViewEventModal from './ViewEventModal.tsx';
 import SearchEvents from './SearchEvents.tsx';
+import ImportEventsModal from './ImportEventsModal.tsx';
 
 interface MainCalendarProps {
   initialCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible'>[];
@@ -38,6 +44,9 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
   const newEventModal = useSignal<{ isOpen: boolean; initialStartDate?: Date; initiallyAllDay?: boolean }>({
     isOpen: false,
   });
+  const openImportModal = useSignal<
+    { isOpen: boolean }
+  >({ isOpen: false });
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long' });
   const today = new Date().toISOString().substring(0, 10);
@@ -247,6 +256,11 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
   }
 
   function onClickImportICS() {
+    openImportModal.value = { isOpen: true };
+    isImportExportOptionsDropdownOpen.value = false;
+  }
+
+  function onClickChooseImportCalendar(calendarId: string) {
     isImportExportOptionsDropdownOpen.value = false;
 
     if (isImporting.value) {
@@ -266,7 +280,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
       }
 
       const reader = new FileReader();
-      reader.onload = (fileRead) => {
+      reader.onload = async (fileRead) => {
         const importFileContents = fileRead.target?.result;
 
         if (!importFileContents || isImporting.value) {
@@ -275,24 +289,33 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
 
         isImporting.value = true;
 
-        // try {
-        //   const partialContacts = parseVCardFromTextContents(importFileContents!.toString());
+        openImportModal.value = { isOpen: false };
 
-        //   const requestBody: ImportRequestBody = { partialContacts, page };
-        //   const response = await fetch(`/api/calendar/import`, {
-        //     method: 'POST',
-        //     body: JSON.stringify(requestBody),
-        //   });
-        //   const result = await response.json() as ImportResponseBody;
+        try {
+          const partialCalendarEvents = parseVCalendarFromTextContents(importFileContents!.toString());
 
-        //   if (!result.success) {
-        //     throw new Error('Failed to import contact!');
-        //   }
+          const requestBody: ImportRequestBody = {
+            partialCalendarEvents,
+            calendarIds: visibleCalendars.map((calendar) => calendar.id),
+            calendarView: view,
+            calendarStartDate: startDate,
+            calendarId,
+          };
 
-        //   contacts.value = [...result.contacts];
-        // } catch (error) {
-        //   console.error(error);
-        // }
+          const response = await fetch(`/api/calendar/import`, {
+            method: 'POST',
+            body: JSON.stringify(requestBody),
+          });
+          const result = await response.json() as ImportResponseBody;
+
+          if (!result.success) {
+            throw new Error('Failed to import file!');
+          }
+
+          calendarEvents.value = [...result.newCalendarEvents];
+        } catch (error) {
+          console.error(error);
+        }
 
         isImporting.value = false;
       };
@@ -600,6 +623,15 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
         calendarEvent={openEventModal.value.calendarEvent!}
         onClickDelete={onClickDeleteEvent}
         onClose={onCloseOpenEvent}
+      />
+
+      <ImportEventsModal
+        isOpen={openImportModal.value.isOpen}
+        calendars={calendars.value}
+        onClickImport={onClickChooseImportCalendar}
+        onClose={() => {
+          openImportModal.value = { isOpen: false };
+        }}
       />
     </>
   );

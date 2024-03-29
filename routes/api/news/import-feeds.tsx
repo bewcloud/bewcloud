@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState, NewsFeed } from '/lib/types.ts';
-import { concurrentPromises } from '/lib/utils.ts';
+import { concurrentPromises } from '/lib/utils/misc.ts';
 import { createNewsFeed, getNewsFeeds } from '/lib/data/news.ts';
 import { fetchNewArticles } from '/crons/news.ts';
 

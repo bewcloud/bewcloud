@@ -2,15 +2,8 @@ import { Handler } from 'fresh/server.ts';
 import { parse } from 'xml/mod.ts';
 
 import { Contact, FreshContextState } from '/lib/types.ts';
-import {
-  buildRFC822Date,
-  convertObjectToDavXml,
-  DAV_RESPONSE_HEADER,
-  escapeHtml,
-  escapeXml,
-  formatContactToVCard,
-  parseVCardFromTextContents,
-} from '/lib/utils.ts';
+import { buildRFC822Date, convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml, escapeXml } from '/lib/utils/misc.ts';
+import { formatContactToVCard, parseVCardFromTextContents } from '/lib/utils/contacts.ts';
 import { createContact, deleteContact, getContact, updateContact } from '/lib/data/contacts.ts';
 import { createSessionCookie } from '/lib/auth.ts';
 

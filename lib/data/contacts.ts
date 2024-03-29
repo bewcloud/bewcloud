@@ -1,6 +1,6 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { Contact } from '/lib/types.ts';
-import { CONTACTS_PER_PAGE_COUNT } from '/lib/utils.ts';
+import { CONTACTS_PER_PAGE_COUNT } from '/lib/utils/contacts.ts';
 import { updateUserContactRevision } from './user.ts';
 
 const db = new Database();

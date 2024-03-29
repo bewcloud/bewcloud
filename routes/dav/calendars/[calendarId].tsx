@@ -1,15 +1,8 @@
 import { Handler } from 'fresh/server.ts';
 
 import { Calendar, FreshContextState } from '/lib/types.ts';
-import {
-  buildRFC822Date,
-  convertObjectToDavXml,
-  DAV_RESPONSE_HEADER,
-  escapeHtml,
-  escapeXml,
-  formatCalendarEventsToVCalendar,
-  parseVCalendarFromTextContents,
-} from '/lib/utils.ts';
+import { buildRFC822Date, convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml, escapeXml } from '/lib/utils/misc.ts';
+import { formatCalendarEventsToVCalendar, parseVCalendarFromTextContents } from '/lib/utils/calendar.ts';
 import { getCalendar, getCalendarEvents } from '/lib/data/calendar.ts';
 import { createSessionCookie } from '/lib/auth.ts';
 

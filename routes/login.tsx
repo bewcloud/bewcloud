@@ -1,6 +1,6 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
-import { generateHash, helpEmail, validateEmail } from '/lib/utils.ts';
+import { generateHash, helpEmail, validateEmail } from '/lib/utils/misc.ts';
 import { createSessionResponse, PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
 import { createVerificationCode, getUserByEmail, updateUser, validateVerificationCode } from '/lib/data/user.ts';

@@ -1,4 +1,4 @@
-import { convertObjectToFormData, helpEmail } from '/lib/utils.ts';
+import { convertObjectToFormData, helpEmail } from '/lib/utils/misc.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
 
 interface SettingsProps {

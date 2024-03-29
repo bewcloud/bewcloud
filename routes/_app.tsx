@@ -1,7 +1,7 @@
 import { PageProps } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { defaultDescription, defaultTitle } from '/lib/utils.ts';
+import { defaultDescription, defaultTitle } from '/lib/utils/misc.ts';
 import Header from '/components/Header.tsx';
 
 interface Data {}

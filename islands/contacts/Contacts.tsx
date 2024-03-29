@@ -1,7 +1,8 @@
 import { useSignal } from '@preact/signals';
 
 import { Contact } from '/lib/types.ts';
-import { baseUrl, CONTACTS_PER_PAGE_COUNT, formatContactToVCard, parseVCardFromTextContents } from '/lib/utils.ts';
+import { baseUrl } from '/lib/utils/misc.ts';
+import { CONTACTS_PER_PAGE_COUNT, formatContactToVCard, parseVCardFromTextContents } from '/lib/utils/contacts.ts';
 import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/routes/api/contacts/get.tsx';
 import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/contacts/add.tsx';
 import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/contacts/delete.tsx';

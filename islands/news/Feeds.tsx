@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { NewsFeed } from '/lib/types.ts';
-import { escapeHtml, validateUrl } from '/lib/utils.ts';
+import { escapeHtml, validateUrl } from '/lib/utils/misc.ts';
 import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/news/add-feed.tsx';
 import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/news/delete-feed.tsx';
 import {

@@ -9,7 +9,7 @@ import {
   updateUser,
   validateVerificationCode,
 } from '/lib/data/user.ts';
-import { convertFormDataToObject, generateHash, validateEmail } from '/lib/utils.ts';
+import { convertFormDataToObject, generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import Settings, { Action, actionWords } from '/islands/Settings.tsx';

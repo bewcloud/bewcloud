@@ -1,6 +1,6 @@
 import 'std/dotenv/load.ts';
 
-import { helpEmail } from '/lib/utils.ts';
+import { helpEmail } from '/lib/utils/misc.ts';
 
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') || '';
 

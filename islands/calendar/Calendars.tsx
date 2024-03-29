@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { Calendar } from '/lib/types.ts';
-import { CALENDAR_COLOR_OPTIONS } from '/lib/utils.ts';
+import { CALENDAR_COLOR_OPTIONS } from '/lib/utils/calendar.ts';
 import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/calendar/add.tsx';
 import { RequestBody as UpdateRequestBody, ResponseBody as UpdateResponseBody } from '/routes/api/calendar/update.tsx';
 import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/calendar/delete.tsx';

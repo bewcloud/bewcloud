@@ -9,7 +9,7 @@ import {
   splitArrayInChunks,
   validateEmail,
   validateUrl,
-} from './utils.ts';
+} from './misc.ts';
 
 Deno.test('that escapeHtml works', () => {
   const tests: { input: string; expected: string }[] = [

@@ -31,14 +31,16 @@ Deno.test('Basic routes', async (testContext) => {
     assertEquals(response.status, 404);
   });
 
-  // await testContext.step('#4 POST /', async () => {
-  //   const formData = new FormData();
-  //   formData.append('text', 'Deno!');
-  //   const request = new Request('http://127.0.0.1/', {
-  //     method: 'POST',
-  //     body: formData,
-  //   });
-  //   const response = await handler(request, CONN_INFO);
-  //   assertEquals(response.status, 303);
-  // });
+  await testContext.step('#4 POST /login', async () => {
+    const formData = new FormData();
+    formData.append('email', 'user@example.com');
+    const request = new Request('http://127.0.0.1/login', {
+      method: 'POST',
+      body: formData,
+    });
+    const response = await handler(request, CONN_INFO);
+    const text = await response.text();
+    assert(text.includes('Error: Password is too short'));
+    assertEquals(response.status, 200);
+  });
 });

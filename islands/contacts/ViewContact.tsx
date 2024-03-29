@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { Contact } from '/lib/types.ts';
-import { convertObjectToFormData } from '/lib/utils.ts';
+import { convertObjectToFormData } from '/lib/utils/misc.ts';
 import { FormField, generateFieldHtml } from '/lib/form-utils.tsx';
 import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/contacts/delete.tsx';
 

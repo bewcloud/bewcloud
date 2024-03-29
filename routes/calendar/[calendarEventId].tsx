@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Calendar, CalendarEvent, FreshContextState } from '/lib/types.ts';
-import { convertFormDataToObject } from '/lib/utils.ts';
+import { convertFormDataToObject } from '/lib/utils/misc.ts';
 import { getCalendarEvent, getCalendars, updateCalendarEvent } from '/lib/data/calendar.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
 import ViewCalendarEvent, { formFields } from '/islands/calendar/ViewCalendarEvent.tsx';

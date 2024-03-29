@@ -1,12 +1,8 @@
 import { useSignal } from '@preact/signals';
 
 import { Calendar, CalendarEvent } from '/lib/types.ts';
-import {
-  baseUrl,
-  capitalizeWord,
-  formatCalendarEventsToVCalendar,
-  parseVCalendarFromTextContents,
-} from '/lib/utils.ts';
+import { baseUrl, capitalizeWord } from '/lib/utils/misc.ts';
+import { formatCalendarEventsToVCalendar, parseVCalendarFromTextContents } from '/lib/utils/calendar.ts';
 import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/routes/api/calendar/get-events.tsx';
 import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/calendar/add-event.tsx';
 import {
@@ -23,7 +19,7 @@ import SearchEvents from './SearchEvents.tsx';
 import ImportEventsModal from './ImportEventsModal.tsx';
 
 interface MainCalendarProps {
-  initialCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible'>[];
+  initialCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible' | 'extra'>[];
   initialCalendarEvents: CalendarEvent[];
   view: 'day' | 'week' | 'month';
   startDate: string;
@@ -34,7 +30,7 @@ export default function MainCalendar({ initialCalendars, initialCalendarEvents, 
   const isDeleting = useSignal<boolean>(false);
   const isExporting = useSignal<boolean>(false);
   const isImporting = useSignal<boolean>(false);
-  const calendars = useSignal<Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible'>[]>(initialCalendars);
+  const calendars = useSignal<Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible' | 'extra'>[]>(initialCalendars);
   const isViewOptionsDropdownOpen = useSignal<boolean>(false);
   const isImportExportOptionsDropdownOpen = useSignal<boolean>(false);
   const calendarEvents = useSignal<CalendarEvent[]>(initialCalendarEvents);

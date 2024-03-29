@@ -1,6 +1,6 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { NewsFeed } from '/lib/types.ts';
-import { concurrentPromises } from '/lib/utils.ts';
+import { concurrentPromises } from '/lib/utils/misc.ts';
 import { crawlNewsFeed } from '/lib/data/news.ts';
 
 const db = new Database();

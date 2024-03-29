@@ -5,7 +5,7 @@ import { getCalendarEvents, getCalendars } from '/lib/data/calendar.ts';
 import CalendarWrapper from '/islands/calendar/CalendarWrapper.tsx';
 
 interface Data {
-  userCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible'>[];
+  userCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible' | 'extra'>[];
   userCalendarEvents: CalendarEvent[];
   view: 'day' | 'week' | 'month';
   startDate: string;

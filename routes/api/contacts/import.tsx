@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Contact, FreshContextState } from '/lib/types.ts';
-import { concurrentPromises } from '/lib/utils.ts';
+import { concurrentPromises } from '/lib/utils/misc.ts';
 import { createContact, getContacts, updateContact } from '/lib/data/contacts.ts';
 
 interface Data {}

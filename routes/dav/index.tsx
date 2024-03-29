@@ -1,7 +1,7 @@
 import { Handler } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { buildRFC822Date, convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml } from '/lib/utils.ts';
+import { buildRFC822Date, convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml } from '/lib/utils/misc.ts';
 import { createSessionCookie } from '/lib/auth.ts';
 
 interface Data {}

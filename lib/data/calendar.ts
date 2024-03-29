@@ -1,6 +1,7 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { Calendar, CalendarEvent } from '/lib/types.ts';
-import { CALENDAR_COLOR_OPTIONS, getRandomItem } from '/lib/utils.ts';
+import { getRandomItem } from '/lib/utils/misc.ts';
+import { CALENDAR_COLOR_OPTIONS } from '/lib/utils/calendar.ts';
 import { getUserById } from './user.ts';
 
 const db = new Database();

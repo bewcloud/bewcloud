@@ -2,7 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { DashboardLink } from '/lib/types.ts';
-import { validateUrl } from '/lib/utils.ts';
+import { validateUrl } from '/lib/utils/misc.ts';
 import { RequestBody, ResponseBody } from '/routes/api/dashboard/save-links.tsx';
 
 interface LinksProps {

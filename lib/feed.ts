@@ -1,6 +1,6 @@
 import { DOMParser, initParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm-noinit.ts';
 import { Feed, parseFeed } from 'https://deno.land/x/rss@1.0.0/mod.ts';
-import { fetchUrl, fetchUrlAsGooglebot, fetchUrlWithProxy, fetchUrlWithRetries } from './utils.ts';
+import { fetchUrl, fetchUrlAsGooglebot, fetchUrlWithProxy, fetchUrlWithRetries } from './utils/misc.ts';
 import { NewsFeed, NewsFeedCrawlType, NewsFeedType } from './types.ts';
 
 export interface JsonFeedItem {

@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { Calendar, CalendarEvent } from '/lib/types.ts';
-import { capitalizeWord, convertObjectToFormData } from '/lib/utils.ts';
+import { capitalizeWord, convertObjectToFormData } from '/lib/utils/misc.ts';
 import { FormField, generateFieldHtml } from '/lib/form-utils.tsx';
 import {
   RequestBody as DeleteRequestBody,

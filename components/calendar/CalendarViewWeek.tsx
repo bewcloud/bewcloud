@@ -1,9 +1,9 @@
 import { Calendar, CalendarEvent } from '/lib/types.ts';
-import { getDaysForWeek } from '/lib/utils.ts';
+import { getCalendarEventColor, getDaysForWeek } from '/lib/utils/calendar.ts';
 
 interface CalendarViewWeekProps {
   startDate: Date;
-  visibleCalendars: Pick<Calendar, 'id' | 'name' | 'color'>[];
+  visibleCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'extra'>[];
   calendarEvents: CalendarEvent[];
   onClickAddEvent: (startDate?: Date, isAllDay?: boolean) => void;
   onClickOpenEvent: (calendarEvent: CalendarEvent) => void;
@@ -97,8 +97,7 @@ export default function CalendarViewWeek(
                           <a
                             href='javascript:void(0);'
                             class={`flex px-2 py-2 rounded-md hover:no-underline hover:opacity-60 ${
-                              visibleCalendars.find((calendar) => calendar.id === calendarEvent.calendar_id)
-                                ?.color || 'bg-gray-700'
+                              getCalendarEventColor(calendarEvent, visibleCalendars)
                             }`}
                             onClick={() => onClickOpenEvent(calendarEvent)}
                           >
@@ -186,8 +185,7 @@ export default function CalendarViewWeek(
                               <a
                                 href='javascript:void(0);'
                                 class={`flex px-2 py-2 rounded-md hover:no-underline hover:opacity-60 ${
-                                  visibleCalendars.find((calendar) => calendar.id === hourEvent.calendar_id)
-                                    ?.color || 'bg-gray-700'
+                                  getCalendarEventColor(hourEvent, visibleCalendars)
                                 }`}
                                 onClick={() => onClickOpenEvent(hourEvent)}
                               >

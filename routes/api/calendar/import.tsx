@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { CalendarEvent, FreshContextState } from '/lib/types.ts';
-import { concurrentPromises } from '/lib/utils.ts';
+import { concurrentPromises } from '/lib/utils/misc.ts';
 import { createCalendarEvent, getCalendar, getCalendarEvents, updateCalendarEvent } from '/lib/data/calendar.ts';
 
 interface Data {}

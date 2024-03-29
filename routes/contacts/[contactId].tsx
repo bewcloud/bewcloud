@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Contact, ContactAddress, ContactField, FreshContextState } from '/lib/types.ts';
-import { convertFormDataToObject } from '/lib/utils.ts';
+import { convertFormDataToObject } from '/lib/utils/misc.ts';
 import { getContact, updateContact } from '/lib/data/contacts.ts';
 import { getFormDataField, getFormDataFieldArray } from '/lib/form-utils.tsx';
 import ViewContact, { formFields } from '/islands/contacts/ViewContact.tsx';

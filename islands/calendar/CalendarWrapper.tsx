@@ -2,7 +2,7 @@ import { Calendar, CalendarEvent } from '/lib/types.ts';
 import MainCalendar from '/components/calendar/MainCalendar.tsx';
 
 interface CalendarWrapperProps {
-  initialCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible'>[];
+  initialCalendars: Pick<Calendar, 'id' | 'name' | 'color' | 'is_visible' | 'extra'>[];
   initialCalendarEvents: CalendarEvent[];
   view: 'day' | 'week' | 'month';
   startDate: string;

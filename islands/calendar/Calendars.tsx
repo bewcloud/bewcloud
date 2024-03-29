@@ -254,7 +254,7 @@ export default function Calendars({ initialCalendars }: CalendarsProps) {
             <label class='text-slate-300 block pb-1' for='calendar_color'>Color</label>
             <section class='flex items-center justify-between'>
               <select
-                class='input-field mr-2'
+                class='input-field mr-2 !w-5/6'
                 name='calendar_color'
                 id='calendar_color'
                 value={openCalendar.value?.color || ''}

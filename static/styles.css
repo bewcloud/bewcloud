@@ -19,27 +19,27 @@ form {
 }
 
 .button {
-  @apply inline-block rounded text-white bg-[#51A4FB] hover:bg-sky-400 hover:shadow-sm px-4 py-2 !important;
+  @apply inline-block rounded text-white bg-[#51A4FB] hover:bg-sky-400 hover:shadow-sm px-4 py-2;
 }
 
 .button-secondary {
-  @apply inline-block rounded text-white bg-slate-600 hover:text-slate-900 hover:bg-slate-400 hover:shadow-sm px-4 py-2 !important;
+  @apply inline-block rounded text-white bg-slate-600 hover:text-slate-900 hover:bg-slate-400 hover:shadow-sm px-4 py-2;
 }
 
 .button-danger {
-  @apply inline-block rounded text-slate-50 bg-red-600 hover:text-slate-900 hover:bg-red-400 hover:shadow-md px-4 py-2 !important;
+  @apply inline-block rounded text-slate-50 bg-red-600 hover:text-slate-900 hover:bg-red-400 hover:shadow-md px-4 py-2;
 }
 
 .input-field {
-  @apply block w-full p-2 rounded-md text-white bg-slate-700 border-transparent border focus:border-[#51A4FB] focus:bg-slate-700 outline-none focus:ring-0 shadow-sm !important;
+  @apply block w-full p-2 rounded-md text-white bg-slate-700 border-transparent border focus:border-[#51A4FB] focus:bg-slate-700 outline-none focus:ring-0 shadow-sm;
 }
 
 .input-field[type="range"] {
-  @apply w-auto !important;
+  @apply w-auto;
 }
 
 .input-field:required:invalid:not(:placeholder-shown) {
-  @apply bg-red-400 !important;
+  @apply bg-red-400;
 }
 
 .notification-error {

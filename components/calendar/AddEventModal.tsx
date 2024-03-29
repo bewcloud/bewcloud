@@ -81,7 +81,7 @@ export default function AddEventModal(
             <label class='text-slate-300 block pb-1' for='event_calendar'>Calendar</label>
             <section class='flex items-center justify-between'>
               <select
-                class='input-field mr-2'
+                class='input-field mr-2 !w-5/6'
                 name='event_calendar'
                 id='event_calendar'
                 value={newEvent.value?.calendar_id || ''}

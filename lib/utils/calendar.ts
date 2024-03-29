@@ -145,7 +145,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
       continue;
     }
 
-    if (line.startsWith('DTSTART')) {
+    if (line.startsWith('DTSTART:') || line.startsWith('DTSTART;')) {
       const startDateInfo = line.split(':')[1] || '';
       const [dateInfo, hourInfo] = startDateInfo.split('T');
 
@@ -164,7 +164,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
       continue;
     }
 
-    if (line.startsWith('DTEND')) {
+    if (line.startsWith('DTEND:') || line.startsWith('DTEND;')) {
       const endDateInfo = line.split(':')[1] || '';
       const [dateInfo, hourInfo] = endDateInfo.split('T');
 
@@ -179,6 +179,31 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
       const endDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`);
 
       partialCalendarEvent.end_date = endDate;
+
+      continue;
+    }
+
+    if (line.startsWith('ORGANIZER;')) {
+      const organizerInfo = line.split(':');
+      const organizerEmail = organizerInfo.slice(-1)[0] || '';
+
+      if (!organizerEmail) {
+        continue;
+      }
+
+      partialCalendarEvent.extra = {
+        ...(partialCalendarEvent.extra! || {}),
+        organizer_email: organizerEmail,
+      };
+    }
+
+    if (line.startsWith('TRANSP:')) {
+      const transparency = (line.split('TRANSP:')[1] as CalendarEvent['extra']['transparency']) || 'default';
+
+      partialCalendarEvent.extra = {
+        ...(partialCalendarEvent.extra! || {}),
+        transparency,
+      };
 
       continue;
     }

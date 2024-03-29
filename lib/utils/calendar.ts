@@ -198,7 +198,8 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
     }
 
     if (line.startsWith('TRANSP:')) {
-      const transparency = (line.split('TRANSP:')[1] as CalendarEvent['extra']['transparency']) || 'default';
+      const transparency = (line.split('TRANSP:')[1] || 'default')
+        .toLowerCase() as CalendarEvent['extra']['transparency'];
 
       partialCalendarEvent.extra = {
         ...(partialCalendarEvent.extra! || {}),

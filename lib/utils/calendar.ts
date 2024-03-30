@@ -567,7 +567,6 @@ const rRuleToFrequencyOrWeekDay = new Map<RRuleFrequency | RRuleWeekDay, string>
   ['SU', 'Sunday'],
 ]);
 
-// check if multiple days and format either way
 function convertRRuleDaysToWords(day: string | RRuleFrequency | RRuleWeekDay): string {
   if (day.includes(',')) {
     const days = day.split(',') as (typeof day)[];
@@ -578,7 +577,6 @@ function convertRRuleDaysToWords(day: string | RRuleFrequency | RRuleWeekDay): s
   return rRuleToFrequencyOrWeekDay.get(day as RRuleFrequency | RRuleWeekDay)!;
 }
 
-// convert to ordinal number
 function getOrdinalSuffix(number: number) {
   const text = ['th', 'st', 'nd', 'rd'] as const;
   const value = number % 100;
@@ -607,10 +605,6 @@ export function convertRRuleToWords(rRule: string): string {
   const count = parsedRRule.COUNT;
   const interval = parsedRRule.INTERVAL;
 
-  // TODO: Remove this
-  console.log('==== File.method');
-  console.log(JSON.stringify({}, null, 2));
-
   const words: string[] = [];
 
   if (frequency === 'DAILY') {
@@ -637,7 +631,7 @@ export function convertRRuleToWords(rRule: string): string {
 
   if (frequency === 'WEEKLY') {
     if (byDay) {
-      if (interval && parseInt(interval) > 1) {
+      if (interval && parseInt(interval, 10) > 1) {
         words.push(
           `Every ${interval} ${rRuleToFrequencyOrWeekDay.get(frequency)}s on ${convertRRuleDaysToWords(byDay)}`,
         );
@@ -663,7 +657,7 @@ export function convertRRuleToWords(rRule: string): string {
 
   // monthly
   if (frequency === 'MONTHLY' && byMonthDay) {
-    if (interval && parseInt(interval) > 1) {
+    if (interval && parseInt(interval, 10) > 1) {
       words.push(
         `Every ${interval} ${rRuleToFrequencyOrWeekDay.get(frequency)}s on the ${
           getOrdinalSuffix(parseInt(byMonthDay, 10))

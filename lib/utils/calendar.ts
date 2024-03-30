@@ -79,7 +79,8 @@ ORGANIZER;CN=:mailto:${calendarEvent.extra.organizer_email}
 SUMMARY:${calendarEvent.title.replaceAll('\n', '\\n').replaceAll(',', '\\,')}
 TRANSP:${getCalendarEventTransparency(calendarEvent, calendars).toUpperCase()}
 ${calendarEvent.extra.uid ? `UID:${calendarEvent.extra.uid}` : ''}
-SEQUENCE:0
+${calendarEvent.extra.recurring_rrule ? `RRULE:${calendarEvent.extra.recurring_rrule}` : ''}
+SEQUENCE:${calendarEvent.extra.recurring_sequence || 0}
 CREATED:${new Date(calendarEvent.created_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 LAST-MODIFIED:${
       new Date(calendarEvent.updated_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')
@@ -410,6 +411,37 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
       continue;
     }
 
+    if (line.startsWith('RRULE:')) {
+      const rRule = line.replace('RRULE:', '').trim();
+
+      if (!rRule) {
+        continue;
+      }
+
+      partialCalendarEvent.extra = {
+        ...(partialCalendarEvent.extra! || {}),
+        recurring_rrule: rRule,
+        recurring_sequence: partialCalendarEvent.extra?.recurring_sequence || 0,
+      };
+
+      continue;
+    }
+
+    if (line.startsWith('SEQUENCE:')) {
+      const sequence = line.replace('SEQUENCE:', '').trim();
+
+      if (!sequence || sequence === '0') {
+        continue;
+      }
+
+      partialCalendarEvent.extra = {
+        ...(partialCalendarEvent.extra! || {}),
+        recurring_sequence: parseInt(sequence, 10),
+      };
+
+      continue;
+    }
+
     // TODO: Build this ( https://en.wikipedia.org/wiki/ICalendar#List_of_components,_properties,_and_parameters )
   }
 
@@ -516,4 +548,142 @@ export function getCalendarEventColor(
   const transparency = getCalendarEventTransparency(calendarEvent, calendars);
 
   return transparency === 'opaque' ? opaqueColor : transparentColor;
+}
+
+type RRuleFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+type RRuleWeekDay = 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
+type RRuleType = 'FREQ' | 'BYDAY' | 'BYMONTHDAY' | 'BYHOUR' | 'BYMINUTE' | 'COUNT' | 'INTERVAL';
+
+const rRuleToFrequencyOrWeekDay = new Map<RRuleFrequency | RRuleWeekDay, string>([
+  ['DAILY', 'day'],
+  ['WEEKLY', 'week'],
+  ['MONTHLY', 'month'],
+  ['MO', 'Monday'],
+  ['TU', 'Tuesday'],
+  ['WE', 'Wednesday'],
+  ['TH', 'Thursday'],
+  ['FR', 'Friday'],
+  ['SA', 'Saturday'],
+  ['SU', 'Sunday'],
+]);
+
+// check if multiple days and format either way
+function convertRRuleDaysToWords(day: string | RRuleFrequency | RRuleWeekDay): string {
+  if (day.includes(',')) {
+    const days = day.split(',') as (typeof day)[];
+    return days.map((individualDay) => rRuleToFrequencyOrWeekDay.get(individualDay as RRuleFrequency | RRuleWeekDay))
+      .join(',');
+  }
+
+  return rRuleToFrequencyOrWeekDay.get(day as RRuleFrequency | RRuleWeekDay)!;
+}
+
+// convert to ordinal number
+function getOrdinalSuffix(number: number) {
+  const text = ['th', 'st', 'nd', 'rd'] as const;
+  const value = number % 100;
+  return `${number}${(text[(value - 20) % 10] || text[value] || text[0])}`;
+}
+
+export function convertRRuleToWords(rRule: string): string {
+  const rulePart = rRule.replace('RRULE:', '');
+
+  const rulePieces = rulePart.split(';');
+
+  const parsedRRule: Partial<Record<RRuleType, string>> = {};
+
+  rulePieces.forEach(function (rulePiece) {
+    const keyAndValue = rulePiece.split('=') as [RRuleType, string];
+    const [key, value] = keyAndValue;
+
+    parsedRRule[key] = value;
+  });
+
+  const frequency = parsedRRule.FREQ;
+  const byDay = parsedRRule.BYDAY;
+  const byMonthDay = parsedRRule.BYMONTHDAY;
+  const byHour = parsedRRule.BYHOUR;
+  const byMinute = parsedRRule.BYMINUTE;
+  const count = parsedRRule.COUNT;
+  const interval = parsedRRule.INTERVAL;
+
+  // TODO: Remove this
+  console.log('==== File.method');
+  console.log(JSON.stringify({}, null, 2));
+
+  const words: string[] = [];
+
+  if (frequency === 'DAILY') {
+    if (byHour) {
+      if (byMinute) {
+        words.push(`Every day at ${byHour}:${byMinute}`);
+      } else {
+        words.push(`Every day at ${byHour}:00`);
+      }
+    } else {
+      words.push(`Every day`);
+    }
+
+    if (count) {
+      if (count === '1') {
+        words.push(`for 1 time`);
+      } else {
+        words.push(`for ${count} times`);
+      }
+    }
+
+    return words.join(' ');
+  }
+
+  if (frequency === 'WEEKLY') {
+    if (byDay) {
+      if (interval && parseInt(interval) > 1) {
+        words.push(
+          `Every ${interval} ${rRuleToFrequencyOrWeekDay.get(frequency)}s on ${convertRRuleDaysToWords(byDay)}`,
+        );
+      } else {
+        words.push(`Every ${rRuleToFrequencyOrWeekDay.get(frequency)} on ${convertRRuleDaysToWords(byDay)}`);
+      }
+    }
+
+    if (byMonthDay) {
+      words.push(`the ${getOrdinalSuffix(parseInt(byMonthDay, 10))}`);
+    }
+
+    if (count) {
+      if (count === '1') {
+        words.push(`for 1 time`);
+      } else {
+        words.push(`for ${count} times`);
+      }
+    }
+
+    return words.join(' ');
+  }
+
+  // monthly
+  if (frequency === 'MONTHLY' && byMonthDay) {
+    if (interval && parseInt(interval) > 1) {
+      words.push(
+        `Every ${interval} ${rRuleToFrequencyOrWeekDay.get(frequency)}s on the ${
+          getOrdinalSuffix(parseInt(byMonthDay, 10))
+        }`,
+      );
+    } else {
+      words.push(
+        `Every ${rRuleToFrequencyOrWeekDay.get(frequency)} on the ${getOrdinalSuffix(parseInt(byMonthDay, 10))}`,
+      );
+    }
+
+    if (count) {
+      if (count === '1') {
+        words.push(` for 1 time`);
+      } else {
+        words.push(` for ${count} times`);
+      }
+    }
+    return words.join(' ');
+  }
+
+  return words.join(' ');
 }

@@ -43,6 +43,8 @@ export async function getCalendarEvents(
       ],
     );
 
+    // TODO: Fetch initial recurring events and calculate any necessary to create/show for the date range
+
     return calendarEvents;
   }
 }

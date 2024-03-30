@@ -1,4 +1,5 @@
 import { Calendar, CalendarEvent } from '/lib/types.ts';
+import { convertRRuleToWords } from '/lib/utils/calendar.ts';
 
 interface ViewEventModalProps {
   isOpen: boolean;
@@ -51,9 +52,13 @@ export default function ViewEventModal(
             title={calendar.color}
           />
         </section>
-        <section class='py-5 my-0 border-b border-slate-500'>
-          <p>TODO: recurrence</p>
-        </section>
+        {calendarEvent.extra.recurring_rrule
+          ? (
+            <section class='py-5 my-0 border-b border-slate-500'>
+              <p>Repeats {convertRRuleToWords(calendarEvent.extra.recurring_rrule).toLowerCase()}.</p>
+            </section>
+          )
+          : null}
         {calendarEvent.extra.description
           ? (
             <section class='py-5 my-0 border-b border-slate-500'>
@@ -101,7 +106,7 @@ export default function ViewEventModal(
           : null}
         {Array.isArray(calendarEvent.extra.reminders) && calendarEvent.extra.reminders.length > 0
           ? (
-            <section class='py-5 mb-2 border-b border-slate-500 text-xs'>
+            <section class='py-5 my-0 border-b border-slate-500 text-xs'>
               {calendarEvent.extra.reminders.map((reminder) => (
                 <p class='my-1'>
                   {reminder.description || 'Reminder'} at {hourFormat.format(new Date(reminder.start_date))} via{' '}
@@ -111,7 +116,7 @@ export default function ViewEventModal(
             </section>
           )
           : null}
-        <footer class='flex justify-between'>
+        <footer class='flex justify-between mt-2'>
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-red-600 text-white cursor-pointer rounded-md'
             onClick={() => onClickDelete(calendarEvent.id)}

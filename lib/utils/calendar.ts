@@ -50,7 +50,7 @@ export const CALENDAR_BORDER_COLOR_OPTIONS = [
 // TODO: Build this
 export function formatCalendarEventsToVCalendar(
   calendarEvents: CalendarEvent[],
-  _calendars: Pick<Calendar, 'id' | 'color' | 'is_visible'>[],
+  calendars: Pick<Calendar, 'id' | 'color' | 'is_visible' | 'extra'>[],
 ): string {
   const vCalendarText = calendarEvents.map((calendarEvent) =>
     `BEGIN:VEVENT
@@ -59,6 +59,7 @@ DTSTART:${new Date(calendarEvent.start_date).toISOString().substring(0, 19).repl
 DTEND:${new Date(calendarEvent.end_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 ORGANIZER;CN=:MAILTO:${calendarEvent.extra.organizer_email}
 SUMMARY:${calendarEvent.title}
+TRANSP:${getCalendarEventTransparency(calendarEvent, calendars).toUpperCase()}
 ${calendarEvent.extra.uid ? `UID:${calendarEvent.extra.uid}` : ''}
 END:VEVENT`
   ).join('\n');
@@ -289,6 +290,19 @@ export function getDaysForWeek(
   return days;
 }
 
+function getCalendarEventTransparency(
+  calendarEvent: CalendarEvent,
+  calendars: Pick<Calendar, 'id' | 'extra'>[],
+) {
+  const matchingCalendar = calendars.find((calendar) => calendar.id === calendarEvent.calendar_id);
+
+  const transparency = calendarEvent.extra.transparency === 'default'
+    ? (matchingCalendar?.extra.default_transparency || 'opaque')
+    : calendarEvent.extra.transparency;
+
+  return transparency;
+}
+
 export function getCalendarEventColor(
   calendarEvent: CalendarEvent,
   calendars: Pick<Calendar, 'id' | 'color' | 'extra'>[],
@@ -297,9 +311,7 @@ export function getCalendarEventColor(
   const opaqueColor = matchingCalendar?.color || 'bg-gray-700';
   const transparentColor = opaqueColor.replace('bg-', 'border border-');
 
-  const transparency = calendarEvent.extra.transparency === 'default'
-    ? (matchingCalendar?.extra.default_transparency || 'opaque')
-    : calendarEvent.extra.transparency;
+  const transparency = getCalendarEventTransparency(calendarEvent, calendars);
 
   return transparency === 'opaque' ? opaqueColor : transparentColor;
 }

@@ -58,6 +58,8 @@ export const handler: Handlers<Data, FreshContextState> = {
     calendarEvent.extra.description = getFormDataField(formData, 'description') || undefined;
     calendarEvent.extra.url = getFormDataField(formData, 'url') || undefined;
     calendarEvent.extra.location = getFormDataField(formData, 'location') || undefined;
+    calendarEvent.extra.transparency =
+      getFormDataField(formData, 'transparency') as CalendarEvent['extra']['transparency'] || 'default';
 
     const newCalendarId = getFormDataField(formData, 'calendar_id');
     let oldCalendarId: string | undefined;
@@ -68,7 +70,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     calendarEvent.calendar_id = newCalendarId;
 
-    // TODO: More fields, transparency, attendees, recurrence
+    // TODO: More fields, attendees, recurrence
 
     try {
       if (!calendarEvent.title) {

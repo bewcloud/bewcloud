@@ -92,7 +92,20 @@ export function formFields(calendarEvent: CalendarEvent, calendars: Calendar[]) 
       value: calendarEvent.extra.location,
       required: false,
     },
-    // TODO: More fields, transparency, attendees, recurrence
+    {
+      name: 'transparency',
+      label: 'Transparency',
+      type: 'select',
+      value: calendarEvent.extra.transparency,
+      options: (['default', 'opaque', 'transparent'] as CalendarEvent['extra']['transparency'][]).map((
+        transparency,
+      ) => ({
+        label: capitalizeWord(transparency),
+        value: transparency,
+      })),
+      required: true,
+    },
+    // TODO: More fields, attendees, recurrence
   ];
 
   return fields;

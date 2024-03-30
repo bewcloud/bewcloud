@@ -61,7 +61,7 @@ export default function AddEventModal(
       <section
         class={`fixed ${
           newEvent.value ? 'block' : 'hidden'
-        } z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-600 text-white rounded-md px-8 py-6 drop-shadow-lg`}
+        } z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-600 text-white rounded-md px-8 py-6 drop-shadow-lg overflow-y-scroll max-h-[80%]`}
       >
         <h1 class='text-2xl font-semibold my-5'>New Event</h1>
         <section class='py-5 my-2 border-y border-slate-500'>

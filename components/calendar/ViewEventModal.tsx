@@ -28,7 +28,7 @@ export default function ViewEventModal(
       <section
         class={`fixed ${
           isOpen ? 'block' : 'hidden'
-        } z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-600 text-white rounded-md px-8 py-6 drop-shadow-lg`}
+        } z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-slate-600 text-white rounded-md px-8 py-6 drop-shadow-lg overflow-y-scroll max-h-[80%]`}
       >
         <h1 class='text-2xl font-semibold my-5'>{calendarEvent.title}</h1>
         <header class='py-5 border-t border-b border-slate-500 font-semibold flex justify-between items-center'>
@@ -80,6 +80,20 @@ export default function ViewEventModal(
               >
                 {calendarEvent.extra.location}
               </a>
+            </section>
+          )
+          : null}
+        {Array.isArray(calendarEvent.extra.attendees) && calendarEvent.extra.attendees.length > 0
+          ? (
+            <section class='py-5 my-0 border-b border-slate-500'>
+              {calendarEvent.extra.attendees.map((attendee) => (
+                <p class='my-1'>
+                  <a href={`mailto:${attendee.email}`} target='_blank' rel='noopener noreferrer'>
+                    {attendee.name || attendee.email}
+                  </a>{' '}
+                  - {attendee.status}
+                </p>
+              ))}
             </section>
           )
           : null}

@@ -1,4 +1,4 @@
-import { Calendar, CalendarEvent } from '../types.ts';
+import { Calendar, CalendarEvent, CalendarEventAttendee } from '../types.ts';
 
 export const CALENDAR_COLOR_OPTIONS = [
   'bg-red-700',
@@ -47,6 +47,24 @@ export const CALENDAR_BORDER_COLOR_OPTIONS = [
   'border-rose-700',
 ] as const;
 
+function getVCalendarAttendeeStatus(status: CalendarEventAttendee['status']) {
+  if (status === 'accepted' || status === 'rejected') {
+    return status.toUpperCase();
+  }
+
+  return `NEEDS-ACTION`;
+}
+
+function getAttendeeStatusFromVCalendar(
+  status: 'NEEDS-ACTION' | 'ACCEPTED' | 'REJECTED',
+): CalendarEventAttendee['status'] {
+  if (status === 'ACCEPTED' || status === 'REJECTED') {
+    return status.toLowerCase() as CalendarEventAttendee['status'];
+  }
+
+  return 'invited';
+}
+
 // TODO: Build this
 export function formatCalendarEventsToVCalendar(
   calendarEvents: CalendarEvent[],
@@ -57,10 +75,17 @@ export function formatCalendarEventsToVCalendar(
 DTSTAMP:${new Date(calendarEvent.created_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 DTSTART:${new Date(calendarEvent.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 DTEND:${new Date(calendarEvent.end_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
-ORGANIZER;CN=:MAILTO:${calendarEvent.extra.organizer_email}
+ORGANIZER;CN=:mailto:${calendarEvent.extra.organizer_email}
 SUMMARY:${calendarEvent.title}
 TRANSP:${getCalendarEventTransparency(calendarEvent, calendars).toUpperCase()}
 ${calendarEvent.extra.uid ? `UID:${calendarEvent.extra.uid}` : ''}
+${
+      calendarEvent.extra.attendees?.map((attendee) =>
+        `ATTENDEE;PARTSTAT=${getVCalendarAttendeeStatus(attendee.status)};CN=${
+          attendee.name || ''
+        }:mailto:${attendee.email}`
+      ).join('\n') || ''
+    }
 END:VEVENT`
   ).join('\n');
 
@@ -74,7 +99,18 @@ END:VEVENT`
 type VCalendarVersion = '1.0' | '2.0';
 
 export function parseVCalendarFromTextContents(text: string): Partial<CalendarEvent>[] {
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  // Lines that start with a space should be moved to the line above them, as it's the same field/value to parse
+  const lines = text.split('\n').reduce((previousLines, currentLine) => {
+    if (currentLine.startsWith(' ')) {
+      previousLines[previousLines.length - 1] = `${previousLines[previousLines.length - 1]}${
+        currentLine.substring(1).replaceAll('\r', '')
+      }`;
+    } else {
+      previousLines.push(currentLine.replaceAll('\r', ''));
+    }
+
+    return previousLines;
+  }, [] as string[]).map((line) => line.trim()).filter(Boolean);
 
   const partialCalendarEvents: Partial<CalendarEvent>[] = [];
 
@@ -95,7 +131,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
       continue;
     }
 
-    // Finish contact
+    // Finish event
     if (line.startsWith('END:VEVENT')) {
       partialCalendarEvents.push(partialCalendarEvent);
       continue;
@@ -208,6 +244,35 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
       };
 
       continue;
+    }
+
+    if (line.startsWith('ATTENDEE;')) {
+      const attendeeInfo = line.split(':');
+      const attendeeEmail = attendeeInfo.slice(-1)[0] || '';
+      const attendeeStatusInfo = line.split('PARTSTAT=')[1] || '';
+      const attendeeStatus = getAttendeeStatusFromVCalendar(
+        (attendeeStatusInfo.split(';')[0] || 'NEEDS-ACTION') as 'ACCEPTED' | 'REJECTED' | 'NEEDS-ACTION',
+      );
+      const attendeeNameInfo = line.split('CN=')[1] || '';
+      const attendeeName = (attendeeNameInfo.split(';')[0] || '').trim();
+
+      if (!attendeeEmail) {
+        continue;
+      }
+
+      const attendee: CalendarEventAttendee = {
+        email: attendeeEmail,
+        status: attendeeStatus,
+      };
+
+      if (attendeeName) {
+        attendee.name = attendeeName;
+      }
+
+      partialCalendarEvent.extra = {
+        ...(partialCalendarEvent.extra! || {}),
+        attendees: [...(partialCalendarEvent.extra?.attendees || []), attendee],
+      };
     }
   }
 

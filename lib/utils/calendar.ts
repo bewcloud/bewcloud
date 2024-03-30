@@ -1,4 +1,4 @@
-import { Calendar, CalendarEvent, CalendarEventAttendee } from '../types.ts';
+import { Calendar, CalendarEvent, CalendarEventAttendee, CalendarEventReminder } from '/lib/types.ts';
 
 export const CALENDAR_COLOR_OPTIONS = [
   'bg-red-700',
@@ -76,14 +76,38 @@ DTSTAMP:${new Date(calendarEvent.created_at).toISOString().substring(0, 19).repl
 DTSTART:${new Date(calendarEvent.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 DTEND:${new Date(calendarEvent.end_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
 ORGANIZER;CN=:mailto:${calendarEvent.extra.organizer_email}
-SUMMARY:${calendarEvent.title}
+SUMMARY:${calendarEvent.title.replaceAll('\n', '\\n').replaceAll(',', '\\,')}
 TRANSP:${getCalendarEventTransparency(calendarEvent, calendars).toUpperCase()}
 ${calendarEvent.extra.uid ? `UID:${calendarEvent.extra.uid}` : ''}
+SEQUENCE:0
+CREATED:${new Date(calendarEvent.created_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
+LAST-MODIFIED:${
+      new Date(calendarEvent.updated_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')
+    }
 ${
       calendarEvent.extra.attendees?.map((attendee) =>
         `ATTENDEE;PARTSTAT=${getVCalendarAttendeeStatus(attendee.status)};CN=${
-          attendee.name || ''
+          attendee.name?.replaceAll('\n', '\\n').replaceAll(',', '\\,') || ''
         }:mailto:${attendee.email}`
+      ).join('\n') || ''
+    }
+${
+      calendarEvent.extra.reminders?.map((reminder) =>
+        `BEGIN:VALARM
+ACTION:${reminder.type.toUpperCase()}
+${reminder.description ? `DESCRIPTION:${reminder.description.replaceAll('\n', '\\n').replaceAll(',', '\\,')}` : ''}
+TRIGGER;VALUE=DATE-TIME:${
+          new Date(reminder.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')
+        }
+${reminder.uid ? `UID:${reminder.uid}` : ''}
+${
+          reminder.acknowledged_at
+            ? `ACKNOWLEDGED:${
+              new Date(reminder.acknowledged_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')
+            }`
+            : ''
+        }
+END:VALARM`
       ).join('\n') || ''
     }
 END:VEVENT`
@@ -115,6 +139,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
   const partialCalendarEvents: Partial<CalendarEvent>[] = [];
 
   let partialCalendarEvent: Partial<CalendarEvent> = {};
+  let partialCalendarReminder: Partial<CalendarEventReminder> = {};
   let vCalendarVersion: VCalendarVersion = '2.0';
 
   // Loop through every line
@@ -134,6 +159,23 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
     // Finish event
     if (line.startsWith('END:VEVENT')) {
       partialCalendarEvents.push(partialCalendarEvent);
+      continue;
+    }
+
+    // Start new reminder
+    if (line.startsWith('BEGIN:VALARM')) {
+      partialCalendarReminder = {};
+      continue;
+    }
+
+    // Finish reminder
+    if (line.startsWith('END:VALARM')) {
+      partialCalendarEvent.extra = {
+        ...(partialCalendarEvent.extra! || {}),
+        reminders: [...(partialCalendarEvent.extra?.reminders || []), partialCalendarReminder as CalendarEventReminder],
+      };
+
+      partialCalendarReminder = {};
       continue;
     }
 
@@ -158,9 +200,15 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
     }
 
     if (line.startsWith('UID:')) {
-      const uid = line.replace('UID:', '');
+      const uid = line.replace('UID:', '').trim();
 
       if (!uid) {
+        continue;
+      }
+
+      if (Object.keys(partialCalendarReminder).length > 0) {
+        partialCalendarReminder.uid = uid;
+
         continue;
       }
 
@@ -172,10 +220,29 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
       continue;
     }
 
-    // TODO: Build this ( https://en.wikipedia.org/wiki/ICalendar#List_of_components,_properties,_and_parameters )
+    if (line.startsWith('DESCRIPTION:')) {
+      const description = line.replace('DESCRIPTION:', '').trim().replaceAll('\\n', '\n').replaceAll('\\,', ',');
+
+      if (!description) {
+        continue;
+      }
+
+      if (Object.keys(partialCalendarReminder).length > 0) {
+        partialCalendarReminder.description = description;
+
+        continue;
+      }
+
+      partialCalendarEvent.extra = {
+        ...(partialCalendarEvent.extra! || {}),
+        description,
+      };
+
+      continue;
+    }
 
     if (line.startsWith('SUMMARY:')) {
-      const title = line.split('SUMMARY:')[1] || '';
+      const title = (line.split('SUMMARY:')[1] || '').trim().replaceAll('\\n', '\n').replaceAll('\\,', ',');
 
       partialCalendarEvent.title = title;
 
@@ -254,7 +321,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
         (attendeeStatusInfo.split(';')[0] || 'NEEDS-ACTION') as 'ACCEPTED' | 'REJECTED' | 'NEEDS-ACTION',
       );
       const attendeeNameInfo = line.split('CN=')[1] || '';
-      const attendeeName = (attendeeNameInfo.split(';')[0] || '').trim();
+      const attendeeName = (attendeeNameInfo.split(';')[0] || '').trim().replaceAll('\\n', '\n').replaceAll('\\,', ',');
 
       if (!attendeeEmail) {
         continue;
@@ -274,6 +341,76 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
         attendees: [...(partialCalendarEvent.extra?.attendees || []), attendee],
       };
     }
+
+    if (line.startsWith('ACTION:')) {
+      const reminderType =
+        (line.replace('ACTION:', '').trim().toLowerCase() || 'display') as CalendarEventReminder['type'];
+
+      partialCalendarReminder.type = reminderType;
+
+      continue;
+    }
+
+    if (line.startsWith('TRIGGER:') || line.startsWith('TRIGGER;')) {
+      const triggerInfo = line.split(':')[1] || '';
+      let triggerDate = new Date(partialCalendarEvent.start_date || new Date());
+
+      if (line.includes('DATE-TIME')) {
+        const [dateInfo, hourInfo] = triggerInfo.split('T');
+
+        const year = dateInfo.substring(0, 4);
+        const month = dateInfo.substring(4, 6);
+        const day = dateInfo.substring(6, 8);
+
+        const hours = hourInfo.substring(0, 2);
+        const minutes = hourInfo.substring(2, 4);
+        const seconds = hourInfo.substring(4, 6);
+
+        triggerDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`);
+      } else {
+        const triggerHoursMatch = triggerInfo.match(/(\d+(?:H))/);
+        const triggerMinutesMatch = triggerInfo.match(/(\d+(?:M))/);
+        const triggerSecondsMatch = triggerInfo.match(/(\d+(?:S))/);
+
+        const isNegative = triggerInfo.startsWith('-');
+
+        if (triggerHoursMatch && triggerHoursMatch.length > 0) {
+          const triggerHours = parseInt(triggerHoursMatch[0], 10);
+
+          if (isNegative) {
+            triggerDate.setHours(triggerDate.getHours() - triggerHours);
+          } else {
+            triggerDate.setHours(triggerHours);
+          }
+        }
+
+        if (triggerMinutesMatch && triggerMinutesMatch.length > 0) {
+          const triggerMinutes = parseInt(triggerMinutesMatch[0], 10);
+
+          if (isNegative) {
+            triggerDate.setMinutes(triggerDate.getMinutes() - triggerMinutes);
+          } else {
+            triggerDate.setMinutes(triggerMinutes);
+          }
+        }
+
+        if (triggerSecondsMatch && triggerSecondsMatch.length > 0) {
+          const triggerSeconds = parseInt(triggerSecondsMatch[0], 10);
+
+          if (isNegative) {
+            triggerDate.setSeconds(triggerDate.getSeconds() - triggerSeconds);
+          } else {
+            triggerDate.setSeconds(triggerSeconds);
+          }
+        }
+      }
+
+      partialCalendarReminder.start_date = triggerDate.toISOString();
+
+      continue;
+    }
+
+    // TODO: Build this ( https://en.wikipedia.org/wiki/ICalendar#List_of_components,_properties,_and_parameters )
   }
 
   return partialCalendarEvents;

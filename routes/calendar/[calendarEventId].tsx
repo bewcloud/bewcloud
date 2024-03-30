@@ -70,8 +70,6 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     calendarEvent.calendar_id = newCalendarId;
 
-    // TODO: More fields, attendees, recurrence
-
     try {
       if (!calendarEvent.title) {
         throw new Error(`Title is required.`);

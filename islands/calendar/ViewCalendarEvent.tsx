@@ -105,7 +105,6 @@ export function formFields(calendarEvent: CalendarEvent, calendars: Calendar[]) 
       })),
       required: true,
     },
-    // TODO: More fields, attendees, recurrence
   ];
 
   return fields;

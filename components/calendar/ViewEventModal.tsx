@@ -57,7 +57,9 @@ export default function ViewEventModal(
         {calendarEvent.extra.description
           ? (
             <section class='py-5 my-0 border-b border-slate-500'>
-              <p>{calendarEvent.extra.description}</p>
+              <article class='overflow-auto max-w-full max-h-80 font-mono text-sm whitespace-pre-wrap'>
+                {calendarEvent.extra.description}
+              </article>
             </section>
           )
           : null}
@@ -97,9 +99,18 @@ export default function ViewEventModal(
             </section>
           )
           : null}
-        <section class='py-5 mb-2 border-b border-slate-500'>
-          <p>TODO: reminders</p>
-        </section>
+        {Array.isArray(calendarEvent.extra.reminders) && calendarEvent.extra.reminders.length > 0
+          ? (
+            <section class='py-5 mb-2 border-b border-slate-500 text-xs'>
+              {calendarEvent.extra.reminders.map((reminder) => (
+                <p class='my-1'>
+                  {reminder.description || 'Reminder'} at {hourFormat.format(new Date(reminder.start_date))} via{' '}
+                  {reminder.type}.
+                </p>
+              ))}
+            </section>
+          )
+          : null}
         <footer class='flex justify-between'>
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-red-600 text-white cursor-pointer rounded-md'

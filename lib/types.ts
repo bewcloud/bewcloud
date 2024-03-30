@@ -189,6 +189,7 @@ export interface CalendarEventAttendee {
 export interface CalendarEventReminder {
   uid?: string;
   start_date: string;
-  type: 'email' | 'sound';
+  type: 'email' | 'sound' | 'display';
   acknowledged_at?: string;
+  description?: string;
 }

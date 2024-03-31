@@ -2,6 +2,7 @@ import { Handler } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
 import { convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml } from '/lib/utils/misc.ts';
+import { getColorAsHex } from '/lib/utils/calendar.ts';
 import { createSessionCookie } from '/lib/auth.ts';
 import { getCalendars } from '/lib/data/calendar.ts';
 
@@ -22,6 +23,21 @@ interface DavResponse {
         'd:href': string;
       };
       'd:principal-URL'?: {};
+      'd:current-user-privilege-set'?: {
+        'd:privilege': {
+          'd:write-properties'?: {};
+          'd:write'?: {};
+          'd:write-content'?: {};
+          'd:unlock'?: {};
+          'd:bind'?: {};
+          'd:unbind'?: {};
+          'd:write-acl'?: {};
+          'd:read'?: {};
+          'd:read-acl'?: {};
+          'd:read-current-user-privilege-set'?: {};
+        }[];
+      };
+      'ic:calendar-color'?: string;
     };
     'd:status': string;
   }[];
@@ -38,6 +54,7 @@ interface DavMultiStatusResponse {
     'xmlns:oc': string;
     'xmlns:nc': string;
     'xmlns:cs': string;
+    'xmlns:ic': string;
   };
 }
 
@@ -88,13 +105,36 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
       'xmlns:oc': 'http://owncloud.org/ns',
       'xmlns:nc': 'http://nextcloud.org/ns',
       'xmlns:cs': 'http://calendarserver.org/ns/',
+      'xmlns:ic': 'http://apple.com/ns/ical/',
     },
   };
 
   const calendars = await getCalendars(context.state.user.id);
 
+  const requestBody = (await request.clone().text()).toLowerCase();
+
+  const includePrivileges = requestBody.includes('current-user-privilege-set');
+  const includeColor = requestBody.includes('calendar-color');
+
+  if (includePrivileges) {
+    responseBody['d:multistatus']['d:response'][0]['d:propstat'][0]['d:prop']['d:current-user-privilege-set'] = {
+      'd:privilege': [
+        { 'd:write-properties': {} },
+        { 'd:write': {} },
+        { 'd:write-content': {} },
+        { 'd:unlock': {} },
+        { 'd:bind': {} },
+        { 'd:unbind': {} },
+        { 'd:write-acl': {} },
+        { 'd:read': {} },
+        { 'd:read-acl': {} },
+        { 'd:read-current-user-privilege-set': {} },
+      ],
+    };
+  }
+
   for (const calendar of calendars) {
-    responseBody['d:multistatus']['d:response'].push({
+    const parsedCalendar: DavResponse = {
       'd:href': `/dav/calendars/${calendar.id}`,
       'd:propstat': [{
         'd:prop': {
@@ -114,7 +154,30 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
         'd:prop': { 'd:principal-URL': {} },
         'd:status': 'HTTP/1.1 404 Not Found',
       }],
-    });
+    };
+
+    if (includePrivileges) {
+      parsedCalendar['d:propstat'][0]['d:prop']['d:current-user-privilege-set'] = {
+        'd:privilege': [
+          { 'd:write-properties': {} },
+          { 'd:write': {} },
+          { 'd:write-content': {} },
+          { 'd:unlock': {} },
+          { 'd:bind': {} },
+          { 'd:unbind': {} },
+          { 'd:write-acl': {} },
+          { 'd:read': {} },
+          { 'd:read-acl': {} },
+          { 'd:read-current-user-privilege-set': {} },
+        ],
+      };
+    }
+
+    if (includeColor) {
+      parsedCalendar['d:propstat'][0]['d:prop']['ic:calendar-color'] = getColorAsHex(calendar.color);
+    }
+
+    responseBody['d:multistatus']['d:response'].push(parsedCalendar);
   }
 
   const response = new Response(convertObjectToDavXml(responseBody, true), {

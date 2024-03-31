@@ -2,8 +2,14 @@ import { Handler } from 'fresh/server.ts';
 
 import { Calendar, CalendarEvent, FreshContextState } from '/lib/types.ts';
 import { buildRFC822Date, convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml, escapeXml } from '/lib/utils/misc.ts';
-import { formatCalendarEventsToVCalendar } from '/lib/utils/calendar.ts';
-import { getCalendar, getCalendarEvent, updateCalendarEvent } from '/lib/data/calendar.ts';
+import { formatCalendarEventsToVCalendar, parseVCalendarFromTextContents } from '/lib/utils/calendar.ts';
+import {
+  createCalendarEvent,
+  deleteCalendarEvent,
+  getCalendar,
+  getCalendarEvent,
+  updateCalendarEvent,
+} from '/lib/data/calendar.ts';
 import { createSessionCookie } from '/lib/auth.ts';
 
 interface Data {}
@@ -83,71 +89,88 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
   if (!calendarEvent) {
     if (request.method === 'PUT') {
-      // TODO: Build this
-      // const newCalendarEvent = await createCalendarEvent(
-      //   context.state.user.id,
-      //   partialCalendarEvent.title,
-      //   partialCalendarEvent.start_date,
-      //   partialCalendarEvent.end_date,
-      // );
+      const requestBody = await request.clone().text();
 
-      // // Use the sent id for the UID
-      // if (!partialCalendarEvent.extra?.uid) {
-      //   partialCalendarEvent.extra = {
-      //     ...(partialCalendarEvent.extra! || {}),
-      //     uid: calendarId,
-      //   };
-      // }
+      const [partialCalendarEvent] = parseVCalendarFromTextContents(requestBody);
 
-      // newCalendarEvent.extra = partialCalendarEvent.extra!;
+      if (partialCalendarEvent.title && partialCalendarEvent.start_date && partialCalendarEvent.end_date) {
+        const newCalendarEvent = await createCalendarEvent(
+          context.state.user.id,
+          calendarId,
+          partialCalendarEvent.title,
+          new Date(partialCalendarEvent.start_date),
+          new Date(partialCalendarEvent.end_date),
+          partialCalendarEvent.is_all_day,
+        );
 
-      // await updateCalendarEvent(newCalendarEvent);
+        // Use the sent id for the UID
+        if (!partialCalendarEvent.extra?.uid) {
+          partialCalendarEvent.extra = {
+            ...(partialCalendarEvent.extra! || {}),
+            uid: calendarEventId,
+          };
+        }
 
-      // const calendarEvent = await getCalendarEvent(newCalendarEvent.id, context.state.user.id);
+        const parsedExtra = JSON.stringify(partialCalendarEvent.extra || {});
 
-      // return new Response('Created', { status: 201, headers: { 'etag': `"${calendarEvent.revision}"` } });
+        if (parsedExtra !== '{}') {
+          newCalendarEvent.extra = partialCalendarEvent.extra!;
+
+          if (
+            newCalendarEvent.extra.is_recurring && newCalendarEvent.extra.recurring_sequence === 0 &&
+            !newCalendarEvent.extra.recurring_id
+          ) {
+            newCalendarEvent.extra.recurring_id = newCalendarEvent.id;
+          }
+
+          await updateCalendarEvent(newCalendarEvent);
+        }
+
+        const calendarEvent = await getCalendarEvent(newCalendarEvent.id, context.state.user.id);
+
+        return new Response('Created', { status: 201, headers: { 'etag': `"${calendarEvent.revision}"` } });
+      }
     }
 
     return new Response('Not found', { status: 404 });
   }
 
-  // TODO: Build this
-  // if (request.method === 'DELETE') {
-  //   const clientRevision = request.headers.get('if-match') || request.headers.get('etag');
+  if (request.method === 'DELETE') {
+    const clientRevision = request.headers.get('if-match') || request.headers.get('etag');
 
-  //   // Don't update outdated data
-  //   if (clientRevision && clientRevision !== `"${calendarEvent.revision}"`) {
-  //     return new Response(null, { status: 204, headers: { 'etag': `"${calendarEvent.revision}"` } });
-  //   }
+    // Don't update outdated data
+    if (clientRevision && clientRevision !== `"${calendarEvent.revision}"`) {
+      return new Response(null, { status: 204, headers: { 'etag': `"${calendarEvent.revision}"` } });
+    }
 
-  //   await deleteContact(contactId, context.state.user.id);
+    await deleteCalendarEvent(calendarEventId, calendarId, context.state.user.id);
 
-  //   return new Response(null, { status: 202 });
-  // }
+    return new Response(null, { status: 202 });
+  }
 
-  // if (request.method === 'PUT') {
-  //   const clientRevision = request.headers.get('if-match') || request.headers.get('etag');
+  if (request.method === 'PUT') {
+    const clientRevision = request.headers.get('if-match') || request.headers.get('etag');
 
-  //   // Don't update outdated data
-  //   if (clientRevision && clientRevision !== `"${contact.revision}"`) {
-  //     return new Response(null, { status: 204, headers: { 'etag': `"${contact.revision}"` } });
-  //   }
+    // Don't update outdated data
+    if (clientRevision && clientRevision !== `"${calendarEvent.revision}"`) {
+      return new Response(null, { status: 204, headers: { 'etag': `"${calendarEvent.revision}"` } });
+    }
 
-  //   const requestBody = await request.clone().text();
+    const requestBody = await request.clone().text();
 
-  //   const [partialContact] = parseVCardFromTextContents(requestBody);
+    const [partialCalendarEvent] = parseVCalendarFromTextContents(requestBody);
 
-  //   contact = {
-  //     ...contact,
-  //     ...partialContact,
-  //   };
+    calendarEvent = {
+      ...calendarEvent,
+      ...partialCalendarEvent,
+    };
 
-  //   await updateContact(contact);
+    await updateCalendarEvent(calendarEvent);
 
-  //   contact = await getContact(contactId, context.state.user.id);
+    calendarEvent = await getCalendarEvent(calendarEventId, context.state.user.id);
 
-  //   return new Response(null, { status: 204, headers: { 'etag': `"${contact.revision}"` } });
-  // }
+    return new Response(null, { status: 204, headers: { 'etag': `"${calendarEvent.revision}"` } });
+  }
 
   if (request.method === 'GET') {
     // Set a UID if there isn't one

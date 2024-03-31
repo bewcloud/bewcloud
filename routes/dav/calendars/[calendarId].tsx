@@ -1,9 +1,11 @@
 import { Handler } from 'fresh/server.ts';
+import { parse } from 'xml/mod.ts';
 
 import { Calendar, FreshContextState } from '/lib/types.ts';
 import { buildRFC822Date, convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml, escapeXml } from '/lib/utils/misc.ts';
 import { formatCalendarEventsToVCalendar, parseVCalendarFromTextContents } from '/lib/utils/calendar.ts';
 import {
+  createCalendar,
   createCalendarEvent,
   getCalendar,
   getCalendarEvent,
@@ -76,8 +78,27 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     console.error(error);
   }
 
+  if (!calendar && request.method === 'MKCALENDAR') {
+    const requestBody = await request.clone().text();
+
+    try {
+      const parsedDocument = parse(requestBody);
+
+      const makeCalendarRequest = (parsedDocument['c:mkcalendar'] || parsedDocument['cal:mkcalendar']) as
+        | Record<string, any>
+        | undefined;
+
+      const name: string = makeCalendarRequest!['d:set']['d:prop']['d:displayname']!;
+
+      const calendar = await createCalendar(context.state.user.id, name);
+
+      return new Response('Created', { status: 201, headers: { 'etag': `"${calendar.revision}"` } });
+    } catch (error) {
+      console.error(`Failed to parse XML`, error);
+    }
+  }
+
   if (!calendar) {
-    // TODO: Support MKCALENDAR
     return new Response('Not found', { status: 404 });
   }
 

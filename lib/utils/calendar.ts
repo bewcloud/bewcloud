@@ -23,6 +23,29 @@ export const CALENDAR_COLOR_OPTIONS = [
   'bg-rose-700',
 ] as const;
 
+const CALENDAR_COLOR_OPTIONS_HEX = [
+  '#B51E1F',
+  '#450A0A',
+  '#BF4310',
+  '#431407',
+  '#B0550F',
+  '#834F13',
+  '#4D7D16',
+  '#1A2E05',
+  '#148041',
+  '#066048',
+  '#107873',
+  '#0E7490',
+  '#075985',
+  '#1E3A89',
+  '#423BCA',
+  '#6A2BD9',
+  '#6923A9',
+  '#9D21B1',
+  '#9C174D',
+  '#BC133D',
+] as const;
+
 // NOTE: This variable isn't really used, _but_ it allows for tailwind to include the classes without having to move this into the tailwind.config.ts file
 export const CALENDAR_BORDER_COLOR_OPTIONS = [
   'border-red-700',
@@ -46,6 +69,12 @@ export const CALENDAR_BORDER_COLOR_OPTIONS = [
   'border-pink-800',
   'border-rose-700',
 ] as const;
+
+export function getColorAsHex(calendarColor: string) {
+  const colorIndex = CALENDAR_COLOR_OPTIONS.findIndex((color) => color === calendarColor);
+
+  return CALENDAR_COLOR_OPTIONS_HEX[colorIndex];
+}
 
 function getVCalendarAttendeeStatus(status: CalendarEventAttendee['status']) {
   if (status === 'accepted' || status === 'rejected') {
@@ -77,7 +106,6 @@ function getSafelyUnescapedTextFromVCalendar(text: string) {
   return text.replaceAll('\\n', '\n').replaceAll('\\,', ',');
 }
 
-// TODO: Build this
 export function formatCalendarEventsToVCalendar(
   calendarEvents: CalendarEvent[],
   calendars: Pick<Calendar, 'id' | 'color' | 'is_visible' | 'extra'>[],
@@ -448,8 +476,6 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
 
       continue;
     }
-
-    // TODO: Build this ( https://en.wikipedia.org/wiki/ICalendar#List_of_components,_properties,_and_parameters )
   }
 
   return partialCalendarEvents;

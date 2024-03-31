@@ -3,7 +3,13 @@ import { Handler } from 'fresh/server.ts';
 import { Calendar, FreshContextState } from '/lib/types.ts';
 import { buildRFC822Date, convertObjectToDavXml, DAV_RESPONSE_HEADER, escapeHtml, escapeXml } from '/lib/utils/misc.ts';
 import { formatCalendarEventsToVCalendar, parseVCalendarFromTextContents } from '/lib/utils/calendar.ts';
-import { getCalendar, getCalendarEvents } from '/lib/data/calendar.ts';
+import {
+  createCalendarEvent,
+  getCalendar,
+  getCalendarEvent,
+  getCalendarEvents,
+  updateCalendarEvent,
+} from '/lib/data/calendar.ts';
 import { createSessionCookie } from '/lib/auth.ts';
 
 interface Data {}
@@ -80,32 +86,37 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
     const [partialCalendarEvent] = parseVCalendarFromTextContents(requestBody);
 
-    if (partialCalendarEvent.title) {
-      // TODO: Build this
-      // const newCalendarEvent = await createCalendarEvent(
-      //   context.state.user.id,
-      //   partialCalendarEvent.title,
-      //   partialCalendarEvent.start_date,
-      //   partialCalendarEvent.end_date,
-      // );
+    if (partialCalendarEvent.title && partialCalendarEvent.start_date && partialCalendarEvent.end_date) {
+      const newCalendarEvent = await createCalendarEvent(
+        context.state.user.id,
+        calendarId,
+        partialCalendarEvent.title,
+        new Date(partialCalendarEvent.start_date),
+        new Date(partialCalendarEvent.end_date),
+        partialCalendarEvent.is_all_day,
+      );
 
-      // // Use the sent id for the UID
-      // if (!partialCalendarEvent.extra?.uid) {
-      //   partialCalendarEvent.extra = {
-      //     ...(partialCalendarEvent.extra! || {}),
-      //     uid: calendarId,
-      //   };
-      // }
+      const parsedExtra = JSON.stringify(partialCalendarEvent.extra || {});
 
-      // newCalendarEvent.extra = partialCalendarEvent.extra!;
+      if (parsedExtra !== '{}') {
+        newCalendarEvent.extra = partialCalendarEvent.extra!;
 
-      // await updateCalendarEvent(newCalendarEvent);
+        if (
+          newCalendarEvent.extra.is_recurring && newCalendarEvent.extra.recurring_sequence === 0 &&
+          !newCalendarEvent.extra.recurring_id
+        ) {
+          newCalendarEvent.extra.recurring_id = newCalendarEvent.id;
+        }
 
-      // const calendarEvent = await getCalendarEvent(newCalendarEvent.id, context.state.user.id);
+        await updateCalendarEvent(newCalendarEvent);
+      }
 
-      // return new Response('Created', { status: 201, headers: { 'etag': `"${calendarEvent.revision}"` } });
-      return new Response('Not found', { status: 404 });
+      const calendarEvent = await getCalendarEvent(newCalendarEvent.id, context.state.user.id);
+
+      return new Response('Created', { status: 201, headers: { 'etag': `"${calendarEvent.revision}"` } });
     }
+
+    return new Response('Not found', { status: 404 });
   }
 
   const calendarEvents = await getCalendarEvents(context.state.user.id, [calendar.id]);

@@ -61,6 +61,13 @@ export const handler: Handlers<Data, FreshContextState> = {
           if (parsedExtra !== '{}') {
             calendarEvent.extra = partialCalendarEvent.extra!;
 
+            if (
+              calendarEvent.extra.is_recurring && calendarEvent.extra.recurring_sequence === 0 &&
+              !calendarEvent.extra.recurring_id
+            ) {
+              calendarEvent.extra.recurring_id = calendarEvent.id;
+            }
+
             await updateCalendarEvent(calendarEvent);
           }
         }

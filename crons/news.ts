@@ -1,4 +1,5 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
+import Locker from '/lib/interfaces/locker.ts';
 import { NewsFeed } from '/lib/types.ts';
 import { concurrentPromises } from '/lib/utils/misc.ts';
 import { crawlNewsFeed } from '/lib/data/news.ts';
@@ -7,6 +8,10 @@ const db = new Database();
 
 export async function fetchNewArticles(forceFetch = false) {
   const fourHoursAgo = forceFetch ? new Date() : new Date(new Date().setUTCHours(new Date().getUTCHours() - 4));
+
+  const lock = new Locker(`feeds`);
+
+  await lock.acquire();
 
   try {
     const feedsToCrawl = await db.query<NewsFeed>(
@@ -22,4 +27,6 @@ export async function fetchNewArticles(forceFetch = false) {
   } catch (error) {
     console.log(error);
   }
+
+  lock.release();
 }

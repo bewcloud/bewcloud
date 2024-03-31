@@ -38,7 +38,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       dateRange.end.setDate(dateRange.end.getDate() + 31);
     }
 
-    const userCalendarEvents = await getCalendarEvents(context.state.user.id, visibleCalendarIds);
+    const userCalendarEvents = await getCalendarEvents(context.state.user.id, visibleCalendarIds, dateRange);
 
     return await context.render({ userCalendars, userCalendarEvents, view, startDate });
   },

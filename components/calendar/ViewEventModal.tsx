@@ -52,13 +52,6 @@ export default function ViewEventModal(
             title={calendar.color}
           />
         </section>
-        {calendarEvent.extra.recurring_rrule
-          ? (
-            <section class='py-5 my-0 border-b border-slate-500'>
-              <p>Repeats {convertRRuleToWords(calendarEvent.extra.recurring_rrule).toLowerCase()}.</p>
-            </section>
-          )
-          : null}
         {calendarEvent.extra.description
           ? (
             <section class='py-5 my-0 border-b border-slate-500'>
@@ -104,11 +97,18 @@ export default function ViewEventModal(
             </section>
           )
           : null}
+        {calendarEvent.extra.is_recurring && calendarEvent.extra.recurring_rrule
+          ? (
+            <section class='py-5 my-0 border-b border-slate-500'>
+              <p class='text-xs'>Repeats {convertRRuleToWords(calendarEvent.extra.recurring_rrule).toLowerCase()}.</p>
+            </section>
+          )
+          : null}
         {Array.isArray(calendarEvent.extra.reminders) && calendarEvent.extra.reminders.length > 0
           ? (
-            <section class='py-5 my-0 border-b border-slate-500 text-xs'>
+            <section class='py-5 my-0 border-b border-slate-500'>
               {calendarEvent.extra.reminders.map((reminder) => (
-                <p class='my-1'>
+                <p class='my-1 text-xs'>
                   {reminder.description || 'Reminder'} at {hourFormat.format(new Date(reminder.start_date))} via{' '}
                   {reminder.type}.
                 </p>

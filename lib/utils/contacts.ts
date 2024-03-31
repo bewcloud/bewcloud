@@ -2,6 +2,14 @@ import { Contact, ContactAddress, ContactField } from '../types.ts';
 
 export const CONTACTS_PER_PAGE_COUNT = 20;
 
+function getSafelyEscapedTextForVCard(text: string) {
+  return text.replaceAll('\n', '\\n').replaceAll(',', '\\,');
+}
+
+function getSafelyUnescapedTextFromVCard(text: string) {
+  return text.replaceAll('\\n', '\n').replaceAll('\\,', ',');
+}
+
 export function formatContactToVCard(contacts: Contact[]): string {
   const vCardText = contacts.map((contact) =>
     `BEGIN:VCARD
@@ -10,10 +18,10 @@ N:${contact.last_name};${contact.first_name};${
       contact.extra.middle_names ? contact.extra.middle_names?.map((name) => name.trim()).filter(Boolean).join(' ') : ''
     };${contact.extra.name_title || ''};
 FN:${contact.extra.name_title ? `${contact.extra.name_title || ''} ` : ''}${contact.first_name} ${contact.last_name}
-${contact.extra.organization ? `ORG:${contact.extra.organization.replaceAll(',', '\\,')}` : ''}
-${contact.extra.role ? `TITLE:${contact.extra.role}` : ''}
+${contact.extra.organization ? `ORG:${getSafelyEscapedTextForVCard(contact.extra.organization)}` : ''}
+${contact.extra.role ? `TITLE:${getSafelyEscapedTextForVCard(contact.extra.role)}` : ''}
 ${contact.extra.birthday ? `BDAY:${contact.extra.birthday}` : ''}
-${contact.extra.nickname ? `NICKNAME:${contact.extra.nickname}` : ''}
+${contact.extra.nickname ? `NICKNAME:${getSafelyEscapedTextForVCard(contact.extra.nickname)}` : ''}
 ${contact.extra.photo_url ? `PHOTO;MEDIATYPE=${contact.extra.photo_mediatype}:${contact.extra.photo_url}` : ''}
 ${
       contact.extra.fields?.filter((field) => field.type === 'phone').map((phone) =>
@@ -22,13 +30,11 @@ ${
     }
 ${
       contact.extra.addresses?.map((address) =>
-        `ADR;TYPE=${address.label}:${(address.line_2 || '').replaceAll('\n', '\\n').replaceAll(',', '\\,')};${
-          (address.line_1 || '').replaceAll('\n', '\\n').replaceAll(',', '\\,')
-        };${(address.city || '').replaceAll('\n', '\\n').replaceAll(',', '\\,')};${
-          (address.state || '').replaceAll('\n', '\\n').replaceAll(',', '\\,')
-        };${(address.postal_code || '').replaceAll('\n', '\\n').replaceAll(',', '\\,')};${
-          (address.country || '').replaceAll('\n', '\\n').replaceAll(',', '\\,')
-        }`
+        `ADR;TYPE=${address.label}:${getSafelyEscapedTextForVCard(address.line_2 || '')};${
+          getSafelyEscapedTextForVCard(address.line_1 || '')
+        };${getSafelyEscapedTextForVCard(address.city || '')};${getSafelyEscapedTextForVCard(address.state || '')};${
+          getSafelyEscapedTextForVCard(address.postal_code || '')
+        };${getSafelyEscapedTextForVCard(address.country || '')}`
       ).join('\n') || ''
     }
 ${
@@ -41,11 +47,7 @@ ${
       contact.extra.fields?.filter((field) => field.type === 'other').map((other) => `x-${other.name}:${other.value}`)
         .join('\n') || ''
     }
-${
-      contact.extra.notes
-        ? `NOTE:${contact.extra.notes.replaceAll('\r', '').replaceAll('\n', '\\n').replaceAll(',', '\\,')}`
-        : ''
-    }
+${contact.extra.notes ? `NOTE:${getSafelyEscapedTextForVCard(contact.extra.notes.replaceAll('\r', ''))}` : ''}
 ${contact.extra.uid ? `UID:${contact.extra.uid}` : ''}
 END:VCARD`
   ).join('\n');
@@ -191,7 +193,7 @@ export function parseVCardFromTextContents(text: string): Partial<Contact>[] {
     }
 
     if (line.startsWith('NOTE:')) {
-      const notes = (line.split('NOTE:')[1] || '').replaceAll('\\n', '\n').replaceAll('\\,', ',');
+      const notes = getSafelyUnescapedTextFromVCard(line.split('NOTE:')[1] || '');
 
       partialContact.extra = {
         ...(partialContact.extra || {}),
@@ -204,35 +206,16 @@ export function parseVCardFromTextContents(text: string): Partial<Contact>[] {
     if (line.includes('ADR;')) {
       const addressInfo = line.split('ADR;')[1] || '';
       const addressParts = (addressInfo.split(':')[1] || '').split(';');
-      const country = addressParts.slice(-1, addressParts.length).join(' ').replaceAll('\\n', '\n').replaceAll(
-        '\\,',
-        ',',
-      );
-      const postalCode = addressParts.slice(-2, addressParts.length - 1).join(' ').replaceAll('\\n', '\n').replaceAll(
-        '\\,',
-        ',',
-      );
-      const state = addressParts.slice(-3, addressParts.length - 2).join(' ').replaceAll('\\n', '\n').replaceAll(
-        '\\,',
-        ',',
-      );
-      const city = addressParts.slice(-4, addressParts.length - 3).join(' ').replaceAll('\\n', '\n').replaceAll(
-        '\\,',
-        ',',
-      );
-      const line1 = addressParts.slice(-5, addressParts.length - 4).join(' ').replaceAll('\\n', '\n').replaceAll(
-        '\\,',
-        ',',
-      );
-      const line2 = addressParts.slice(-6, addressParts.length - 5).join(' ').replaceAll('\\n', '\n').replaceAll(
-        '\\,',
-        ',',
-      );
+      const country = getSafelyUnescapedTextFromVCard(addressParts.slice(-1, addressParts.length).join(' '));
+      const postalCode = getSafelyUnescapedTextFromVCard(addressParts.slice(-2, addressParts.length - 1).join(' '));
+      const state = getSafelyUnescapedTextFromVCard(addressParts.slice(-3, addressParts.length - 2).join(' '));
+      const city = getSafelyUnescapedTextFromVCard(addressParts.slice(-4, addressParts.length - 3).join(' '));
+      const line1 = getSafelyUnescapedTextFromVCard(addressParts.slice(-5, addressParts.length - 4).join(' '));
+      const line2 = getSafelyUnescapedTextFromVCard(addressParts.slice(-6, addressParts.length - 5).join(' '));
 
-      const label = ((addressInfo.split(':')[0] || '').split('TYPE=')[1] || 'home').replaceAll(';', '').replaceAll(
-        '\\n',
-        '\n',
-      ).replaceAll('\\,', ',');
+      const label = getSafelyUnescapedTextFromVCard(
+        ((addressInfo.split(':')[0] || '').split('TYPE=')[1] || 'home').replaceAll(';', ''),
+      );
 
       if (!country && !postalCode && !state && !city && !line2 && !line1) {
         continue;

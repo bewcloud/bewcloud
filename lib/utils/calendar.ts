@@ -65,6 +65,18 @@ function getAttendeeStatusFromVCalendar(
   return 'invited';
 }
 
+export function getVCalendarDate(date: Date | string) {
+  return new Date(date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '');
+}
+
+function getSafelyEscapedTextForVCalendar(text: string) {
+  return text.replaceAll('\n', '\\n').replaceAll(',', '\\,');
+}
+
+function getSafelyUnescapedTextFromVCalendar(text: string) {
+  return text.replaceAll('\\n', '\n').replaceAll('\\,', ',');
+}
+
 // TODO: Build this
 export function formatCalendarEventsToVCalendar(
   calendarEvents: CalendarEvent[],
@@ -72,23 +84,25 @@ export function formatCalendarEventsToVCalendar(
 ): string {
   const vCalendarText = calendarEvents.map((calendarEvent) =>
     `BEGIN:VEVENT
-DTSTAMP:${new Date(calendarEvent.created_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
-DTSTART:${new Date(calendarEvent.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
-DTEND:${new Date(calendarEvent.end_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
+DTSTAMP:${getVCalendarDate(calendarEvent.created_at)}
+DTSTART:${getVCalendarDate(calendarEvent.start_date)}
+DTEND:${getVCalendarDate(calendarEvent.end_date)}
 ORGANIZER;CN=:mailto:${calendarEvent.extra.organizer_email}
-SUMMARY:${calendarEvent.title.replaceAll('\n', '\\n').replaceAll(',', '\\,')}
+SUMMARY:${getSafelyEscapedTextForVCalendar(calendarEvent.title)}
 TRANSP:${getCalendarEventTransparency(calendarEvent, calendars).toUpperCase()}
 ${calendarEvent.extra.uid ? `UID:${calendarEvent.extra.uid}` : ''}
-${calendarEvent.extra.recurring_rrule ? `RRULE:${calendarEvent.extra.recurring_rrule}` : ''}
-SEQUENCE:${calendarEvent.extra.recurring_sequence || 0}
-CREATED:${new Date(calendarEvent.created_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')}
-LAST-MODIFIED:${
-      new Date(calendarEvent.updated_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')
+${
+      calendarEvent.extra.is_recurring && calendarEvent.extra.recurring_rrule
+        ? `RRULE:${calendarEvent.extra.recurring_rrule}`
+        : ''
     }
+SEQUENCE:${calendarEvent.extra.recurring_sequence || 0}
+CREATED:${getVCalendarDate(calendarEvent.created_at)}
+LAST-MODIFIED:${getVCalendarDate(calendarEvent.updated_at)}
 ${
       calendarEvent.extra.attendees?.map((attendee) =>
         `ATTENDEE;PARTSTAT=${getVCalendarAttendeeStatus(attendee.status)};CN=${
-          attendee.name?.replaceAll('\n', '\\n').replaceAll(',', '\\,') || ''
+          getSafelyEscapedTextForVCalendar(attendee.name || '')
         }:mailto:${attendee.email}`
       ).join('\n') || ''
     }
@@ -96,18 +110,10 @@ ${
       calendarEvent.extra.reminders?.map((reminder) =>
         `BEGIN:VALARM
 ACTION:${reminder.type.toUpperCase()}
-${reminder.description ? `DESCRIPTION:${reminder.description.replaceAll('\n', '\\n').replaceAll(',', '\\,')}` : ''}
-TRIGGER;VALUE=DATE-TIME:${
-          new Date(reminder.start_date).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')
-        }
+${reminder.description ? `DESCRIPTION:${getSafelyEscapedTextForVCalendar(reminder.description)}` : ''}
+TRIGGER;VALUE=DATE-TIME:${getVCalendarDate(reminder.start_date)}
 ${reminder.uid ? `UID:${reminder.uid}` : ''}
-${
-          reminder.acknowledged_at
-            ? `ACKNOWLEDGED:${
-              new Date(reminder.acknowledged_at).toISOString().substring(0, 19).replaceAll('-', '').replaceAll(':', '')
-            }`
-            : ''
-        }
+${reminder.acknowledged_at ? `ACKNOWLEDGED:${getVCalendarDate(reminder.acknowledged_at)}` : ''}
 END:VALARM`
       ).join('\n') || ''
     }
@@ -222,7 +228,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
     }
 
     if (line.startsWith('DESCRIPTION:')) {
-      const description = line.replace('DESCRIPTION:', '').trim().replaceAll('\\n', '\n').replaceAll('\\,', ',');
+      const description = getSafelyUnescapedTextFromVCalendar(line.replace('DESCRIPTION:', '').trim());
 
       if (!description) {
         continue;
@@ -243,7 +249,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
     }
 
     if (line.startsWith('SUMMARY:')) {
-      const title = (line.split('SUMMARY:')[1] || '').trim().replaceAll('\\n', '\n').replaceAll('\\,', ',');
+      const title = getSafelyUnescapedTextFromVCalendar((line.split('SUMMARY:')[1] || '').trim());
 
       partialCalendarEvent.title = title;
 
@@ -322,7 +328,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
         (attendeeStatusInfo.split(';')[0] || 'NEEDS-ACTION') as 'ACCEPTED' | 'REJECTED' | 'NEEDS-ACTION',
       );
       const attendeeNameInfo = line.split('CN=')[1] || '';
-      const attendeeName = (attendeeNameInfo.split(';')[0] || '').trim().replaceAll('\\n', '\n').replaceAll('\\,', ',');
+      const attendeeName = getSafelyUnescapedTextFromVCalendar((attendeeNameInfo.split(';')[0] || '').trim());
 
       if (!attendeeEmail) {
         continue;
@@ -420,6 +426,7 @@ export function parseVCalendarFromTextContents(text: string): Partial<CalendarEv
 
       partialCalendarEvent.extra = {
         ...(partialCalendarEvent.extra! || {}),
+        is_recurring: true,
         recurring_rrule: rRule,
         recurring_sequence: partialCalendarEvent.extra?.recurring_sequence || 0,
       };
@@ -489,7 +496,7 @@ export function getWeeksForMonth(date: Date): { date: Date; isSameMonth: boolean
 export function getDaysForWeek(
   date: Date,
 ): { date: Date; isSameDay: boolean; hours: { date: Date; isCurrentHour: boolean }[] }[] {
-  const shortIsoDate = date.toISOString().substring(0, 10);
+  const shortIsoDate = new Date().toISOString().substring(0, 10);
   const currentHour = new Date().getHours();
 
   const days: { date: Date; isSameDay: boolean; hours: { date: Date; isCurrentHour: boolean }[] }[] = [];

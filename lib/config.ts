@@ -13,3 +13,11 @@ export async function isSignupAllowed() {
 
   return false;
 }
+
+export function getFilesRootPath() {
+  const configRootPath = Deno.env.get('CONFIG_FILES_ROOT_PATH');
+
+  const filesRootPath = `${Deno.cwd()}/${configRootPath}`;
+
+  return filesRootPath;
+}

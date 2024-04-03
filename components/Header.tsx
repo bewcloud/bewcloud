@@ -32,18 +32,6 @@ export default function Header({ route, user }: Data) {
       label: 'News',
     },
     {
-      url: '/contacts',
-      label: 'Contacts',
-    },
-    {
-      url: '/calendar',
-      label: 'Calendar',
-    },
-    {
-      url: '/tasks',
-      label: 'Tasks',
-    },
-    {
       url: '/files',
       label: 'Files',
     },
@@ -68,10 +56,6 @@ export default function Header({ route, user }: Data) {
 
     if (route.startsWith('/settings')) {
       pageLabel = 'Settings';
-    }
-
-    if (route.startsWith('/calendars')) {
-      pageLabel = 'Calendars';
     }
 
     return (

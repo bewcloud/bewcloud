@@ -10,14 +10,8 @@ if (typeof Deno !== 'undefined') {
 
 export const baseUrl = BASE_URL || 'http://localhost:8000';
 export const defaultTitle = 'bewCloud is a modern and simpler alternative to Nextcloud and ownCloud';
-export const defaultDescription = `Have your calendar, contacts, tasks, and files under your own control.`;
+export const defaultDescription = `Have your files under your own control.`;
 export const helpEmail = 'help@bewcloud.com';
-
-export const DAV_RESPONSE_HEADER = '1, 2, 3, 4, addressbook, calendar-access';
-// Response headers from Nextcloud:
-// 1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, oc-resource-sharing, addressbook, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
-// 1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-resource-sharing, oc-calendar-publishing, calendarserver-sharing, addressbook, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
-// 1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-resource-sharing, oc-calendar-publishing, calendarserver-sharing, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar
 
 export function isRunningLocally(request: Request) {
   return request.url.includes('localhost');

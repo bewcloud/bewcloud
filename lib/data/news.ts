@@ -1,6 +1,7 @@
 import { Feed } from 'https://deno.land/x/rss@1.0.0/mod.ts';
 
 import Database, { sql } from '/lib/interfaces/database.ts';
+import Locker from '/lib/interfaces/locker.ts';
 import { NewsFeed, NewsFeedArticle } from '/lib/types.ts';
 import {
   findFeedInUrl,
@@ -211,90 +212,98 @@ type JsonFeedArticle = JsonFeed['items'][number];
 const MAX_ARTICLES_CRAWLED_PER_RUN = 10;
 
 export async function crawlNewsFeed(newsFeed: NewsFeed) {
-  // TODO: Lock this per feedId, so no two processes run this at the same time
+  const lock = new Locker(`feeds:${newsFeed.id}`);
 
-  if (!newsFeed.extra.title || !newsFeed.extra.feed_type || !newsFeed.extra.crawl_type) {
-    const feedUrl = await findFeedInUrl(newsFeed.feed_url);
+  await lock.acquire();
 
-    if (!feedUrl) {
-      throw new Error(
-        `Invalid URL for feed: "${feedUrl}"`,
+  try {
+    if (!newsFeed.extra.title || !newsFeed.extra.feed_type || !newsFeed.extra.crawl_type) {
+      const feedUrl = await findFeedInUrl(newsFeed.feed_url);
+
+      if (!feedUrl) {
+        throw new Error(
+          `Invalid URL for feed: "${feedUrl}"`,
+        );
+      }
+
+      if (feedUrl !== newsFeed.feed_url) {
+        newsFeed.feed_url = feedUrl;
+      }
+
+      const feedInfo = await getFeedInfo(newsFeed.feed_url);
+
+      newsFeed.extra.title = feedInfo.title;
+      newsFeed.extra.feed_type = feedInfo.feed_type;
+      newsFeed.extra.crawl_type = feedInfo.crawl_type;
+    }
+
+    const feedArticles = await fetchNewsArticles(newsFeed);
+
+    const articles: Omit<NewsFeedArticle, 'id' | 'user_id' | 'feed_id' | 'extra' | 'is_read' | 'created_at'>[] = [];
+
+    for (const feedArticle of feedArticles) {
+      // Don't add too many articles per run
+      if (articles.length >= MAX_ARTICLES_CRAWLED_PER_RUN) {
+        continue;
+      }
+
+      const url = (feedArticle as JsonFeedArticle).url || getArticleUrl((feedArticle as FeedArticle).links) ||
+        feedArticle.id;
+
+      const articleIsoDate = (feedArticle as JsonFeedArticle).date_published ||
+        (feedArticle as FeedArticle).published?.toISOString() || (feedArticle as JsonFeedArticle).date_modified ||
+        (feedArticle as FeedArticle).updated?.toISOString();
+
+      const articleDate = articleIsoDate ? new Date(articleIsoDate) : new Date();
+
+      const summary = await parseTextFromHtml(
+        (feedArticle as FeedArticle).description?.value || (feedArticle as FeedArticle).content?.value ||
+          (feedArticle as JsonFeedArticle).content_text || (feedArticle as JsonFeedArticle).content_html ||
+          (feedArticle as JsonFeedArticle).summary || '',
       );
-    }
 
-    if (feedUrl !== newsFeed.feed_url) {
-      newsFeed.feed_url = feedUrl;
-    }
-
-    const feedInfo = await getFeedInfo(newsFeed.feed_url);
-
-    newsFeed.extra.title = feedInfo.title;
-    newsFeed.extra.feed_type = feedInfo.feed_type;
-    newsFeed.extra.crawl_type = feedInfo.crawl_type;
-  }
-
-  const feedArticles = await fetchNewsArticles(newsFeed);
-
-  const articles: Omit<NewsFeedArticle, 'id' | 'user_id' | 'feed_id' | 'extra' | 'is_read' | 'created_at'>[] = [];
-
-  for (const feedArticle of feedArticles) {
-    // Don't add too many articles per run
-    if (articles.length >= MAX_ARTICLES_CRAWLED_PER_RUN) {
-      continue;
-    }
-
-    const url = (feedArticle as JsonFeedArticle).url || getArticleUrl((feedArticle as FeedArticle).links) ||
-      feedArticle.id;
-
-    const articleIsoDate = (feedArticle as JsonFeedArticle).date_published ||
-      (feedArticle as FeedArticle).published?.toISOString() || (feedArticle as JsonFeedArticle).date_modified ||
-      (feedArticle as FeedArticle).updated?.toISOString();
-
-    const articleDate = articleIsoDate ? new Date(articleIsoDate) : new Date();
-
-    const summary = await parseTextFromHtml(
-      (feedArticle as FeedArticle).description?.value || (feedArticle as FeedArticle).content?.value ||
-        (feedArticle as JsonFeedArticle).content_text || (feedArticle as JsonFeedArticle).content_html ||
-        (feedArticle as JsonFeedArticle).summary || '',
-    );
-
-    if (url) {
-      articles.push({
-        article_title: (feedArticle as FeedArticle).title?.value || (feedArticle as JsonFeedArticle).title ||
-          url.replace('http://', '').replace('https://', ''),
-        article_url: url,
-        article_summary: summary,
-        article_date: articleDate,
-      });
-    }
-  }
-
-  const existingArticles = await getNewsArticlesByFeedId(newsFeed.id);
-  const existingArticleUrls = new Set<string>(existingArticles.map((article) => article.article_url));
-  const previousLatestArticleUrl = existingArticles[0]?.article_url;
-  let seenPreviousLatestArticleUrl = false;
-  let addedArticlesCount = 0;
-
-  for (const article of articles) {
-    // Stop looking after seeing the previous latest article
-    if (article.article_url === previousLatestArticleUrl) {
-      seenPreviousLatestArticleUrl = true;
-    }
-
-    if (!seenPreviousLatestArticleUrl && !existingArticleUrls.has(article.article_url)) {
-      try {
-        await createsNewsArticle(newsFeed.user_id, newsFeed.id, article);
-        ++addedArticlesCount;
-      } catch (error) {
-        console.error(error);
-        console.error(`Failed to add new article: "${article.article_url}"`);
+      if (url) {
+        articles.push({
+          article_title: (feedArticle as FeedArticle).title?.value || (feedArticle as JsonFeedArticle).title ||
+            url.replace('http://', '').replace('https://', ''),
+          article_url: url,
+          article_summary: summary,
+          article_date: articleDate,
+        });
       }
     }
+
+    const existingArticles = await getNewsArticlesByFeedId(newsFeed.id);
+    const existingArticleUrls = new Set<string>(existingArticles.map((article) => article.article_url));
+    const previousLatestArticleUrl = existingArticles[0]?.article_url;
+    let seenPreviousLatestArticleUrl = false;
+    let addedArticlesCount = 0;
+
+    for (const article of articles) {
+      // Stop looking after seeing the previous latest article
+      if (article.article_url === previousLatestArticleUrl) {
+        seenPreviousLatestArticleUrl = true;
+      }
+
+      if (!seenPreviousLatestArticleUrl && !existingArticleUrls.has(article.article_url)) {
+        try {
+          await createsNewsArticle(newsFeed.user_id, newsFeed.id, article);
+          ++addedArticlesCount;
+        } catch (error) {
+          console.error(error);
+          console.error(`Failed to add new article: "${article.article_url}"`);
+        }
+      }
+    }
+
+    console.log('Added', addedArticlesCount, 'new articles');
+
+    newsFeed.last_crawled_at = new Date();
+
+    await updateNewsFeed(newsFeed);
+  } catch (error) {
+    lock.release();
+
+    throw error;
   }
-
-  console.log('Added', addedArticlesCount, 'new articles');
-
-  newsFeed.last_crawled_at = new Date();
-
-  await updateNewsFeed(newsFeed);
 }

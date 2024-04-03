@@ -12,8 +12,6 @@ export interface User {
     is_email_verified: boolean;
     is_admin?: boolean;
     dav_hashed_password?: string;
-    contacts_revision?: string;
-    contacts_updated_at?: string;
   };
   created_at: Date;
 }
@@ -87,109 +85,45 @@ export interface NewsFeedArticle {
   created_at: Date;
 }
 
-// NOTE: I don't really organize contacts by groups or address books, so I don't think I'll need that complexity
-export interface Contact {
+export interface DirectoryOrFileShareLink {
+  url: string;
+  hashed_password: string;
+}
+
+export interface FileShare {
   id: string;
-  user_id: string;
-  revision: string;
-  first_name: string;
-  last_name: string;
-  extra: {
-    name_title?: string;
-    middle_names?: string[];
-    organization?: string;
-    role?: string;
-    photo_url?: string;
-    photo_mediatype?: string;
-    addresses?: ContactAddress[];
-    fields?: ContactField[];
-    notes?: string;
-    uid?: string;
-    nickname?: string;
-    birthday?: string;
-  };
-  updated_at: Date;
-  created_at: Date;
-}
-
-export interface ContactAddress {
-  label?: string;
-  line_1?: string;
-  line_2?: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-  country?: string;
-}
-
-export type ContactFieldType = 'email' | 'phone' | 'url' | 'other';
-
-export interface ContactField {
+  owner_user_id: string;
+  parent_path: string;
   name: string;
-  value: string;
-  type: ContactFieldType;
-}
-
-export interface Calendar {
-  id: string;
-  user_id: string;
-  revision: string;
-  name: string;
-  color: string;
-  is_visible: boolean;
+  type: 'directory' | 'file';
+  user_ids_with_read_access: string[];
+  user_ids_with_write_access: string[];
   extra: {
-    shared_read_user_ids?: string[];
-    shared_write_user_ids?: string[];
-    default_transparency: 'opaque' | 'transparent';
-    calendar_timezone?: string;
+    read_share_links: DirectoryOrFileShareLink[];
+    write_share_links: DirectoryOrFileShareLink[];
   };
   updated_at: Date;
   created_at: Date;
 }
 
-export interface CalendarEvent {
-  id: string;
-  user_id: string;
-  calendar_id: string;
-  revision: string;
-  title: string;
-  start_date: Date;
-  end_date: Date;
-  is_all_day: boolean;
-  status: 'scheduled' | 'pending' | 'canceled';
-  extra: {
-    organizer_email: string;
-    description?: string;
-    location?: string;
-    url?: string;
-    attendees?: CalendarEventAttendee[];
-    transparency: 'default' | Calendar['extra']['default_transparency'];
-    is_recurring?: boolean;
-    recurring_id?: string;
-    recurring_sequence?: number;
-    recurring_rrule?: string;
-    recurring_rdate?: string;
-    recurring_exdate?: string;
-    is_task?: boolean;
-    task_due_date?: string;
-    task_completed_at?: string;
-    uid?: string;
-    reminders?: CalendarEventReminder[];
-  };
+export interface Directory {
+  owner_user_id: string;
+  parent_path: string;
+  directory_name: string;
+  has_write_access: boolean;
+  file_share?: FileShare;
+  size_in_bytes: number;
   updated_at: Date;
   created_at: Date;
 }
 
-export interface CalendarEventAttendee {
-  email: string;
-  status: 'accepted' | 'rejected' | 'invited';
-  name?: string;
-}
-
-export interface CalendarEventReminder {
-  uid?: string;
-  start_date: string;
-  type: 'email' | 'sound' | 'display';
-  acknowledged_at?: string;
-  description?: string;
+export interface DirectoryFile {
+  owner_user_id: string;
+  parent_path: string;
+  file_name: string;
+  has_write_access: boolean;
+  file_share?: FileShare;
+  size_in_bytes: number;
+  updated_at: Date;
+  created_at: Date;
 }

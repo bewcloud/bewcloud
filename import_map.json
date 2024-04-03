@@ -2,8 +2,6 @@
   "imports": {
     "/": "./",
     "./": "./",
-    "xml/": "https://deno.land/x/xml@2.1.3/",
-    "rrule-rust": "npm:rrule-rust@1.2.0",
 
     "fresh/": "https://deno.land/x/fresh@1.6.8/",
     "$fresh/": "https://deno.land/x/fresh@1.6.8/",

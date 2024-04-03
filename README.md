@@ -4,13 +4,18 @@
 
 This is the [bewCloud app](https://bewcloud.com) built using [Fresh](https://fresh.deno.dev) and deployed using [docker compose](https://docs.docker.com/compose/).
 
+> [!CAUTION]
+> This is actively being built and should be considered pre-alpha. Bugs will exist. Code and models _can_ change without a good upgrade path (though I'll try to avoid that). **Don't use it as your only source of data!**
+
 ## Self-host it!
 
 Check the [Development section below](#development).
 
-> **NOTE:** You don't need to have emails (Brevo) setup to have the app work. Those are only setup and used for email verification and future needs. You can simply make any `user.status = 'active'` and `user.subscription.expires_at = new Date('2100-01-01')` to "never" expire, in the database, directly.
+> [!NOTE]
+> You don't need to have emails (Brevo) setup to have the app work. Those are only setup and used for email verification and future needs. You can simply make any `user.status = 'active'` and `user.subscription.expires_at = new Date('2100-01-01')` to "never" expire, in the database, directly.
 
-> **NOTE 2:** Even with signups disabled (`CONFIG_ALLOW_SIGNUPS="false"`), the first signup will work and become an admin.
+> [!IMPORTANT]
+> Even with signups disabled (`CONFIG_ALLOW_SIGNUPS="false"`), the first signup will work and become an admin.
 
 ## Requirements
 
@@ -55,14 +60,20 @@ Just push to the `main` branch.
 
 - [x] Dashboard with URLs and Notes
 - [x] News
-- [x] Contacts / CardDav
-- [ ] Calendar / CalDav
-- [ ] Tasks / CalDav
-- [ ] Files / WebDav
-- [ ] Notes / WebDav
-- [ ] Photos / WebDav
-- [ ] Desktop app for selective file sync (or potentially just `rclone`)
+- [ ] Files UI
+- [ ] Notes UI
+- [ ] Photos UI
+- [ ] Desktop app for selective file sync (WebDav or potentially just `rclone` or `rsync`)
 - [ ] Mobile app for offline file sync
 - [ ] Add notes support for mobile app
 - [ ] Add photos/sync support for mobile client
 - [ ] Address `TODO:`s in code
+- [ ] Basic Contacts UI via CardDav?
+- [ ] Basic Calendar UI via CalDav?
+- [ ] Basic Tasks UI via CalDav?
+
+## Where's Contacts/Calendar (CardDav/CalDav)?! Wasn't this supposed to be a core Nextcloud replacement?
+
+[Check this tag/release for more info and the code where/when that was being done](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav). Contacts/CardDav worked and Calendar/CalDav mostly worked as well at that point.
+
+My focus is still to get me to replace Nextcloud for me and my family ASAP, but turns out it's not easy to do it all in a single, installable _thing_, so I'm focusing on the Files UI, sync, and sharing, since [Radicale](https://radicale.org/v3.html) solved my other issues better than my own solution (and it's already _very_ efficient).

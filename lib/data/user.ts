@@ -283,14 +283,3 @@ export async function validateVerificationCode(
     throw new Error('Not Found');
   }
 }
-
-export async function updateUserContactRevision(id: string) {
-  const user = await getUserById(id);
-
-  const revision = crypto.randomUUID();
-
-  user.extra.contacts_revision = revision;
-  user.extra.contacts_updated_at = new Date().toISOString();
-
-  await updateUser(user);
-}

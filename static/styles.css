@@ -73,8 +73,3 @@ img.red {
 img.gray {
   filter: invert(30%) sepia(46%) saturate(356%) hue-rotate(174deg) brightness(90%) contrast(82%);
 }
-
-.calendar-week-view-days {
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-  grid-template-rows: 0.5fr 1fr 0.5fr 0.5fr 0.5fr 0.5fr 0.5fr 0.5fr 0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-}

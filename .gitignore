@@ -9,3 +9,6 @@ db/
 
 # Env var
 .env
+
+# Files
+data-files/

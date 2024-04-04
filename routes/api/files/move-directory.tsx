@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Directory, FreshContextState } from '/lib/types.ts';
-import { getDirectories, renameDirectoryOrFile } from '/lib/data/files.ts';
+import { getDirectories, getDirectoryAccess, renameDirectoryOrFile } from '/lib/data/files.ts';
 
 interface Data {}
 
@@ -33,12 +33,26 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    // TODO: Verify user has write access to old and new paths and get the appropriate ownerUserIds
+    const { hasWriteAccess: hasOldWriteAccess, ownerUserId, ownerParentPath: oldOwnerParentPath } =
+      await getDirectoryAccess(context.state.user.id, requestBody.oldParentPath, requestBody.name.trim());
+
+    if (!hasOldWriteAccess) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    const { hasWriteAccess: hasNewWriteAccess, ownerParentPath: newOwnerParentPath } = await getDirectoryAccess(
+      context.state.user.id,
+      requestBody.newParentPath,
+    );
+
+    if (!hasNewWriteAccess) {
+      return new Response('Forbidden', { status: 403 });
+    }
 
     const movedDirectory = await renameDirectoryOrFile(
-      context.state.user.id,
-      requestBody.oldParentPath,
-      requestBody.newParentPath,
+      ownerUserId,
+      oldOwnerParentPath,
+      newOwnerParentPath,
       requestBody.name.trim(),
       requestBody.name.trim(),
     );

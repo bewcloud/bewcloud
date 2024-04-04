@@ -85,7 +85,7 @@ export interface NewsFeedArticle {
   created_at: Date;
 }
 
-export interface DirectoryOrFileShareLink {
+export interface FileShareLink {
   url: string;
   hashed_password: string;
 }
@@ -93,16 +93,16 @@ export interface DirectoryOrFileShareLink {
 export interface FileShare {
   id: string;
   owner_user_id: string;
+  owner_parent_path: string;
   parent_path: string;
   name: string;
   type: 'directory' | 'file';
   user_ids_with_read_access: string[];
   user_ids_with_write_access: string[];
   extra: {
-    read_share_links: DirectoryOrFileShareLink[];
-    write_share_links: DirectoryOrFileShareLink[];
+    read_share_links: FileShareLink[];
+    write_share_links: FileShareLink[];
   };
-  updated_at: Date;
   created_at: Date;
 }
 

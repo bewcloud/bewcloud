@@ -452,12 +452,12 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
         <ListFiles
           directories={directories.value}
           files={files.value}
-          onClickDeleteDirectory={onClickDeleteDirectory}
-          onClickDeleteFile={onClickDeleteFile}
           onClickOpenRenameDirectory={onClickOpenRenameDirectory}
           onClickOpenRenameFile={onClickOpenRenameFile}
           onClickOpenMoveDirectory={onClickOpenMoveDirectory}
           onClickOpenMoveFile={onClickOpenMoveFile}
+          onClickDeleteDirectory={onClickDeleteDirectory}
+          onClickDeleteFile={onClickDeleteFile}
         />
 
         <span

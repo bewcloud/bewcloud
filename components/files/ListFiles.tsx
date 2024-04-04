@@ -4,24 +4,24 @@ import { humanFileSize, TRASH_PATH } from '/lib/utils/files.ts';
 interface ListFilesProps {
   directories: Directory[];
   files: DirectoryFile[];
-  onClickDeleteDirectory: (parentPath: string, name: string) => Promise<void>;
-  onClickDeleteFile: (parentPath: string, name: string) => Promise<void>;
   onClickOpenRenameDirectory: (parentPath: string, name: string) => void;
   onClickOpenRenameFile: (parentPath: string, name: string) => void;
   onClickOpenMoveDirectory: (parentPath: string, name: string) => void;
   onClickOpenMoveFile: (parentPath: string, name: string) => void;
+  onClickDeleteDirectory: (parentPath: string, name: string) => Promise<void>;
+  onClickDeleteFile: (parentPath: string, name: string) => Promise<void>;
 }
 
 export default function ListFiles(
   {
     directories,
     files,
-    onClickDeleteDirectory,
-    onClickDeleteFile,
     onClickOpenRenameDirectory,
     onClickOpenRenameFile,
     onClickOpenMoveDirectory,
     onClickOpenMoveFile,
+    onClickDeleteDirectory,
+    onClickDeleteFile,
   }: ListFilesProps,
 ) {
   const dateFormat = new Intl.DateTimeFormat('en-GB', {

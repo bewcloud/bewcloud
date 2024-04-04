@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { getDirectoryAccess, getFile, getFileAccess } from '/lib/data/files.ts';
+import { getFile } from '/lib/data/files.ts';
 
 interface Data {}
 
@@ -31,25 +31,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath = `${currentPath}/`;
     }
 
-    let { hasWriteAccess, ownerUserId, ownerParentPath } = await getFileAccess(
-      context.state.user.id,
-      currentPath,
-      decodeURIComponent(fileName),
-    );
-
-    if (!hasWriteAccess) {
-      const directoryAccessResult = await getDirectoryAccess(context.state.user.id, currentPath);
-
-      hasWriteAccess = directoryAccessResult.hasWriteAccess;
-      ownerUserId = directoryAccessResult.ownerUserId;
-      ownerParentPath = directoryAccessResult.ownerParentPath;
-
-      if (!hasWriteAccess) {
-        return new Response('Forbidden', { status: 403 });
-      }
-    }
-
-    const fileResult = await getFile(ownerUserId, ownerParentPath, decodeURIComponent(fileName));
+    const fileResult = await getFile(context.state.user.id, currentPath, decodeURIComponent(fileName));
 
     if (!fileResult.success) {
       return new Response('Not Found', { status: 404 });

@@ -15,6 +15,7 @@ import * as $api_files_move_directory from './routes/api/files/move-directory.ts
 import * as $api_files_move from './routes/api/files/move.tsx';
 import * as $api_files_rename_directory from './routes/api/files/rename-directory.tsx';
 import * as $api_files_rename from './routes/api/files/rename.tsx';
+import * as $api_files_search from './routes/api/files/search.tsx';
 import * as $api_files_upload from './routes/api/files/upload.tsx';
 import * as $api_news_add_feed from './routes/api/news/add-feed.tsx';
 import * as $api_news_delete_feed from './routes/api/news/delete-feed.tsx';
@@ -54,6 +55,7 @@ const manifest = {
     './routes/api/files/move.tsx': $api_files_move,
     './routes/api/files/rename-directory.tsx': $api_files_rename_directory,
     './routes/api/files/rename.tsx': $api_files_rename,
+    './routes/api/files/search.tsx': $api_files_search,
     './routes/api/files/upload.tsx': $api_files_upload,
     './routes/api/news/add-feed.tsx': $api_news_add_feed,
     './routes/api/news/delete-feed.tsx': $api_news_delete_feed,

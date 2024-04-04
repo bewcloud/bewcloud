@@ -2,7 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-// import { RequestBody, ResponseBody } from '/routes/api/files/search.tsx';
+import { RequestBody, ResponseBody } from '/routes/api/files/search.tsx';
 interface SearchFilesProps {}
 
 export default function SearchFiles({}: SearchFilesProps) {
@@ -32,31 +32,30 @@ export default function SearchFiles({}: SearchFilesProps) {
 
     areResultsVisible.value = false;
 
-    searchTimeout.value = setTimeout(() => {
+    searchTimeout.value = setTimeout(async () => {
       isSearching.value = true;
 
-      // TODO: Build this
-      // try {
-      //   const requestBody: RequestBody = { searchTerm };
-      //   const response = await fetch(`/api/files/search`, {
-      //     method: 'POST',
-      //     body: JSON.stringify(requestBody),
-      //   });
-      //   const result = await response.json() as ResponseBody;
+      try {
+        const requestBody: RequestBody = { searchTerm };
+        const response = await fetch(`/api/files/search`, {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+        });
+        const result = await response.json() as ResponseBody;
 
-      //   if (!result.success) {
-      //     throw new Error('Failed to search files!');
-      //   }
+        if (!result.success) {
+          throw new Error('Failed to search files!');
+        }
 
-      //   matchingDirectories.value = result.matchingDirectories;
-      //   matchingFiles.value = result.matchingFiles;
+        matchingDirectories.value = [...result.directories];
+        matchingFiles.value = [...result.files];
 
-      //   if (matchingDirectories.value.length > 0 || matchingFiles.value.length > 0) {
-      //     areResultsVisible.value = true;
-      //   }
-      // } catch (error) {
-      //   console.error(error);
-      // }
+        if (matchingDirectories.value.length > 0 || matchingFiles.value.length > 0) {
+          areResultsVisible.value = true;
+        }
+      } catch (error) {
+        console.error(error);
+      }
 
       isSearching.value = false;
     }, 500);
@@ -104,9 +103,9 @@ export default function SearchFiles({}: SearchFilesProps) {
       {isSearching.value ? <img src='/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
       {areResultsVisible.value
         ? (
-          <section class='relative inline-block text-left ml-2 text-xs'>
+          <section class='relative inline-block text-left ml-2 text-sm'>
             <section
-              class={`absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none`}
+              class={`absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-slate-600 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none overflow-y-scroll max-h-[80%] min-h-56`}
               role='menu'
               aria-orientation='vertical'
               aria-labelledby='view-button'
@@ -118,13 +117,13 @@ export default function SearchFiles({}: SearchFilesProps) {
                     <li class='mb-1'>
                       <a
                         href={`/files?path=${directory.parent_path}${directory.directory_name}`}
-                        class={`block px-2 py-2 hover:no-underline hover:opacity-60`}
+                        class={`block px-2 py-2 hover:no-underline hover:opacity-60 bg-slate-700 cursor-pointer font-normal`}
                         target='_blank'
                         rel='noopener noreferrer'
                       >
                         <time
                           datetime={new Date(directory.updated_at).toISOString()}
-                          class='mr-2 flex-none text-slate-100 block'
+                          class='mr-2 flex-none text-slate-100 block text-xs'
                         >
                           {dateFormat.format(new Date(directory.updated_at))}
                         </time>
@@ -138,13 +137,13 @@ export default function SearchFiles({}: SearchFilesProps) {
                     <li class='mb-1'>
                       <a
                         href={`/files/open/${file.file_name}?path=${file.parent_path}`}
-                        class={`block px-2 py-2 hover:no-underline hover:opacity-60`}
+                        class={`block px-2 py-2 hover:no-underline hover:opacity-60 bg-slate-700 cursor-pointer font-normal`}
                         target='_blank'
                         rel='noopener noreferrer'
                       >
                         <time
                           datetime={new Date(file.updated_at).toISOString()}
-                          class='mr-2 flex-none text-slate-100 block'
+                          class='mr-2 flex-none text-slate-100 block text-xs'
                         >
                           {dateFormat.format(new Date(file.updated_at))}
                         </time>

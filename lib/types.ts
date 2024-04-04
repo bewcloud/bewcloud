@@ -85,44 +85,21 @@ export interface NewsFeedArticle {
   created_at: Date;
 }
 
-export interface FileShareLink {
-  url: string;
-  hashed_password: string;
-}
-
-export interface FileShare {
-  id: string;
-  owner_user_id: string;
-  owner_parent_path: string;
-  parent_path: string;
-  name: string;
-  type: 'directory' | 'file';
-  user_ids_with_read_access: string[];
-  user_ids_with_write_access: string[];
-  extra: {
-    read_share_links: FileShareLink[];
-    write_share_links: FileShareLink[];
-  };
-  created_at: Date;
-}
-
 export interface Directory {
-  owner_user_id: string;
+  user_id: string;
   parent_path: string;
   directory_name: string;
   has_write_access: boolean;
-  file_share?: FileShare;
   size_in_bytes: number;
   updated_at: Date;
   created_at: Date;
 }
 
 export interface DirectoryFile {
-  owner_user_id: string;
+  user_id: string;
   parent_path: string;
   file_name: string;
   has_write_access: boolean;
-  file_share?: FileShare;
   size_in_bytes: number;
   updated_at: Date;
   created_at: Date;

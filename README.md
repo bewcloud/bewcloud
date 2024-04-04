@@ -60,20 +60,23 @@ Just push to the `main` branch.
 
 - [x] Dashboard with URLs and Notes
 - [x] News
-- [ ] Files UI
-- [ ] Notes UI
-- [ ] Photos UI
+- [x] Files UI
 - [ ] Desktop app for selective file sync (WebDav or potentially just `rclone` or `rsync`)
 - [ ] Mobile app for offline file sync
 - [ ] Add notes support for mobile app
 - [ ] Add photos/sync support for mobile client
+- [ ] Notes UI
+- [ ] Photos UI
 - [ ] Address `TODO:`s in code
-- [ ] Basic Contacts UI via CardDav?
-- [ ] Basic Calendar UI via CalDav?
-- [ ] Basic Tasks UI via CalDav?
 
 ## Where's Contacts/Calendar (CardDav/CalDav)?! Wasn't this supposed to be a core Nextcloud replacement?
 
 [Check this tag/release for more info and the code where/when that was being done](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav). Contacts/CardDav worked and Calendar/CalDav mostly worked as well at that point.
 
 My focus is still to get me to replace Nextcloud for me and my family ASAP, but turns out it's not easy to do it all in a single, installable _thing_, so I'm focusing on the Files UI, sync, and sharing, since [Radicale](https://radicale.org/v3.html) solved my other issues better than my own solution (and it's already _very_ efficient).
+
+## How does file sharing work?
+
+[Check this PR for advanced sharing with internal and external users, with read and write access that was being done and almost working](https://github.com/bewcloud/bewcloud/pull/4). I ditched all that complexity for simply using [symlinks](https://en.wikipedia.org/wiki/Symbolic_link), as it served my use case (I have multiple data backups and trust the people I provide accounts to, with the symlinks).
+
+You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-to-share> /<absolute-path-to-data-files>/<user-id-to-share-with>/` to create a shared directory between two users, and the same directory can have different names, now.

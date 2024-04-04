@@ -1,66 +1,24 @@
 import { join } from 'std/path/join.ts';
 
-import Database, { sql } from '/lib/interfaces/database.ts';
 import { getFilesRootPath } from '/lib/config.ts';
-import { Directory, DirectoryFile, FileShare, FileShareLink } from '/lib/types.ts';
+import { Directory, DirectoryFile } from '/lib/types.ts';
 import { sortDirectoriesByName, sortEntriesByName, sortFilesByName, TRASH_PATH } from '/lib/utils/files.ts';
-
-const db = new Database();
 
 export async function getDirectories(userId: string, path: string): Promise<Directory[]> {
   const rootPath = join(getFilesRootPath(), userId, path);
 
-  const directoryShares = await db.query<FileShare>(
-    sql`SELECT * FROM "bewcloud_file_shares"
-    WHERE "parent_path" = $2
-    AND "type" = 'directory'
-    AND (
-      "owner_user_id" = $1
-      OR ANY("user_ids_with_read_access") = $1
-      OR ANY("user_ids_with_write_access") = $1
-    )`,
-    [
-      userId,
-      path,
-    ],
-  );
-
   const directories: Directory[] = [];
 
-  const directoryEntries = (await getPathEntries(userId, path)).filter((entry) => entry.isDirectory);
+  const directoryEntries = (await getPathEntries(userId, path)).filter((entry) => entry.isDirectory || entry.isSymlink);
 
   for (const entry of directoryEntries) {
     const stat = await Deno.stat(join(rootPath, entry.name));
 
     const directory: Directory = {
-      owner_user_id: userId,
+      user_id: userId,
       parent_path: path,
       directory_name: entry.name,
       has_write_access: true,
-      file_share: directoryShares.find((share) =>
-        share.owner_user_id === userId && share.parent_path === path && share.name === entry.name
-      ),
-      size_in_bytes: stat.size,
-      updated_at: stat.mtime || new Date(),
-      created_at: stat.birthtime || new Date(),
-    };
-
-    directories.push(directory);
-  }
-
-  // Add directoryShares that aren't owned by this user
-  const foreignDirectoryShares = directoryShares.filter((directoryShare) => directoryShare.owner_user_id !== userId);
-  for (const share of foreignDirectoryShares) {
-    const stat = await Deno.stat(join(getFilesRootPath(), share.owner_user_id, path, share.name));
-
-    const hasWriteAccess = share.user_ids_with_write_access.includes(userId);
-
-    const directory: Directory = {
-      owner_user_id: share.owner_user_id,
-      parent_path: path,
-      directory_name: share.name,
-      has_write_access: hasWriteAccess,
-      file_share: share,
       size_in_bytes: stat.size,
       updated_at: stat.mtime || new Date(),
       created_at: stat.birthtime || new Date(),
@@ -77,21 +35,6 @@ export async function getDirectories(userId: string, path: string): Promise<Dire
 export async function getFiles(userId: string, path: string): Promise<DirectoryFile[]> {
   const rootPath = join(getFilesRootPath(), userId, path);
 
-  const fileShares = await db.query<FileShare>(
-    sql`SELECT * FROM "bewcloud_file_shares"
-    WHERE "parent_path" = $2
-    AND "type" = 'file'
-    AND (
-      "owner_user_id" = $1
-      OR ANY("user_ids_with_read_access") = $1
-      OR ANY("user_ids_with_write_access") = $1
-    )`,
-    [
-      userId,
-      path,
-    ],
-  );
-
   const files: DirectoryFile[] = [];
 
   const fileEntries = (await getPathEntries(userId, path)).filter((entry) => entry.isFile);
@@ -100,13 +43,10 @@ export async function getFiles(userId: string, path: string): Promise<DirectoryF
     const stat = await Deno.stat(join(rootPath, entry.name));
 
     const file: DirectoryFile = {
-      owner_user_id: userId,
+      user_id: userId,
       parent_path: path,
       file_name: entry.name,
       has_write_access: true,
-      file_share: fileShares.find((share) =>
-        share.owner_user_id === userId && share.parent_path === path && share.name === entry.name
-      ),
       size_in_bytes: stat.size,
       updated_at: stat.mtime || new Date(),
       created_at: stat.birthtime || new Date(),
@@ -114,29 +54,6 @@ export async function getFiles(userId: string, path: string): Promise<DirectoryF
 
     files.push(file);
   }
-
-  // Add fileShares that aren't owned by this user
-  const foreignFileShares = fileShares.filter((fileShare) => fileShare.owner_user_id !== userId);
-  for (const share of foreignFileShares) {
-    const stat = await Deno.stat(join(getFilesRootPath(), share.owner_user_id, path, share.name));
-
-    const hasWriteAccess = share.user_ids_with_write_access.includes(userId);
-
-    const file: DirectoryFile = {
-      owner_user_id: share.owner_user_id,
-      parent_path: path,
-      file_name: share.name,
-      has_write_access: hasWriteAccess,
-      file_share: share,
-      size_in_bytes: stat.size,
-      updated_at: stat.mtime || new Date(),
-      created_at: stat.birthtime || new Date(),
-    };
-
-    files.push(file);
-  }
-
-  // TODO: Check fileshare directories and list files from there too
 
   files.sort(sortFilesByName);
 
@@ -193,23 +110,6 @@ export async function renameDirectoryOrFile(
 
   try {
     await Deno.rename(join(oldRootPath, oldName), join(newRootPath, newName));
-
-    // Update any matching file shares
-    await db.query<FileShare>(
-      sql`UPDATE "bewcloud_file_shares" SET
-      "parent_path" = $4,
-      "name" = $5
-      WHERE "parent_path" = $2
-      AND "name" = $3
-      AND "owner_user_id" = $1`,
-      [
-        userId,
-        oldPath,
-        oldName,
-        newPath,
-        newName,
-      ],
-    );
   } catch (error) {
     console.error(error);
     return false;
@@ -227,19 +127,6 @@ export async function deleteDirectoryOrFile(userId: string, path: string, name: 
     } else {
       const trashPath = join(getFilesRootPath(), userId, TRASH_PATH);
       await Deno.rename(join(rootPath, name), join(trashPath, name));
-
-      // Delete any matching file shares
-      await db.query<FileShare>(
-        sql`DELETE FROM "bewcloud_file_shares"
-        WHERE "parent_path" = $2
-        AND "name" = $3
-        AND "owner_user_id" = $1`,
-        [
-          userId,
-          path,
-          name,
-        ],
-      );
     }
   } catch (error) {
     console.error(error);
@@ -290,6 +177,8 @@ export async function getFile(
       contentType = 'image/jpeg';
     } else if (extension === 'png') {
       contentType = 'image/png';
+    } else if (extension === 'svg') {
+      contentType = 'image/svg+xml';
     } else if (extension === 'pdf') {
       contentType = 'application/pdf';
     } else if (extension === 'txt' || extension === 'md') {
@@ -309,219 +198,236 @@ export async function getFile(
   }
 }
 
-export async function createFileShare(
+export async function searchFilesAndDirectories(
   userId: string,
-  path: string,
-  name: string,
-  type: 'directory' | 'file',
-  userIdsWithReadAccess: string[],
-  userIdsWithWriteAccess: string[],
-  readShareLinks: FileShareLink[],
-  writeShareLinks: FileShareLink[],
-): Promise<FileShare> {
-  const extra: FileShare['extra'] = {
-    read_share_links: readShareLinks,
-    write_share_links: writeShareLinks,
+  searchTerm: string,
+): Promise<{ success: boolean; directories: Directory[]; files: DirectoryFile[] }> {
+  const directoryNamesResult = await searchDirectoryNames(userId, searchTerm);
+  const fileNamesResult = await searchFileNames(userId, searchTerm);
+  const fileContentsResult = await searchFileContents(userId, searchTerm);
+
+  const success = directoryNamesResult.success && fileNamesResult.success && fileContentsResult.success;
+
+  const directories = [...directoryNamesResult.directories];
+  directories.sort(sortDirectoriesByName);
+
+  const files = [...fileNamesResult.files, ...fileContentsResult.files];
+  files.sort(sortFilesByName);
+
+  return {
+    success,
+    directories,
+    files,
   };
-
-  const newFileShare = (await db.query<FileShare>(
-    sql`INSERT INTO "bewcloud_file_shares" (
-      "owner_user_id",
-      "owner_parent_path",
-      "parent_path",
-      "name",
-      "type",
-      "user_ids_with_read_access",
-      "user_ids_with_write_access",
-      "extra"
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING *`,
-    [
-      userId,
-      path,
-      '/',
-      name,
-      type,
-      userIdsWithReadAccess,
-      userIdsWithWriteAccess,
-      JSON.stringify(extra),
-    ],
-  ))[0];
-
-  return newFileShare;
 }
 
-export async function updateFileShare(fileShare: FileShare) {
-  await db.query(
-    sql`UPDATE "bewcloud_file_shares" SET
-      "owner_parent_path" = $2,
-      "parent_path" = $3,
-      "name" = $4,
-      "user_ids_with_read_access" = $5,
-      "user_ids_with_write_access" = $6,
-      "extra" = $7
-    WHERE "id" = $1`,
-    [
-      fileShare.id,
-      fileShare.owner_parent_path,
-      fileShare.parent_path,
-      fileShare.name,
-      fileShare.user_ids_with_read_access,
-      fileShare.user_ids_with_write_access,
-      JSON.stringify(fileShare.extra),
-    ],
-  );
-}
-
-export async function getDirectoryAccess(
+async function searchDirectoryNames(
   userId: string,
-  parentPath: string,
-  name?: string,
-): Promise<{ hasReadAccess: boolean; hasWriteAccess: boolean; ownerUserId: string; ownerParentPath: string }> {
-  const rootPath = join(getFilesRootPath(), userId, parentPath, name || '');
+  searchTerm: string,
+): Promise<{ success: boolean; directories: Directory[] }> {
+  const rootPath = `${getFilesRootPath()}/${userId}/`;
 
-  // If it exists in the correct filesystem path, it's the user's
+  const directories: Directory[] = [];
+
   try {
-    await Deno.stat(rootPath);
+    const controller = new AbortController();
+    const commandTimeout = setTimeout(() => controller.abort(), 10_000);
 
-    return { hasReadAccess: true, hasWriteAccess: true, ownerUserId: userId, ownerParentPath: parentPath };
+    const command = new Deno.Command(`find`, {
+      args: [
+        `.`, // proper cwd is sent below
+        `-type`,
+        `d,l`, // directories and symbolic links
+        `-iname`,
+        `*${searchTerm}*`,
+      ],
+      cwd: rootPath,
+      signal: controller.signal,
+    });
+
+    const { code, stdout, stderr } = await command.output();
+
+    if (commandTimeout) {
+      clearTimeout(commandTimeout);
+    }
+
+    if (code !== 0) {
+      if (stderr) {
+        throw new Error(new TextDecoder().decode(stderr));
+      }
+
+      throw new Error(`Unknown error running "find"`);
+    }
+
+    const output = new TextDecoder().decode(stdout);
+    const matchingDirectories = output.split('\n').map((directoryPath) => directoryPath.trim()).filter(Boolean);
+
+    for (const relativeDirectoryPath of matchingDirectories) {
+      const stat = await Deno.stat(join(rootPath, relativeDirectoryPath));
+      let parentPath = `/${relativeDirectoryPath.replace('./', '/').split('/').slice(0, -1).join('')}/`;
+      const directoryName = relativeDirectoryPath.split('/').pop()!;
+
+      if (parentPath === '//') {
+        parentPath = '/';
+      }
+
+      const directory: Directory = {
+        user_id: userId,
+        parent_path: parentPath,
+        directory_name: directoryName,
+        has_write_access: true,
+        size_in_bytes: stat.size,
+        updated_at: stat.mtime || new Date(),
+        created_at: stat.birthtime || new Date(),
+      };
+
+      directories.push(directory);
+    }
+
+    return { success: true, directories };
   } catch (error) {
     console.error(error);
   }
 
-  // Otherwise check if it's been shared with them
-  const parentPaths: string[] = [];
-  let nextParentPath: string | null = rootPath;
-
-  while (nextParentPath !== null) {
-    parentPaths.push(nextParentPath);
-
-    nextParentPath = `/${nextParentPath.split('/').filter(Boolean).slice(0, -1).join('/')}`;
-
-    if (nextParentPath === '/') {
-      parentPaths.push(nextParentPath);
-      nextParentPath = null;
-    }
-  }
-
-  const fileShare = (await db.query<FileShare>(
-    sql`SELECT * FROM "bewcloud_file_shares"
-    WHERE "parent_path" = ANY($2)
-    AND "name" = $3
-    AND "type" = 'directory'
-    AND (
-      ANY("user_ids_with_read_access") = $1
-      OR ANY("user_ids_with_write_access") = $1
-    )
-    ORDER BY "parent_path" ASC
-    LIMIT 1`,
-    [
-      userId,
-      parentPaths,
-      name,
-    ],
-  ))[0];
-
-  if (fileShare) {
-    return {
-      hasReadAccess: fileShare.user_ids_with_read_access.includes(userId) ||
-        fileShare.user_ids_with_write_access.includes(userId),
-      hasWriteAccess: fileShare.user_ids_with_write_access.includes(userId),
-      ownerUserId: fileShare.owner_user_id,
-      ownerParentPath: fileShare.owner_parent_path,
-    };
-  }
-
-  return { hasReadAccess: false, hasWriteAccess: false, ownerUserId: userId, ownerParentPath: parentPath };
+  return { success: false, directories };
 }
 
-export async function getFileAccess(
+async function searchFileNames(
   userId: string,
-  parentPath: string,
-  name: string,
-): Promise<{ hasReadAccess: boolean; hasWriteAccess: boolean; ownerUserId: string; ownerParentPath: string }> {
-  const rootPath = join(getFilesRootPath(), userId, parentPath, name);
+  searchTerm: string,
+): Promise<{ success: boolean; files: DirectoryFile[] }> {
+  const rootPath = `${getFilesRootPath()}/${userId}/`;
 
-  // If it exists in the correct filesystem path, it's the user's
+  const files: DirectoryFile[] = [];
+
   try {
-    await Deno.stat(rootPath);
+    const controller = new AbortController();
+    const commandTimeout = setTimeout(() => controller.abort(), 10_000);
 
-    return { hasReadAccess: true, hasWriteAccess: true, ownerUserId: userId, ownerParentPath: parentPath };
+    const command = new Deno.Command(`find`, {
+      args: [
+        `.`, // proper cwd is sent below
+        `-type`,
+        `f`,
+        `-iname`,
+        `*${searchTerm}*`,
+      ],
+      cwd: rootPath,
+      signal: controller.signal,
+    });
+
+    const { code, stdout, stderr } = await command.output();
+
+    if (commandTimeout) {
+      clearTimeout(commandTimeout);
+    }
+
+    if (code !== 0) {
+      if (stderr) {
+        throw new Error(new TextDecoder().decode(stderr));
+      }
+
+      throw new Error(`Unknown error running "find"`);
+    }
+
+    const output = new TextDecoder().decode(stdout);
+    const matchingFiles = output.split('\n').map((filePath) => filePath.trim()).filter(Boolean);
+
+    for (const relativeFilePath of matchingFiles) {
+      const stat = await Deno.stat(join(rootPath, relativeFilePath));
+      let parentPath = `/${relativeFilePath.replace('./', '/').split('/').slice(0, -1).join('')}/`;
+      const fileName = relativeFilePath.split('/').pop()!;
+
+      if (parentPath === '//') {
+        parentPath = '/';
+      }
+
+      const file: DirectoryFile = {
+        user_id: userId,
+        parent_path: parentPath,
+        file_name: fileName,
+        has_write_access: true,
+        size_in_bytes: stat.size,
+        updated_at: stat.mtime || new Date(),
+        created_at: stat.birthtime || new Date(),
+      };
+
+      files.push(file);
+    }
+
+    return { success: true, files };
   } catch (error) {
     console.error(error);
   }
 
-  // Otherwise check if it's been shared with them
-  let fileShare = (await db.query<FileShare>(
-    sql`SELECT * FROM "bewcloud_file_shares"
-    WHERE "parent_path" = $2
-    AND "name" = $3
-    AND "type" = 'file'
-    AND (
-      ANY("user_ids_with_read_access") = $1
-      OR ANY("user_ids_with_write_access") = $1
-    )
-    ORDER BY "parent_path" ASC
-    LIMIT 1`,
-    [
-      userId,
-      parentPath,
-      name,
-    ],
-  ))[0];
+  return { success: false, files };
+}
 
-  if (fileShare) {
-    return {
-      hasReadAccess: fileShare.user_ids_with_read_access.includes(userId) ||
-        fileShare.user_ids_with_write_access.includes(userId),
-      hasWriteAccess: fileShare.user_ids_with_write_access.includes(userId),
-      ownerUserId: fileShare.owner_user_id,
-      ownerParentPath: fileShare.owner_parent_path,
-    };
-  }
+async function searchFileContents(
+  userId: string,
+  searchTerm: string,
+): Promise<{ success: boolean; files: DirectoryFile[] }> {
+  const rootPath = `${getFilesRootPath()}/${userId}/`;
 
-  // Otherwise check if it's a parent directory has been shared with them, which would also give them access
-  const parentPaths: string[] = [];
-  let nextParentPath: string | null = rootPath;
+  const files: DirectoryFile[] = [];
 
-  while (nextParentPath !== null) {
-    parentPaths.push(nextParentPath);
+  try {
+    const controller = new AbortController();
+    const commandTimeout = setTimeout(() => controller.abort(), 10_000);
 
-    nextParentPath = `/${nextParentPath.split('/').filter(Boolean).slice(0, -1).join('/')}`;
+    const command = new Deno.Command(`grep`, {
+      args: [
+        `-rHisl`,
+        `${searchTerm}`,
+        `.`, // proper cwd is sent below
+      ],
+      cwd: rootPath,
+      signal: controller.signal,
+    });
 
-    if (nextParentPath === '/') {
-      parentPaths.push(nextParentPath);
-      nextParentPath = null;
+    const { code, stdout, stderr } = await command.output();
+
+    if (commandTimeout) {
+      clearTimeout(commandTimeout);
     }
+
+    if (code !== 0) {
+      if (stderr) {
+        throw new Error(new TextDecoder().decode(stderr));
+      }
+
+      throw new Error(`Unknown error running "grep"`);
+    }
+
+    const output = new TextDecoder().decode(stdout);
+    const matchingFiles = output.split('\n').map((filePath) => filePath.trim()).filter(Boolean);
+
+    for (const relativeFilePath of matchingFiles) {
+      const stat = await Deno.stat(join(rootPath, relativeFilePath));
+      let parentPath = `/${relativeFilePath.replace('./', '/').split('/').slice(0, -1).join('')}/`;
+      const fileName = relativeFilePath.split('/').pop()!;
+
+      if (parentPath === '//') {
+        parentPath = '/';
+      }
+
+      const file: DirectoryFile = {
+        user_id: userId,
+        parent_path: parentPath,
+        file_name: fileName,
+        has_write_access: true,
+        size_in_bytes: stat.size,
+        updated_at: stat.mtime || new Date(),
+        created_at: stat.birthtime || new Date(),
+      };
+
+      files.push(file);
+    }
+
+    return { success: true, files };
+  } catch (error) {
+    console.error(error);
   }
 
-  fileShare = (await db.query<FileShare>(
-    sql`SELECT * FROM "bewcloud_file_shares"
-    WHERE "parent_path" = ANY($2)
-    AND "name" = $3
-    AND "type" = 'directory'
-    AND (
-      ANY("user_ids_with_read_access") = $1
-      OR ANY("user_ids_with_write_access") = $1
-    )
-    ORDER BY "parent_path" ASC
-    LIMIT 1`,
-    [
-      userId,
-      parentPaths,
-      name,
-    ],
-  ))[0];
-
-  if (fileShare) {
-    return {
-      hasReadAccess: fileShare.user_ids_with_read_access.includes(userId) ||
-        fileShare.user_ids_with_write_access.includes(userId),
-      hasWriteAccess: fileShare.user_ids_with_write_access.includes(userId),
-      ownerUserId: fileShare.owner_user_id,
-      ownerParentPath: fileShare.owner_parent_path,
-    };
-  }
-
-  return { hasReadAccess: false, hasWriteAccess: false, ownerUserId: userId, ownerParentPath: parentPath };
+  return { success: false, files };
 }

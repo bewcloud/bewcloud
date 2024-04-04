@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Directory, FreshContextState } from '/lib/types.ts';
-import { createDirectory, getDirectories, getDirectoryAccess } from '/lib/data/files.ts';
+import { createDirectory, getDirectories } from '/lib/data/files.ts';
 
 interface Data {}
 
@@ -30,19 +30,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const { hasWriteAccess, ownerUserId, ownerParentPath } = await getDirectoryAccess(
+    const createdDirectory = await createDirectory(
       context.state.user.id,
       requestBody.parentPath,
-      requestBody.name.trim(),
-    );
-
-    if (!hasWriteAccess) {
-      return new Response('Forbidden', { status: 403 });
-    }
-
-    const createdDirectory = await createDirectory(
-      ownerUserId,
-      ownerParentPath,
       requestBody.name.trim(),
     );
 

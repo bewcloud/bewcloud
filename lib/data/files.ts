@@ -391,7 +391,7 @@ async function searchFileContents(
       clearTimeout(commandTimeout);
     }
 
-    if (code !== 0) {
+    if (code > 1) {
       if (stderr) {
         throw new Error(new TextDecoder().decode(stderr));
       }

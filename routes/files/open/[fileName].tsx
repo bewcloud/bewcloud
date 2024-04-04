@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { getFile, getDirectoryAccess, getFileAccess } from '/lib/data/files.ts';
+import { getDirectoryAccess, getFile, getFileAccess } from '/lib/data/files.ts';
 
 interface Data {}
 

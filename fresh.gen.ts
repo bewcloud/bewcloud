@@ -23,6 +23,7 @@ import * as $api_news_import_feeds from './routes/api/news/import-feeds.tsx';
 import * as $api_news_mark_read from './routes/api/news/mark-read.tsx';
 import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.tsx';
 import * as $dashboard from './routes/dashboard.tsx';
+import * as $dav from './routes/dav.tsx';
 import * as $files from './routes/files.tsx';
 import * as $files_open_fileName_ from './routes/files/open/[fileName].tsx';
 import * as $index from './routes/index.tsx';
@@ -63,6 +64,7 @@ const manifest = {
     './routes/api/news/mark-read.tsx': $api_news_mark_read,
     './routes/api/news/refresh-articles.tsx': $api_news_refresh_articles,
     './routes/dashboard.tsx': $dashboard,
+    './routes/dav.tsx': $dav,
     './routes/files.tsx': $files,
     './routes/files/open/[fileName].tsx': $files_open_fileName_,
     './routes/index.tsx': $index,

@@ -2,6 +2,8 @@
   "imports": {
     "/": "./",
     "./": "./",
+    "xml": "https://deno.land/x/xml@2.1.3/mod.ts",
+    "mrmime": "https://deno.land/x/mrmime@v2.0.0/mod.ts",
 
     "fresh/": "https://deno.land/x/fresh@1.6.8/",
     "$fresh/": "https://deno.land/x/fresh@1.6.8/",

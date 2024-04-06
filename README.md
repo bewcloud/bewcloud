@@ -56,15 +56,17 @@ $ make build # generates all static files for production deploy
 
 Just push to the `main` branch.
 
-## Tentative Roadmap:
+## Tentative Roadmap for a v1 beta:
 
 - [x] Dashboard with URLs and Notes
 - [x] News
 - [x] Files UI
-- [ ] Desktop app for selective file sync (WebDav or potentially just `rclone` or `rsync`)
-- [ ] Mobile app for offline file sync
-- [ ] Add notes support for mobile app
-- [ ] Add photos/sync support for mobile client
+- [x] WebDav Server
+- [ ] Desktop app for selective file sync (`rclone` via WebDav)
+- [ ] Mobile app for offline file view (WebDav client)
+- [ ] Add photo auto-uplod support for mobile client
+- [ ] Add notes view support for mobile app
+- [ ] Add notes edit support for mobile app
 - [ ] Notes UI
 - [ ] Photos UI
 - [ ] Address `TODO:`s in code

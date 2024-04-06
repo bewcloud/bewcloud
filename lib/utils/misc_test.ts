@@ -1,7 +1,6 @@
 import { assertEquals } from 'std/assert/assert_equals.ts';
 import {
   convertFormDataToObject,
-  convertObjectToDavXml,
   convertObjectToFormData,
   escapeHtml,
   generateHash,
@@ -245,50 +244,5 @@ Deno.test('that convertObjectToFormData works', () => {
   for (const test of tests) {
     const output = convertObjectToFormData(test.input);
     assertEquals(convertFormDataToObject(output), convertFormDataToObject(test.expected));
-  }
-});
-
-Deno.test('that convertObjectToDavXml works', () => {
-  const tests: { input: Record<string, any>; expected: string }[] = [
-    {
-      input: {
-        url: 'https://bewcloud.com',
-      },
-      expected: `<url>https://bewcloud.com</url>`,
-    },
-    {
-      input: {
-        a: 'Website',
-        a_attributes: {
-          href: 'https://bewcloud.com',
-          target: '_blank',
-        },
-      },
-      expected: `<a href="https://bewcloud.com" target="_blank">Website</a>`,
-    },
-    {
-      input: {
-        article: {
-          p: [
-            {
-              strong: 'Indeed',
-            },
-            {
-              i: {},
-            },
-            'Mighty!',
-          ],
-        },
-        article_attributes: {
-          class: 'center',
-        },
-      },
-      expected: `<article class="center"><p><strong>Indeed</strong></p>\n<p><i /></p>\n<p>Mighty!</p></article>`,
-    },
-  ];
-
-  for (const test of tests) {
-    const result = convertObjectToDavXml(test.input);
-    assertEquals(result, test.expected);
   }
 });

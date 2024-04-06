@@ -1,4 +1,5 @@
 import { join } from 'std/path/join.ts';
+import { lookup } from 'mrmime';
 
 import { getFilesRootPath } from '/lib/config.ts';
 import { Directory, DirectoryFile } from '/lib/types.ts';
@@ -168,22 +169,9 @@ export async function getFile(
   try {
     const contents = await Deno.readFile(join(rootPath, name));
 
-    let contentType = 'application/octet-stream';
-
-    // NOTE: Detecting based on extension is not accurate, but installing a dependency like `npm:file-types` just for this seems unnecessary
     const extension = name.split('.').slice(-1).join('').toLowerCase();
 
-    if (extension === 'jpg' || extension === 'jpeg') {
-      contentType = 'image/jpeg';
-    } else if (extension === 'png') {
-      contentType = 'image/png';
-    } else if (extension === 'svg') {
-      contentType = 'image/svg+xml';
-    } else if (extension === 'pdf') {
-      contentType = 'application/pdf';
-    } else if (extension === 'txt' || extension === 'md') {
-      contentType = 'text/plain';
-    }
+    const contentType = lookup(extension) || 'application/octet-stream';
 
     return {
       success: true,

@@ -1,6 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
+import { baseUrl } from '/lib/utils/misc.ts';
 import { ResponseBody as UploadResponseBody } from '/routes/api/files/upload.tsx';
 import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/routes/api/files/rename.tsx';
 import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/routes/api/files/move.tsx';
@@ -497,6 +498,11 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
             : null}
           {!isDeleting.value && !isAdding.value && !isUploading.value && !isUpdating.value ? <>&nbsp;</> : null}
         </span>
+      </section>
+
+      <section class='flex flex-row items-center justify-start my-12'>
+        <span class='font-semibold'>WebDav URL:</span>{' '}
+        <code class='bg-slate-600 mx-2 px-2 py-1 rounded-md'>{baseUrl}/dav</code>
       </section>
 
       <CreateDirectoryModal

@@ -54,39 +54,43 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
   function onClickUploadFile() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
+    fileInput.multiple = true;
     fileInput.click();
 
     fileInput.onchange = async (event) => {
-      const chosenFiles = (event.target as HTMLInputElement)?.files!;
-      const chosenFile = chosenFiles[0];
+      const chosenFilesList = (event.target as HTMLInputElement)?.files!;
 
-      if (!chosenFile) {
-        return;
-      }
+      const chosenFiles = Array.from(chosenFilesList);
 
       isUploading.value = true;
 
-      areNewOptionsOption.value = false;
-
-      const requestBody = new FormData();
-      requestBody.set('parent_path', path.value);
-      requestBody.set('name', chosenFile.name);
-      requestBody.set('contents', chosenFile);
-
-      try {
-        const response = await fetch(`/api/files/upload`, {
-          method: 'POST',
-          body: requestBody,
-        });
-        const result = await response.json() as UploadResponseBody;
-
-        if (!result.success) {
-          throw new Error('Failed to upload file!');
+      for (const chosenFile of chosenFiles) {
+        if (!chosenFile) {
+          continue;
         }
 
-        files.value = [...result.newFiles];
-      } catch (error) {
-        console.error(error);
+        areNewOptionsOption.value = false;
+
+        const requestBody = new FormData();
+        requestBody.set('parent_path', path.value);
+        requestBody.set('name', chosenFile.name);
+        requestBody.set('contents', chosenFile);
+
+        try {
+          const response = await fetch(`/api/files/upload`, {
+            method: 'POST',
+            body: requestBody,
+          });
+          const result = await response.json() as UploadResponseBody;
+
+          if (!result.success) {
+            throw new Error('Failed to upload file!');
+          }
+
+          files.value = [...result.newFiles];
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       isUploading.value = false;

@@ -24,7 +24,7 @@ export const actionWords = new Map<Action, string>([
   ['change-email', 'change email'],
   ['verify-change-email', 'change email'],
   ['change-password', 'change password'],
-  ['change-dav-password', 'change DAV password'],
+  ['change-dav-password', 'change Sync password'],
   ['delete-account', 'delete account'],
 ]);
 
@@ -83,11 +83,11 @@ function formFields(action: Action, formData: FormData) {
   } else if (action === 'change-dav-password') {
     fields.push({
       name: 'new-dav-password',
-      label: 'New DAV Password',
+      label: 'New Sync Password',
       type: 'password',
       placeholder: 'super-SECRET-passphrase',
       required: true,
-      description: 'Alternative password used for DAV access and/or HTTP Basic Auth.',
+      description: 'Alternative password used for Sync access and/or HTTP Basic Auth.',
     });
   } else if (action === 'delete-account') {
     fields.push({
@@ -148,12 +148,12 @@ export default function Settings({ formData: formDataObject, error, notice }: Se
           </section>
         </form>
 
-        <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Change your DAV password</h2>
+        <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Change your Sync password</h2>
 
         <form method='POST' class='mb-12'>
           {formFields('change-dav-password', formData).map((field) => generateFieldHtml(field, formData))}
           <section class='flex justify-end mt-8 mb-4'>
-            <button class='button-secondary' type='submit'>Change DAV password</button>
+            <button class='button-secondary' type='submit'>Change Sync password</button>
           </section>
         </form>
 

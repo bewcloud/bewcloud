@@ -12,7 +12,12 @@ export const handler = [
       const origin = request.headers.get('Origin') || '*';
       const headers = response.headers;
       headers.set('Access-Control-Allow-Origin', origin);
-      headers.set('Access-Control-Allow-Methods', 'DELETE');
+      headers.set('Access-Control-Allow-Credentials', 'true');
+      headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS, GET, PUT, DELETE');
+      headers.set(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With',
+      );
       return response;
     }
 

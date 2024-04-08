@@ -6,6 +6,7 @@ import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.
 import { createVerificationCode, getUserByEmail, updateUser, validateVerificationCode } from '/lib/data/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { FreshContextState } from '/lib/types.ts';
+import { isEmailEnabled } from '/lib/config.ts';
 
 interface Data {
   error?: string;
@@ -60,6 +61,12 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       if (!user || user.hashed_password !== hashedPassword) {
         throw new Error('Email not found or invalid password.');
+      }
+
+      if (!isEmailEnabled() && !user.extra.is_email_verified) {
+        user.extra.is_email_verified = true;
+
+        await updateUser(user);
       }
 
       if (!user.extra.is_email_verified) {

@@ -1,6 +1,7 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { User, UserSession, VerificationCode } from '/lib/types.ts';
 import { generateRandomCode } from '/lib/utils/misc.ts';
+import { isEmailEnabled, isForeverSignupEnabled } from '/lib/config.ts';
 
 const db = new Database();
 
@@ -32,7 +33,7 @@ export async function getUserById(id: string) {
 }
 
 export async function createUser(email: User['email'], hashedPassword: User['hashed_password']) {
-  const trialDays = 30;
+  const trialDays = isForeverSignupEnabled() ? 36_525 : 30;
   const now = new Date();
   const trialEndDate = new Date(new Date().setUTCDate(new Date().getUTCDate() + trialDays));
 
@@ -42,7 +43,7 @@ export async function createUser(email: User['email'], hashedPassword: User['has
     updated_at: now.toISOString(),
   };
 
-  const extra: User['extra'] = { is_email_verified: false };
+  const extra: User['extra'] = { is_email_verified: isEmailEnabled() ? false : true };
 
   // First signup will be an admin "forever"
   if (!(await isThereAnAdmin())) {
@@ -62,7 +63,7 @@ export async function createUser(email: User['email'], hashedPassword: User['has
     [
       email,
       JSON.stringify(subscription),
-      extra.is_admin ? 'active' : 'trial',
+      extra.is_admin || isForeverSignupEnabled() ? 'active' : 'trial',
       hashedPassword,
       JSON.stringify(extra),
     ],

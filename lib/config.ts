@@ -14,6 +14,18 @@ export async function isSignupAllowed() {
   return false;
 }
 
+export function isEmailEnabled() {
+  const areEmailsAllowed = Deno.env.get('CONFIG_ENABLE_EMAILS') === 'true';
+
+  return areEmailsAllowed;
+}
+
+export function isForeverSignupEnabled() {
+  const areForeverAccountsEnabled = Deno.env.get('CONFIG_ENABLE_FOREVER_SIGNUP') === 'true';
+
+  return areForeverAccountsEnabled;
+}
+
 export function getFilesRootPath() {
   const configRootPath = Deno.env.get('CONFIG_FILES_ROOT_PATH');
 

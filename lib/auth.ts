@@ -152,7 +152,9 @@ export async function logoutUser(request: Request) {
     name: COOKIE_NAME,
     value: '',
     expires: tomorrow,
-    domain: isRunningLocally(request) ? 'localhost' : baseUrl.replace('https://', ''),
+    domain: isRunningLocally(request)
+      ? 'localhost'
+      : baseUrl.replace('https://', '').replace('http://', '').split(':')[0],
     path: '/',
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,

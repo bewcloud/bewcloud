@@ -3,9 +3,9 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 import { generateHash, helpEmail, validateEmail } from '/lib/utils/misc.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
-import { createUser, createVerificationCode, getUserByEmail } from '/lib/data/user.ts';
+import { createUser, createVerificationCode, getUserByEmail, updateUser } from '/lib/data/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
-import { isSignupAllowed } from '/lib/config.ts';
+import { isEmailEnabled, isSignupAllowed } from '/lib/config.ts';
 import { FreshContextState } from '/lib/types.ts';
 
 interface Data {
@@ -64,9 +64,11 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       const user = await createUser(email, hashedPassword);
 
-      const verificationCode = await createVerificationCode(user, user.email, 'email');
+      if (isEmailEnabled()) {
+        const verificationCode = await createVerificationCode(user, user.email, 'email');
 
-      await sendVerifyEmailEmail(user.email, verificationCode);
+        await sendVerifyEmailEmail(user.email, verificationCode);
+      }
 
       return new Response('Signup successful', {
         status: 303,

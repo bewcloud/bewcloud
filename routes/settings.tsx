@@ -12,6 +12,7 @@ import {
 import { convertFormDataToObject, generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
+import { isEmailEnabled } from '/lib/config.ts';
 import Settings, { Action, actionWords } from '/islands/Settings.tsx';
 
 interface Data {
@@ -73,7 +74,7 @@ export const handler: Handlers<Data, FreshContextState> = {
           throw new Error('Email is already in use.');
         }
 
-        if (action === 'change-email') {
+        if (action === 'change-email' && isEmailEnabled()) {
           const verificationCode = await createVerificationCode(user, email, 'email');
 
           await sendVerifyEmailEmail(email, verificationCode);
@@ -81,9 +82,11 @@ export const handler: Handlers<Data, FreshContextState> = {
           successTitle = 'Verify your email!';
           successMessage = 'You have received a code in your new email. Use it to verify it here.';
         } else {
-          const code = getFormDataField(formData, 'verification-code');
+          if (isEmailEnabled()) {
+            const code = getFormDataField(formData, 'verification-code');
 
-          await validateVerificationCode(user, email, code, 'email');
+            await validateVerificationCode(user, email, code, 'email');
+          }
 
           user.email = email;
 

@@ -11,9 +11,6 @@ This is the [bewCloud app](https://bewcloud.com) built using [Fresh](https://fre
 
 Check the [Development section below](#development).
 
-> [!NOTE]
-> You don't need to have emails (Brevo) setup to have the app work. Those are only setup and used for email verification and future needs. You can simply make any `user.status = 'active'` and `user.subscription.expires_at = new Date('2100-01-01')` to "never" expire, in the database, directly.
-
 > [!IMPORTANT]
 > Even with signups disabled (`CONFIG_ALLOW_SIGNUPS="false"`), the first signup will work and become an admin.
 

@@ -62,7 +62,7 @@ Just push to the `main` branch.
 - [x] News
 - [x] Files UI
 - [x] WebDav Server
-- [ ] Desktop app for selective file sync (`rclone` via WebDav)
+- [x] [Desktop app for selective file sync](https://github.com/bewcloud/bewcloud-desktop/releases) (`rclone` via WebDav)
 - [ ] Mobile app for offline file view (WebDav client)
 - [ ] Add photo auto-uplod support for mobile client
 - [ ] Add notes view support for mobile app

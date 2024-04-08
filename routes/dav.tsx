@@ -10,6 +10,7 @@ import {
   getProperDestinationPath,
   getPropertyNames,
 } from '/lib/utils/webdav.ts';
+import { getFile } from '/lib/data/files.ts';
 
 interface Data {}
 
@@ -49,15 +50,20 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
   if (request.method === 'GET') {
     try {
-      const stat = await Deno.stat(join(rootPath, filePath));
+      const fileResult = await getFile(context.state.user.id, filePath);
 
-      if (stat) {
-        const contents = await Deno.readFile(join(rootPath, filePath));
-
-        return new Response(contents, { status: 200 });
+      if (!fileResult.success) {
+        return new Response('Not Found', { status: 404 });
       }
 
-      return new Response('Not Found', { status: 404 });
+      return new Response(fileResult.contents!, {
+        status: 200,
+        headers: {
+          'cache-control': 'no-cache, no-store, must-revalidate',
+          'content-type': fileResult.contentType!,
+          'content-length': fileResult.byteSize!.toString(),
+        },
+      });
     } catch (error) {
       console.error(error);
     }
@@ -80,7 +86,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
   if (request.method === 'PUT') {
     const contentLengthString = request.headers.get('content-length');
     const contentLength = contentLengthString ? parseInt(contentLengthString, 10) : null;
-    const body = contentLength === 0 ? new Blob([new Uint8Array([0])]).stream() : request.body;
+    const body = contentLength === 0 ? new Blob([new Uint8Array([0])]).stream() : request.clone().body;
 
     try {
       const newFile = await Deno.open(join(rootPath, filePath), {

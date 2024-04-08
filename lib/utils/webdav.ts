@@ -24,7 +24,7 @@ export function addDavPrefixToKeys(object: Record<string, any>, prefix = 'D:'): 
 export function getPropertyNames(xml: Record<string, any>): string[] {
   const propFindElement = xml['D:propfind'] || xml.propfind;
   if (!propFindElement) {
-    return [];
+    return ['allprop'];
   }
 
   const propElement = propFindElement['D:prop'] || propFindElement.prop;
@@ -126,11 +126,11 @@ export async function buildPropFindResponse(
       for (const propKey of properties) {
         switch (propKey) {
           case 'displayname':
-            prop.displayname = isDirectory ? filePath : filePath.split('/').pop();
+            prop.displayname = isDirectory ? filePath.split('/').filter(Boolean).pop() : filePath.split('/').pop();
             break;
           case 'getcontentlength':
             if (!isDirectory) {
-              prop.getcontentlength = (stat.size ?? 0)?.toString();
+              prop.getcontentlength = stat.size?.toString() || '0';
             }
             break;
           case 'getcontenttype':
@@ -150,8 +150,24 @@ export async function buildPropFindResponse(
           case 'getetag':
             prop.etag = stat.mtime?.toUTCString();
             break;
+          case 'getctag':
+            prop.ctag = stat.mtime?.toUTCString();
+            break;
+          case 'allprop':
+            prop.displayname = isDirectory ? filePath.split('/').filter(Boolean).pop() : filePath.split('/').pop();
+            if (!isDirectory) {
+              prop.getcontentlength = stat.size?.toString() || '0';
+              prop.getcontenttype = lookup(filePath);
+            }
+            prop.resourcetype = isDirectory ? { collection: { '@xmlns:D': 'DAV:' } } : {};
+            prop.getlastmodified = stat.mtime?.toUTCString() || '';
+            prop.creationdate = stat.birthtime?.toUTCString() || '';
+            prop.etag = stat.mtime?.toUTCString();
+            prop.ctag = stat.mtime?.toUTCString();
+            break;
         }
-        if (typeof prop[propKey] === 'undefined') {
+
+        if (typeof prop[propKey] === 'undefined' && propKey !== 'allprop') {
           if (propKey.startsWith('s:')) {
             notFound[propKey.slice(2)] = { '@xmlns:s': 'SAR:' };
           } else {

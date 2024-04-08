@@ -66,6 +66,13 @@ export const handler = [
     const response = await context.next();
 
     console.info(`${new Date().toISOString()} - [${response.status}] ${request.method} ${request.url}`);
+    // NOTE: Uncomment when debugging WebDav stuff
+    // if (request.url.includes('/dav')) {
+    //   console.info(`Request`, request.headers);
+    //   console.info((await request.clone().text()) || '<No Body>');
+    //   console.info(`Response`, response.headers);
+    //   console.info(`Status`, response.status);
+    // }
 
     return response;
   },

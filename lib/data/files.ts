@@ -143,7 +143,7 @@ export async function createFile(
   name: string,
   contents: string | ArrayBuffer,
 ): Promise<boolean> {
-  const rootPath = `${getFilesRootPath()}/${userId}${path}`;
+  const rootPath = join(getFilesRootPath(), userId, path);
 
   try {
     if (typeof contents === 'string') {
@@ -162,28 +162,34 @@ export async function createFile(
 export async function getFile(
   userId: string,
   path: string,
-  name: string,
-): Promise<{ success: boolean; contents?: Uint8Array; contentType?: string }> {
-  const rootPath = `${getFilesRootPath()}/${userId}${path}`;
+  name?: string,
+): Promise<{ success: boolean; contents?: Uint8Array; contentType?: string; byteSize?: number }> {
+  const rootPath = join(getFilesRootPath(), userId, path);
 
   try {
-    const contents = await Deno.readFile(join(rootPath, name));
+    const stat = await Deno.stat(join(rootPath, name || ''));
 
-    const extension = name.split('.').slice(-1).join('').toLowerCase();
+    if (stat) {
+      const contents = await Deno.readFile(join(rootPath, name || ''));
 
-    const contentType = lookup(extension) || 'application/octet-stream';
+      const extension = (name || path).split('.').slice(-1).join('').toLowerCase();
 
-    return {
-      success: true,
-      contents,
-      contentType,
-    };
+      const contentType = lookup(extension) || 'application/octet-stream';
+
+      return {
+        success: true,
+        contents,
+        contentType,
+        byteSize: stat.size,
+      };
+    }
   } catch (error) {
     console.error(error);
-    return {
-      success: false,
-    };
   }
+
+  return {
+    success: false,
+  };
 }
 
 export async function searchFilesAndDirectories(
@@ -213,7 +219,7 @@ async function searchDirectoryNames(
   userId: string,
   searchTerm: string,
 ): Promise<{ success: boolean; directories: Directory[] }> {
-  const rootPath = `${getFilesRootPath()}/${userId}/`;
+  const rootPath = join(getFilesRootPath(), userId);
 
   const directories: Directory[] = [];
 
@@ -284,7 +290,7 @@ async function searchFileNames(
   userId: string,
   searchTerm: string,
 ): Promise<{ success: boolean; files: DirectoryFile[] }> {
-  const rootPath = `${getFilesRootPath()}/${userId}/`;
+  const rootPath = join(getFilesRootPath(), userId);
 
   const files: DirectoryFile[] = [];
 
@@ -355,7 +361,7 @@ async function searchFileContents(
   userId: string,
   searchTerm: string,
 ): Promise<{ success: boolean; files: DirectoryFile[] }> {
-  const rootPath = `${getFilesRootPath()}/${userId}/`;
+  const rootPath = join(getFilesRootPath(), userId);
 
   const files: DirectoryFile[] = [];
 

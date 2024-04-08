@@ -39,7 +39,11 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     return new Response(fileResult.contents!, {
       status: 200,
-      headers: { 'cache-control': 'no-cache, no-store, must-revalidate', 'content-type': fileResult.contentType! },
+      headers: {
+        'cache-control': 'no-cache, no-store, must-revalidate',
+        'content-type': fileResult.contentType!,
+        'content-length': fileResult.byteSize!.toString(),
+      },
     });
   },
 };

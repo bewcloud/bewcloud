@@ -9,7 +9,14 @@ This is the [bewCloud app](https://bewcloud.com) built using [Fresh](https://fre
 
 ## Self-host it!
 
-Check the [Development section below](#development).
+Download/copy [`docker-compose.yml`](/docker-compose.yml) and [`.env.sample`](/.env.sample) as `.env`.
+
+```sh
+$ docker compose up # makes the app available at http://localhost:8000
+$ docker compose run website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any updates)
+```
+
+Alternatively, check the [Development section below](#development).
 
 > [!IMPORTANT]
 > Even with signups disabled (`CONFIG_ALLOW_SIGNUPS="false"`), the first signup will work and become an admin.
@@ -25,7 +32,7 @@ Don't forget to set up your `.env` file based on `.env.sample`.
 ## Development
 
 ```sh
-$ docker compose up # (optional) runs docker with postgres, locally
+$ docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
 $ make migrate-db # runs any missing database migrations
 $ make start # runs the app
 $ make format # formats the code

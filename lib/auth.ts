@@ -18,6 +18,8 @@ export interface JwtData {
   };
 }
 
+const isBaseUrlAnIp = () => /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/.test(baseUrl);
+
 const textToData = (text: string) => new TextEncoder().encode(text);
 
 export const dataToText = (data: Uint8Array) => new TextDecoder().decode(data);
@@ -152,14 +154,17 @@ export async function logoutUser(request: Request) {
     name: COOKIE_NAME,
     value: '',
     expires: tomorrow,
-    domain: isRunningLocally(request)
-      ? 'localhost'
-      : baseUrl.replace('https://', '').replace('http://', '').split(':')[0],
     path: '/',
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
   };
+
+  if (!isBaseUrlAnIp()) {
+    cookie.domain = isRunningLocally(request)
+      ? 'localhost'
+      : baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
+  }
 
   const response = new Response('Logged Out', {
     status: 303,
@@ -203,12 +208,17 @@ export async function createSessionCookie(
     name: COOKIE_NAME,
     value: token,
     expires: newSession.expires_at,
-    domain: isRunningLocally(request) ? 'localhost' : baseUrl.replace('https://', ''),
     path: '/',
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
   };
+
+  if (!isBaseUrlAnIp()) {
+    cookie.domain = isRunningLocally(request)
+      ? 'localhost'
+      : baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
+  }
 
   setCookie(response.headers, cookie);
 
@@ -227,12 +237,17 @@ export async function updateSessionCookie(
     name: COOKIE_NAME,
     value: token,
     expires: userSession.expires_at,
-    domain: isRunningLocally(request) ? 'localhost' : baseUrl.replace('https://', ''),
     path: '/',
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
   };
+
+  if (!isBaseUrlAnIp()) {
+    cookie.domain = isRunningLocally(request)
+      ? 'localhost'
+      : baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
+  }
 
   setCookie(response.headers, cookie);
 

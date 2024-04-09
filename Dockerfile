@@ -2,6 +2,8 @@ FROM denoland/deno:ubuntu-1.41.3
 
 EXPOSE 8000
 
+RUN apt-get update && apt-get install -y make
+
 WORKDIR /app
 
 # These steps will be re-run upon each file change in your working directory:

@@ -1,4 +1,14 @@
 services:
+  website:
+    build: ghcr.io/bewcloud/bewcloud
+    restart: always
+    ports:
+      - 127.0.0.1:8000:8000
+    mem_limit: '256m'
+    user: "${UID}:${GID}" # if you run into issues with permissions for the data-files volume below, see other options at https://stackoverflow.com/a/56904335
+    volumes:
+      - ./data-files:/app/data-files
+
   postgresql:
     image: postgres:15
     environment:
@@ -7,14 +17,15 @@ services:
       - POSTGRES_DB=bewcloud
     restart: on-failure
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - bewcloud-db:/var/lib/postgresql/data
     ports:
-      - 5432:5432
+      - 127.0.0.1:5432:5432
     ulimits:
       memlock:
         soft: -1
         hard: -1
+    mem_limit: '256m'
 
 volumes:
-  pgdata:
+  bewcloud-db:
     driver: local

@@ -31,7 +31,11 @@ export const handler: Handlers<Data, FreshContextState> = {
       email = searchParams.get('email') || '';
       formData.set('email', email);
 
-      notice = `You have received a code in your email. Use it to verify your email and login.`;
+      if (isEmailEnabled()) {
+        notice = `You have received a code in your email. Use it to verify your email and login.`;
+      } else {
+        notice = `Your account was created successfully. Login below.`;
+      }
     }
 
     return await context.render({ notice, email, formData });
@@ -153,7 +157,7 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
           : null}
 
         <form method='POST' class='mb-12'>
-          {formFields(data?.email, data?.notice?.includes('verify your email')).map((field) =>
+          {formFields(data?.email, data?.notice?.includes('verify your email') && isEmailEnabled()).map((field) =>
             generateFieldHtml(field, data?.formData || new FormData())
           )}
           <section class='flex justify-center mt-8 mb-4'>

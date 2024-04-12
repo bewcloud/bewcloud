@@ -67,13 +67,12 @@ Just push to the `main` branch.
 - [x] Files UI
 - [x] WebDav Server
 - [x] [Desktop app for selective file sync](https://github.com/bewcloud/bewcloud-desktop/releases) (`rclone` via WebDav)
-- [ ] Mobile app for offline file view (WebDav client)
+- [ ] Mobile app for offline file view (API + WebDav client)
 - [ ] Add photo auto-uplod support for mobile client
 - [ ] Add notes view support for mobile app
 - [ ] Add notes edit support for mobile app
 - [ ] Notes UI
 - [ ] Photos UI
-- [ ] Address `TODO:`s in code
 
 ## Where's Contacts/Calendar (CardDav/CalDav)?! Wasn't this supposed to be a core Nextcloud replacement?
 

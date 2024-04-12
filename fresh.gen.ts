@@ -11,6 +11,7 @@ import * as $api_files_create_directory from './routes/api/files/create-director
 import * as $api_files_delete_directory from './routes/api/files/delete-directory.tsx';
 import * as $api_files_delete from './routes/api/files/delete.tsx';
 import * as $api_files_get_directories from './routes/api/files/get-directories.tsx';
+import * as $api_files_get from './routes/api/files/get.tsx';
 import * as $api_files_move_directory from './routes/api/files/move-directory.tsx';
 import * as $api_files_move from './routes/api/files/move.tsx';
 import * as $api_files_rename_directory from './routes/api/files/rename-directory.tsx';
@@ -52,6 +53,7 @@ const manifest = {
     './routes/api/files/delete-directory.tsx': $api_files_delete_directory,
     './routes/api/files/delete.tsx': $api_files_delete,
     './routes/api/files/get-directories.tsx': $api_files_get_directories,
+    './routes/api/files/get.tsx': $api_files_get,
     './routes/api/files/move-directory.tsx': $api_files_move_directory,
     './routes/api/files/move.tsx': $api_files_move,
     './routes/api/files/rename-directory.tsx': $api_files_rename_directory,

@@ -67,8 +67,8 @@ Just push to the `main` branch.
 - [x] Files UI
 - [x] WebDav Server
 - [x] [Desktop app for selective file sync](https://github.com/bewcloud/bewcloud-desktop/releases) (`rclone` via WebDav)
-- [ ] Mobile app for offline file view (API + WebDav client)
-- [ ] Add photo auto-uplod support for mobile client
+- [x] [Mobile app for offline file view](https://github.com/bewcloud/bewcloud-mobile/releases) (API + WebDav client)
+- [x] Add photo auto-uplod support for mobile client
 - [ ] Add notes view support for mobile app
 - [ ] Add notes edit support for mobile app
 - [ ] Notes UI
@@ -85,3 +85,6 @@ My focus is still to get me to replace Nextcloud for me and my family ASAP, but 
 [Check this PR for advanced sharing with internal and external users, with read and write access that was being done and almost working](https://github.com/bewcloud/bewcloud/pull/4). I ditched all that complexity for simply using [symlinks](https://en.wikipedia.org/wiki/Symbolic_link), as it served my use case (I have multiple data backups and trust the people I provide accounts to, with the symlinks).
 
 You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-to-share> /<absolute-path-to-data-files>/<user-id-to-share-with>/` to create a shared directory between two users, and the same directory can have different names, now.
+
+> [!NOTE]
+> If you're running the app with docker, the symlink needs to point to the container's directory, usually starting with `/app` if you didn't change the `Dockerfile`, otherwise the container will fail to load the linked directory.

@@ -73,3 +73,5 @@ img.red {
 img.gray {
   filter: invert(30%) sepia(46%) saturate(356%) hue-rotate(174deg) brightness(90%) contrast(82%);
 }
+
+details summary::-webkit-details-marker { display:none; }

@@ -1,4 +1,4 @@
-import { Cron } from 'https://deno.land/x/croner@7.0.1/dist/croner.js';
+import { Cron } from 'https://deno.land/x/croner@8.0.1/dist/croner.js';
 
 import { cleanupSessions } from './cleanup.ts';
 import { fetchNewArticles } from './news.ts';

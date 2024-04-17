@@ -1,6 +1,6 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
-import { Dashboard, FreshContextState } from '/lib/types.ts';
+import { FreshContextState } from '/lib/types.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import {
   createVerificationCode,
@@ -180,7 +180,7 @@ export const handler: Handlers<Data, FreshContextState> = {
   },
 };
 
-export default function Dashboard({ data }: PageProps<Data, FreshContextState>) {
+export default function SettingsPage({ data }: PageProps<Data, FreshContextState>) {
   return (
     <main>
       <Settings formData={data?.formData} error={data?.error} notice={data?.notice} />

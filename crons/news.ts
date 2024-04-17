@@ -16,10 +16,12 @@ export async function fetchNewArticles(forceFetch = false) {
       ],
     );
 
+    console.info('Will crawl', feedsToCrawl.length, 'news feeds');
+
     await concurrentPromises(feedsToCrawl.map((newsFeed) => () => crawlNewsFeed(newsFeed)), 3);
 
-    console.log('Crawled', feedsToCrawl.length, 'news feeds');
+    console.info('Crawled', feedsToCrawl.length, 'news feeds');
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }

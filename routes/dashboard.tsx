@@ -25,7 +25,7 @@ export const handler: Handlers<Data, FreshContextState> = {
   },
 };
 
-export default function Dashboard({ data }: PageProps<Data, FreshContextState>) {
+export default function DashboardPage({ data }: PageProps<Data, FreshContextState>) {
   const initialNotes = data?.userDashboard?.data?.notes || 'Jot down some notes here.';
 
   return (

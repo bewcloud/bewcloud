@@ -6,6 +6,8 @@ export async function cleanupSessions() {
   const yesterday = new Date(new Date().setUTCDate(new Date().getUTCDate() - 1));
 
   try {
+    console.info('Will cleanup user sessions');
+
     const result = await db.query<{ count: number }>(
       sql`WITH "deleted" AS (
         DELETE FROM "bewcloud_user_sessions" WHERE "expires_at" <= $1 RETURNING *
@@ -16,8 +18,8 @@ export async function cleanupSessions() {
       ],
     );
 
-    console.log('Deleted', result[0].count, 'user sessions');
+    console.info('Deleted', result[0].count, 'user sessions');
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }

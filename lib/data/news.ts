@@ -199,8 +199,8 @@ async function fetchNewsArticles(newsFeed: NewsFeed): Promise<Feed['entries'] | 
 
     return (feed as Feed)?.entries || (feed as JsonFeed)?.items || [];
   } catch (error) {
-    console.log('Failed parsing feed to get articles', newsFeed.feed_url);
-    console.log(error);
+    console.error('Failed parsing feed to get articles', newsFeed.feed_url);
+    console.error(error);
   }
 
   return [];
@@ -296,11 +296,13 @@ export async function crawlNewsFeed(newsFeed: NewsFeed) {
       }
     }
 
-    console.log('Added', addedArticlesCount, 'new articles');
+    console.info('Added', addedArticlesCount, 'new articles');
 
     newsFeed.last_crawled_at = new Date();
 
     await updateNewsFeed(newsFeed);
+
+    lock.release();
   } catch (error) {
     lock.release();
 

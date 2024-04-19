@@ -121,7 +121,7 @@ export async function concurrentPromises<T>(
   return results;
 }
 
-const MAX_RESPONSE_TIME_IN_MS = 10 * 1000;
+const MAX_RESPONSE_TIME_IN_MS = 10_000;
 
 export async function fetchUrl(url: string) {
   const abortController = new AbortController();

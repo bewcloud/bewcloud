@@ -10,9 +10,9 @@ export async function fetchNewArticles(forceFetch = false) {
 
   try {
     const feedsToCrawl = await db.query<NewsFeed>(
-      sql`SELECT * FROM "bewcloud_news_feeds" WHERE "last_crawled_at" IS NULL OR "last_crawled_at" <= $1`,
+      sql`SELECT * FROM "bewcloud_news_feeds" WHERE "last_crawled_at" IS NULL OR "last_crawled_at" <= $1 ORDER BY "last_crawled_at" ASC`,
       [
-        fourHoursAgo.toISOString().substring(0, 10),
+        fourHoursAgo.toISOString(),
       ],
     );
 

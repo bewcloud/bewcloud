@@ -20,7 +20,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const parentPath = requestBody.get('parent_path') as string;
     const name = requestBody.get('name') as string;
-    const contents = requestBody.get('contents') as File;
+    const contents = requestBody.get('contents') as File | string;
 
     if (
       !parentPath || !name.trim() || !contents || !parentPath.startsWith('/') ||
@@ -29,7 +29,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const createdFile = await createFile(context.state.user.id, parentPath, name.trim(), await contents.arrayBuffer());
+    const fileContents = typeof contents === 'string' ? contents : await contents.arrayBuffer();
+
+    const createdFile = await createFile(context.state.user.id, parentPath, name.trim(), fileContents);
 
     const newFiles = await getFiles(context.state.user.id, parentPath);
 

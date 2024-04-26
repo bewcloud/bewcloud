@@ -21,15 +21,15 @@ Alternatively, check the [Development section below](#development).
 > [!IMPORTANT]
 > Even with signups disabled (`CONFIG_ALLOW_SIGNUPS="false"`), the first signup will work and become an admin.
 
-## Requirements
-
-This was tested with [`Deno`](https://deno.land)'s version stated in the `.dvmrc` file, though other versions may work.
-
-For the postgres dependency (used when running locally or in CI), you should have `Docker` and `docker compose` installed.
-
-Don't forget to set up your `.env` file based on `.env.sample`.
-
 ## Development
+
+### Requirements
+
+- Don't forget to set up your `.env` file based on `.env.sample`.
+- This was tested with [`Deno`](https://deno.land)'s version stated in the `.dvmrc` file, though other versions may work.
+- For the postgres dependency (used when running locally or in CI), you should have `Docker` and `docker compose` installed.
+
+### Commands
 
 ```sh
 $ docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
@@ -39,7 +39,7 @@ $ make format # formats the code
 $ make test # runs tests
 ```
 
-## Other less-used commands
+### Other less-used commands
 
 ```sh
 $ make exec-db # runs psql inside the postgres container, useful for running direct development queries like `DROP DATABASE "bewcloud"; CREATE DATABASE "bewcloud";`
@@ -69,10 +69,11 @@ Just push to the `main` branch.
 - [x] [Desktop app for selective file sync](https://github.com/bewcloud/bewcloud-desktop/releases) (`rclone` via WebDav)
 - [x] [Mobile app for offline file view](https://github.com/bewcloud/bewcloud-mobile/releases) (API + WebDav client)
 - [x] Add photo auto-uplod support for mobile client
+- [x] Notes UI
+- [ ] Photos UI
 - [ ] Add notes view support for mobile app
 - [ ] Add notes edit support for mobile app
-- [ ] Notes UI
-- [ ] Photos UI
+- [ ] Respect `CONFIG_ENABLED_APPS` in `.env` for enabling apps
 
 ## Where's Contacts/Calendar (CardDav/CalDav)?! Wasn't this supposed to be a core Nextcloud replacement?
 
@@ -88,3 +89,7 @@ You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-
 
 > [!NOTE]
 > If you're running the app with docker, the symlink needs to point to the container's directory, usually starting with `/app` if you didn't change the `Dockerfile`, otherwise the container will fail to load the linked directory.
+
+## How does it look?
+
+[Check the website](https://bewcloud.com) for screenshots or [the YouTube channel](https://www.youtube.com/@bewCloud) for 1-minute demos.

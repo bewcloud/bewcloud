@@ -23,6 +23,7 @@ import * as $api_news_delete_feed from './routes/api/news/delete-feed.tsx';
 import * as $api_news_import_feeds from './routes/api/news/import-feeds.tsx';
 import * as $api_news_mark_read from './routes/api/news/mark-read.tsx';
 import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.tsx';
+import * as $api_notes_save from './routes/api/notes/save.tsx';
 import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav from './routes/dav.tsx';
 import * as $files from './routes/files.tsx';
@@ -32,6 +33,8 @@ import * as $login from './routes/login.tsx';
 import * as $logout from './routes/logout.tsx';
 import * as $news from './routes/news.tsx';
 import * as $news_feeds from './routes/news/feeds.tsx';
+import * as $notes from './routes/notes.tsx';
+import * as $notes_open_fileName_ from './routes/notes/open/[fileName].tsx';
 import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
@@ -40,6 +43,8 @@ import * as $dashboard_Notes from './islands/dashboard/Notes.tsx';
 import * as $files_FilesWrapper from './islands/files/FilesWrapper.tsx';
 import * as $news_Articles from './islands/news/Articles.tsx';
 import * as $news_Feeds from './islands/news/Feeds.tsx';
+import * as $notes_Note from './islands/notes/Note.tsx';
+import * as $notes_NotesWrapper from './islands/notes/NotesWrapper.tsx';
 import { type Manifest } from '$fresh/server.ts';
 
 const manifest = {
@@ -65,6 +70,7 @@ const manifest = {
     './routes/api/news/import-feeds.tsx': $api_news_import_feeds,
     './routes/api/news/mark-read.tsx': $api_news_mark_read,
     './routes/api/news/refresh-articles.tsx': $api_news_refresh_articles,
+    './routes/api/notes/save.tsx': $api_notes_save,
     './routes/dashboard.tsx': $dashboard,
     './routes/dav.tsx': $dav,
     './routes/files.tsx': $files,
@@ -74,6 +80,8 @@ const manifest = {
     './routes/logout.tsx': $logout,
     './routes/news.tsx': $news,
     './routes/news/feeds.tsx': $news_feeds,
+    './routes/notes.tsx': $notes,
+    './routes/notes/open/[fileName].tsx': $notes_open_fileName_,
     './routes/settings.tsx': $settings,
     './routes/signup.tsx': $signup,
   },
@@ -84,6 +92,8 @@ const manifest = {
     './islands/files/FilesWrapper.tsx': $files_FilesWrapper,
     './islands/news/Articles.tsx': $news_Articles,
     './islands/news/Feeds.tsx': $news_Feeds,
+    './islands/notes/Note.tsx': $notes_Note,
+    './islands/notes/NotesWrapper.tsx': $notes_NotesWrapper,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

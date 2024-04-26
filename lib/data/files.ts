@@ -75,6 +75,17 @@ async function getPathEntries(userId: string, path: string): Promise<Deno.DirEnt
     }
   }
 
+  // Ensure the Notes or Photos directories exist, if being requested
+  if (path === '/Notes/' || path === '/Photos/') {
+    try {
+      await Deno.stat(rootPath);
+    } catch (error) {
+      if (error.toString().includes('NotFound')) {
+        await Deno.mkdir(rootPath, { recursive: true });
+      }
+    }
+  }
+
   const entries: Deno.DirEntry[] = [];
 
   for await (const dirEntry of Deno.readDir(rootPath)) {
@@ -151,6 +162,24 @@ export async function createFile(
     } else {
       await Deno.writeFile(join(rootPath, name), new Uint8Array(contents), { append: false, createNew: true });
     }
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function updateFile(
+  userId: string,
+  path: string,
+  name: string,
+  contents: string,
+): Promise<boolean> {
+  const rootPath = join(getFilesRootPath(), userId, path);
+
+  try {
+    await Deno.writeTextFile(join(rootPath, name), contents, { append: false, createNew: false });
   } catch (error) {
     console.error(error);
     return false;

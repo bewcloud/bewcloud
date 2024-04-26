@@ -1,9 +1,12 @@
 interface FilesBreadcrumbProps {
   path: string;
+  isShowingNotes?: boolean;
 }
 
-export default function FilesBreadcrumb({ path }: FilesBreadcrumbProps) {
-  if (path === '/') {
+export default function FilesBreadcrumb({ path, isShowingNotes }: FilesBreadcrumbProps) {
+  const routePath = isShowingNotes ? 'notes' : 'files';
+
+  if (!isShowingNotes && path === '/') {
     return (
       <h3 class='text-base font-semibold text-white whitespace-nowrap mr-2'>
         All files
@@ -11,17 +14,29 @@ export default function FilesBreadcrumb({ path }: FilesBreadcrumbProps) {
     );
   }
 
+  if (isShowingNotes && path === '/Notes/') {
+    return (
+      <h3 class='text-base font-semibold text-white whitespace-nowrap mr-2'>
+        All notes
+      </h3>
+    );
+  }
+
   const pathParts = path.slice(1, -1).split('/');
+
+  if (isShowingNotes) {
+    pathParts.shift();
+  }
 
   return (
     <h3 class='text-base font-semibold text-white whitespace-nowrap mr-2'>
-      <a href={`/files?path=/`}>All files</a>
+      {isShowingNotes ? <a href={`/notes?path=/Notes/`}>All notes</a> : <a href={`/files?path=/`}>All files</a>}
       {pathParts.map((part, index) => {
         if (index === pathParts.length - 1) {
           return (
             <>
               <span class='ml-2 text-xs'>/</span>
-              <span class='ml-2'>{part}</span>
+              <span class='ml-2'>{decodeURIComponent(part)}</span>
             </>
           );
         }
@@ -35,7 +50,7 @@ export default function FilesBreadcrumb({ path }: FilesBreadcrumbProps) {
         return (
           <>
             <span class='ml-2 text-xs'>/</span>
-            <a href={`/files?path=/${fullPathForPart.join('/')}/`} class='ml-2'>{part}</a>
+            <a href={`/${routePath}?path=/${fullPathForPart.join('/')}/`} class='ml-2'>{decodeURIComponent(part)}</a>
           </>
         );
       })}

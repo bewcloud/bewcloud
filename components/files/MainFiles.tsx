@@ -409,7 +409,7 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
               <button
                 class='inline-block justify-center gap-x-1.5 rounded-md bg-[#51A4FB] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-400 ml-2'
                 type='button'
-                title='Add new event'
+                title='Add new file or directory'
                 id='new-button'
                 aria-expanded='true'
                 aria-haspopup='true'

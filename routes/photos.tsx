@@ -2,11 +2,12 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import { getDirectories, getFiles } from '/lib/data/files.ts';
-import NotesWrapper from '/islands/notes/NotesWrapper.tsx';
+import { PHOTO_EXTENSIONS } from '/lib/utils/photos.ts';
+import PhotosWrapper from '/islands/photos/PhotosWrapper.tsx';
 
 interface Data {
   userDirectories: Directory[];
-  userNotes: DirectoryFile[];
+  userPhotos: DirectoryFile[];
   currentPath: string;
 }
 
@@ -18,11 +19,11 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const searchParams = new URL(request.url).searchParams;
 
-    let currentPath = searchParams.get('path') || '/Notes/';
+    let currentPath = searchParams.get('path') || '/Photos/';
 
-    // Send invalid paths back to Notes root
-    if (!currentPath.startsWith('/Notes/') || currentPath.includes('../')) {
-      currentPath = '/Notes/';
+    // Send invalid paths back to Photos root
+    if (!currentPath.startsWith('/Photos/') || currentPath.includes('../')) {
+      currentPath = '/Photos/';
     }
 
     // Always append a trailing slash
@@ -34,18 +35,22 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const userFiles = await getFiles(context.state.user.id, currentPath);
 
-    const userNotes = userFiles.filter((file) => file.file_name.endsWith('.md'));
+    const userPhotos = userFiles.filter((file) => {
+      const lowercaseFileName = file.file_name.toLowerCase();
 
-    return await context.render({ userDirectories, userNotes, currentPath });
+      return PHOTO_EXTENSIONS.some((extension) => lowercaseFileName.endsWith(extension));
+    });
+
+    return await context.render({ userDirectories, userPhotos, currentPath });
   },
 };
 
-export default function NotesPage({ data }: PageProps<Data, FreshContextState>) {
+export default function PhotosPage({ data }: PageProps<Data, FreshContextState>) {
   return (
     <main>
-      <NotesWrapper
+      <PhotosWrapper
         initialDirectories={data.userDirectories}
-        initialFiles={data.userNotes}
+        initialFiles={data.userPhotos}
         initialPath={data.currentPath}
       />
     </main>

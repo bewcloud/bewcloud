@@ -1,37 +1,44 @@
 interface FilesBreadcrumbProps {
   path: string;
   isShowingNotes?: boolean;
+  isShowingPhotos?: boolean;
 }
 
-export default function FilesBreadcrumb({ path, isShowingNotes }: FilesBreadcrumbProps) {
-  const routePath = isShowingNotes ? 'notes' : 'files';
+export default function FilesBreadcrumb({ path, isShowingNotes, isShowingPhotos }: FilesBreadcrumbProps) {
+  let routePath = 'files';
+  let rootPath = '/';
 
-  if (!isShowingNotes && path === '/') {
-    return (
-      <h3 class='text-base font-semibold text-white whitespace-nowrap mr-2'>
-        All files
-      </h3>
-    );
+  if (isShowingNotes) {
+    routePath = 'notes';
+    rootPath = '/Notes/';
+  } else if (isShowingPhotos) {
+    routePath = 'photos';
+    rootPath = '/Photos/';
   }
 
-  if (isShowingNotes && path === '/Notes/') {
+  const itemPluralLabel = routePath;
+
+  if (path === rootPath) {
     return (
       <h3 class='text-base font-semibold text-white whitespace-nowrap mr-2'>
-        All notes
+        All {itemPluralLabel}
       </h3>
     );
   }
 
   const pathParts = path.slice(1, -1).split('/');
 
-  if (isShowingNotes) {
-    pathParts.shift();
-  }
-
   return (
     <h3 class='text-base font-semibold text-white whitespace-nowrap mr-2'>
-      {isShowingNotes ? <a href={`/notes?path=/Notes/`}>All notes</a> : <a href={`/files?path=/`}>All files</a>}
+      {!isShowingNotes && !isShowingPhotos ? <a href={`/files?path=/`}>All files</a> : null}
+      {isShowingNotes ? <a href={`/notes?path=/Notes/`}>All notes</a> : null}
+      {isShowingPhotos ? <a href={`/photos?path=/Photos/`}>All photos</a> : null}
       {pathParts.map((part, index) => {
+        // Ignore the first directory in special ones
+        if (index === 0 && (isShowingNotes || isShowingPhotos)) {
+          return null;
+        }
+
         if (index === pathParts.length - 1) {
           return (
             <>

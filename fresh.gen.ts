@@ -35,6 +35,7 @@ import * as $news from './routes/news.tsx';
 import * as $news_feeds from './routes/news/feeds.tsx';
 import * as $notes from './routes/notes.tsx';
 import * as $notes_open_fileName_ from './routes/notes/open/[fileName].tsx';
+import * as $photos from './routes/photos.tsx';
 import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
@@ -45,6 +46,7 @@ import * as $news_Articles from './islands/news/Articles.tsx';
 import * as $news_Feeds from './islands/news/Feeds.tsx';
 import * as $notes_Note from './islands/notes/Note.tsx';
 import * as $notes_NotesWrapper from './islands/notes/NotesWrapper.tsx';
+import * as $photos_PhotosWrapper from './islands/photos/PhotosWrapper.tsx';
 import { type Manifest } from '$fresh/server.ts';
 
 const manifest = {
@@ -82,6 +84,7 @@ const manifest = {
     './routes/news/feeds.tsx': $news_feeds,
     './routes/notes.tsx': $notes,
     './routes/notes/open/[fileName].tsx': $notes_open_fileName_,
+    './routes/photos.tsx': $photos,
     './routes/settings.tsx': $settings,
     './routes/signup.tsx': $signup,
   },
@@ -94,6 +97,7 @@ const manifest = {
     './islands/news/Feeds.tsx': $news_Feeds,
     './islands/notes/Note.tsx': $notes_Note,
     './islands/notes/NotesWrapper.tsx': $notes_NotesWrapper,
+    './islands/photos/PhotosWrapper.tsx': $photos_PhotosWrapper,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

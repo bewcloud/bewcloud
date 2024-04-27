@@ -8,9 +8,10 @@ interface ListFilesProps {
   onClickOpenRenameFile?: (parentPath: string, name: string) => void;
   onClickOpenMoveDirectory?: (parentPath: string, name: string) => void;
   onClickOpenMoveFile?: (parentPath: string, name: string) => void;
-  onClickDeleteDirectory: (parentPath: string, name: string) => Promise<void>;
-  onClickDeleteFile: (parentPath: string, name: string) => Promise<void>;
+  onClickDeleteDirectory?: (parentPath: string, name: string) => Promise<void>;
+  onClickDeleteFile?: (parentPath: string, name: string) => Promise<void>;
   isShowingNotes?: boolean;
+  isShowingPhotos?: boolean;
 }
 
 export default function ListFiles(
@@ -24,6 +25,7 @@ export default function ListFiles(
     onClickDeleteDirectory,
     onClickDeleteFile,
     isShowingNotes,
+    isShowingPhotos,
   }: ListFilesProps,
 ) {
   const dateFormat = new Intl.DateTimeFormat('en-GB', {
@@ -35,9 +37,23 @@ export default function ListFiles(
     minute: '2-digit',
   });
 
-  const routePath = isShowingNotes ? 'notes' : 'files';
-  const itemSingleLabel = isShowingNotes ? 'note' : 'file';
-  const itemPluralLabel = routePath;
+  let routePath = 'files';
+  let itemSingleLabel = 'file';
+  let itemPluralLabel = 'files';
+
+  if (isShowingNotes) {
+    routePath = 'notes';
+    itemSingleLabel = 'note';
+    itemPluralLabel = 'notes';
+  } else if (isShowingPhotos) {
+    routePath = 'photos';
+    itemSingleLabel = 'photo';
+    itemPluralLabel = 'photos';
+  }
+
+  if (isShowingPhotos && directories.length === 0) {
+    return null;
+  }
 
   return (
     <section class='mx-auto max-w-7xl my-8'>
@@ -46,8 +62,10 @@ export default function ListFiles(
           <tr class='border-b border-slate-600'>
             <th scope='col' class='px-6 py-4 font-medium text-white'>Name</th>
             <th scope='col' class='px-6 py-4 font-medium text-white w-56'>Last update</th>
-            {isShowingNotes ? null : <th scope='col' class='px-6 py-4 font-medium text-white w-32'>Size</th>}
-            <th scope='col' class='px-6 py-4 font-medium text-white w-20'></th>
+            {isShowingNotes || isShowingPhotos
+              ? null
+              : <th scope='col' class='px-6 py-4 font-medium text-white w-32'>Size</th>}
+            {isShowingPhotos ? null : <th scope='col' class='px-6 py-4 font-medium text-white w-20'></th>}
           </tr>
         </thead>
         <tbody class='divide-y divide-slate-600 border-t border-slate-600'>
@@ -75,59 +93,63 @@ export default function ListFiles(
                 <td class='px-6 py-4 text-slate-200'>
                   {dateFormat.format(new Date(directory.updated_at))}
                 </td>
-                {isShowingNotes ? null : (
+                {isShowingNotes || isShowingPhotos ? null : (
                   <td class='px-6 py-4 text-slate-200'>
                     -
                   </td>
                 )}
-                <td class='px-6 py-4'>
-                  {(fullPath === TRASH_PATH || typeof onClickOpenRenameDirectory === 'undefined' ||
-                      typeof onClickOpenMoveDirectory === 'undefined')
-                    ? null
-                    : (
-                      <section class='flex items-center justify-end w-20'>
-                        <span
-                          class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
-                          onClick={() => onClickOpenRenameDirectory(directory.parent_path, directory.directory_name)}
-                        >
-                          <img
-                            src='/images/rename.svg'
-                            class='white drop-shadow-md'
-                            width={18}
-                            height={18}
-                            alt='Rename directory'
-                            title='Rename directory'
-                          />
-                        </span>
-                        <span
-                          class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
-                          onClick={() => onClickOpenMoveDirectory(directory.parent_path, directory.directory_name)}
-                        >
-                          <img
-                            src='/images/move.svg'
-                            class='white drop-shadow-md'
-                            width={18}
-                            height={18}
-                            alt='Move directory'
-                            title='Move directory'
-                          />
-                        </span>
-                        <span
-                          class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100'
-                          onClick={() => onClickDeleteDirectory(directory.parent_path, directory.directory_name)}
-                        >
-                          <img
-                            src='/images/delete.svg'
-                            class='red drop-shadow-md'
-                            width={20}
-                            height={20}
-                            alt='Delete directory'
-                            title='Delete directory'
-                          />
-                        </span>
-                      </section>
-                    )}
-                </td>
+                {isShowingPhotos ? null : (
+                  <td class='px-6 py-4'>
+                    {(fullPath === TRASH_PATH || typeof onClickOpenRenameDirectory === 'undefined' ||
+                        typeof onClickOpenMoveDirectory === 'undefined')
+                      ? null
+                      : (
+                        <section class='flex items-center justify-end w-20'>
+                          <span
+                            class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                            onClick={() => onClickOpenRenameDirectory(directory.parent_path, directory.directory_name)}
+                          >
+                            <img
+                              src='/images/rename.svg'
+                              class='white drop-shadow-md'
+                              width={18}
+                              height={18}
+                              alt='Rename directory'
+                              title='Rename directory'
+                            />
+                          </span>
+                          <span
+                            class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                            onClick={() => onClickOpenMoveDirectory(directory.parent_path, directory.directory_name)}
+                          >
+                            <img
+                              src='/images/move.svg'
+                              class='white drop-shadow-md'
+                              width={18}
+                              height={18}
+                              alt='Move directory'
+                              title='Move directory'
+                            />
+                          </span>
+                          {typeof onClickDeleteDirectory === 'undefined' ? null : (
+                            <span
+                              class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100'
+                              onClick={() => onClickDeleteDirectory(directory.parent_path, directory.directory_name)}
+                            >
+                              <img
+                                src='/images/delete.svg'
+                                class='red drop-shadow-md'
+                                width={20}
+                                height={20}
+                                alt='Delete directory'
+                                title='Delete directory'
+                              />
+                            </span>
+                          )}
+                        </section>
+                      )}
+                  </td>
+                )}
               </tr>
             );
           })}
@@ -159,53 +181,57 @@ export default function ListFiles(
                   {humanFileSize(file.size_in_bytes)}
                 </td>
               )}
-              <td class='px-6 py-4'>
-                <section class='flex items-center justify-end w-20'>
-                  {typeof onClickOpenRenameFile === 'undefined' ? null : (
-                    <span
-                      class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
-                      onClick={() => onClickOpenRenameFile(file.parent_path, file.file_name)}
-                    >
-                      <img
-                        src='/images/rename.svg'
-                        class='white drop-shadow-md'
-                        width={18}
-                        height={18}
-                        alt={`Rename ${itemSingleLabel}`}
-                        title={`Rename ${itemSingleLabel}`}
-                      />
-                    </span>
-                  )}
-                  {typeof onClickOpenMoveFile === 'undefined' ? null : (
-                    <span
-                      class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
-                      onClick={() => onClickOpenMoveFile(file.parent_path, file.file_name)}
-                    >
-                      <img
-                        src='/images/move.svg'
-                        class='white drop-shadow-md'
-                        width={18}
-                        height={18}
-                        alt={`Move ${itemSingleLabel}`}
-                        title={`Move ${itemSingleLabel}`}
-                      />
-                    </span>
-                  )}
-                  <span
-                    class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100'
-                    onClick={() => onClickDeleteFile(file.parent_path, file.file_name)}
-                  >
-                    <img
-                      src='/images/delete.svg'
-                      class='red drop-shadow-md'
-                      width={20}
-                      height={20}
-                      alt={`Delete ${itemSingleLabel}`}
-                      title={`Delete ${itemSingleLabel}`}
-                    />
-                  </span>
-                </section>
-              </td>
+              {isShowingPhotos ? null : (
+                <td class='px-6 py-4'>
+                  <section class='flex items-center justify-end w-20'>
+                    {typeof onClickOpenRenameFile === 'undefined' ? null : (
+                      <span
+                        class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                        onClick={() => onClickOpenRenameFile(file.parent_path, file.file_name)}
+                      >
+                        <img
+                          src='/images/rename.svg'
+                          class='white drop-shadow-md'
+                          width={18}
+                          height={18}
+                          alt={`Rename ${itemSingleLabel}`}
+                          title={`Rename ${itemSingleLabel}`}
+                        />
+                      </span>
+                    )}
+                    {typeof onClickOpenMoveFile === 'undefined' ? null : (
+                      <span
+                        class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                        onClick={() => onClickOpenMoveFile(file.parent_path, file.file_name)}
+                      >
+                        <img
+                          src='/images/move.svg'
+                          class='white drop-shadow-md'
+                          width={18}
+                          height={18}
+                          alt={`Move ${itemSingleLabel}`}
+                          title={`Move ${itemSingleLabel}`}
+                        />
+                      </span>
+                    )}
+                    {typeof onClickDeleteFile === 'undefined' ? null : (
+                      <span
+                        class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100'
+                        onClick={() => onClickDeleteFile(file.parent_path, file.file_name)}
+                      >
+                        <img
+                          src='/images/delete.svg'
+                          class='red drop-shadow-md'
+                          width={20}
+                          height={20}
+                          alt={`Delete ${itemSingleLabel}`}
+                          title={`Delete ${itemSingleLabel}`}
+                        />
+                      </span>
+                    )}
+                  </section>
+                </td>
+              )}
             </tr>
           ))}
           {directories.length === 0 && files.length === 0

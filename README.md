@@ -68,9 +68,9 @@ Just push to the `main` branch.
 - [x] WebDav Server
 - [x] [Desktop app for selective file sync](https://github.com/bewcloud/bewcloud-desktop/releases) (`rclone` via WebDav)
 - [x] [Mobile app for offline file view](https://github.com/bewcloud/bewcloud-mobile/releases) (API + WebDav client)
-- [x] Add photo auto-uplod support for mobile client
+- [x] Add photo auto-upload support for mobile client
 - [x] Notes UI
-- [ ] Photos UI
+- [x] Photos UI
 - [ ] Add notes view support for mobile app
 - [ ] Add notes edit support for mobile app
 - [ ] Respect `CONFIG_ENABLED_APPS` in `.env` for enabling apps

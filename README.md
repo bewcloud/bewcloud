@@ -4,6 +4,10 @@
 
 This is the [bewCloud app](https://bewcloud.com) built using [Fresh](https://fresh.deno.dev) and deployed using [docker compose](https://docs.docker.com/compose/).
 
+If you're looking for the desktop sync app, it's at [`bewcloud-desktop`](https://github.com/bewcloud/bewcloud-desktop).
+
+If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github.com/bewcloud/bewcloud-mobile).
+
 > [!CAUTION]
 > This is actively being built and should be considered pre-alpha. Bugs will exist. Code and models _can_ change without a good upgrade path (though I'll try to avoid that). **Don't use it as your only source of data!**
 
@@ -60,26 +64,11 @@ $ make build # generates all static files for production deploy
 
 Just push to the `main` branch.
 
-## Tentative Roadmap for a v1 beta:
-
-- [x] Dashboard with URLs and Notes
-- [x] News
-- [x] Files UI
-- [x] WebDav Server
-- [x] [Desktop app for selective file sync](https://github.com/bewcloud/bewcloud-desktop/releases) (`rclone` via WebDav)
-- [x] [Mobile app for offline file view](https://github.com/bewcloud/bewcloud-mobile/releases) (API + WebDav client)
-- [x] Add photo auto-upload support for mobile client
-- [x] Notes UI
-- [x] Photos UI
-- [ ] Add notes view support for mobile app
-- [ ] Add notes edit support for mobile app
-- [ ] Respect `CONFIG_ENABLED_APPS` in `.env` for enabling apps
-
 ## Where's Contacts/Calendar (CardDav/CalDav)?! Wasn't this supposed to be a core Nextcloud replacement?
 
 [Check this tag/release for more info and the code where/when that was being done](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav). Contacts/CardDav worked and Calendar/CalDav mostly worked as well at that point.
 
-My focus is still to get me to replace Nextcloud for me and my family ASAP, but turns out it's not easy to do it all in a single, installable _thing_, so I'm focusing on the Files UI, sync, and sharing, since [Radicale](https://radicale.org/v3.html) solved my other issues better than my own solution (and it's already _very_ efficient).
+My focus was to get me to replace Nextcloud for me and my family ASAP, and it turns out it's not easy to do it all in a single, installable _thing_, so I focused on the Files UI, sync, and sharing, since [Radicale](https://radicale.org/v3.html) solved my other issues better than my own solution (and it's already _very_ efficient).
 
 ## How does file sharing work?
 

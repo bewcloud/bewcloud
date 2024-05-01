@@ -1,6 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
+import { isAppEnabled } from '/lib/config.ts';
 import { getDirectories, getFiles } from '/lib/data/files.ts';
 import NotesWrapper from '/islands/notes/NotesWrapper.tsx';
 
@@ -14,6 +15,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
+    }
+
+    if (!isAppEnabled('notes')) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': `/files` } });
     }
 
     const searchParams = new URL(request.url).searchParams;

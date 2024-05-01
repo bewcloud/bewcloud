@@ -1,6 +1,7 @@
 import { Head } from 'fresh/runtime.ts';
 
 import { User } from '/lib/types.ts';
+import { isAppEnabled } from '/lib/config.ts';
 
 interface Data {
   route: string;
@@ -22,28 +23,36 @@ export default function Header({ route, user }: Data) {
 
   const iconWidthAndHeightInPixels = 20;
 
-  const menuItems: MenuItem[] = [
+  const potentialMenuItems: (MenuItem | null)[] = [
     {
       url: '/dashboard',
       label: 'Dashboard',
     },
-    {
-      url: '/news',
-      label: 'News',
-    },
+    isAppEnabled('news')
+      ? {
+        url: '/news',
+        label: 'News',
+      }
+      : null,
     {
       url: '/files',
       label: 'Files',
     },
-    {
-      url: '/notes',
-      label: 'Notes',
-    },
-    {
-      url: '/photos',
-      label: 'Photos',
-    },
+    isAppEnabled('notes')
+      ? {
+        url: '/notes',
+        label: 'Notes',
+      }
+      : null,
+    isAppEnabled('photos')
+      ? {
+        url: '/photos',
+        label: 'Photos',
+      }
+      : null,
   ];
+
+  const menuItems = potentialMenuItems.filter(Boolean) as MenuItem[];
 
   if (user) {
     const activeMenu = menuItems.find((menu) => route.startsWith(menu.url));

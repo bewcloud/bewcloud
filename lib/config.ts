@@ -14,6 +14,12 @@ export async function isSignupAllowed() {
   return false;
 }
 
+export function isAppEnabled(app: 'news' | 'notes' | 'photos') {
+  const enabledApps = (Deno.env.get('CONFIG_ENABLED_APPS') || '').split(',') as typeof app[];
+
+  return enabledApps.includes(app);
+}
+
 export function isEmailEnabled() {
   const areEmailsAllowed = Deno.env.get('CONFIG_ENABLE_EMAILS') === 'true';
 
@@ -27,7 +33,7 @@ export function isForeverSignupEnabled() {
 }
 
 export function getFilesRootPath() {
-  const configRootPath = Deno.env.get('CONFIG_FILES_ROOT_PATH');
+  const configRootPath = Deno.env.get('CONFIG_FILES_ROOT_PATH') || '';
 
   const filesRootPath = `${Deno.cwd()}/${configRootPath}`;
 

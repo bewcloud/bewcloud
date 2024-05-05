@@ -8,10 +8,13 @@ If you're looking for the desktop sync app, it's at [`bewcloud-desktop`](https:/
 
 If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github.com/bewcloud/bewcloud-mobile).
 
-> [!CAUTION]
-> This is actively being built and should be considered pre-alpha. Bugs will exist. Code and models _can_ change without a good upgrade path (though I'll try to avoid that). **Don't use it as your only source of data!**
-
 ## Self-host it!
+
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/bewcloud/bewcloud)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/bewcloud/bewcloud)
+
+Or on your own machine:
 
 Download/copy [`docker-compose.yml`](/docker-compose.yml) and [`.env.sample`](/.env.sample) as `.env`.
 
@@ -54,8 +57,8 @@ $ make build # generates all static files for production deploy
 
 - Routes defined at `routes/`.
 - Static files are defined at `static/`.
-- Static frontend components are defined at `components/`.
-- Interactive frontend components are defined at `islands/`.
+- Frontend-only components are defined at `components/`.
+- Isomorphic components are defined at `islands/`.
 - Cron jobs are defined at `crons/`.
 - Reusable bits of code are defined at `lib/`.
 - Database migrations are defined at `db-migrations/`.

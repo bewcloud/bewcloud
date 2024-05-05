@@ -4,6 +4,7 @@ import { parse, stringify } from 'xml';
 
 import { FreshContextState } from '/lib/types.ts';
 import { getFilesRootPath } from '/lib/config.ts';
+import Locker from '/lib/interfaces/locker.ts';
 import {
   addDavPrefixToKeys,
   buildPropFindResponse,
@@ -148,8 +149,10 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     const xml = await request.clone().text();
     const parsedXml = parse(xml) as Record<string, any>;
 
-    // TODO: This should create an actual lock, not just "pretend", and have it checked when fetching a directory/file
     const lockToken = crypto.randomUUID();
+    const lock = new Locker(`dav:${lockToken}`);
+
+    await lock.acquire();
 
     const responseXml: Record<string, any> = {
       xml: {
@@ -188,8 +191,9 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
   }
 
   if (request.method === 'UNLOCK') {
-    // TODO: This should release an actual lock, not just "pretend"
-    // const lockToken = request.headers.get('Lock-Token');
+    const lockToken = request.headers.get('Lock-Token');
+    const lock = new Locker(`dav:${lockToken}`);
+    lock.release();
 
     return new Response(null, {
       status: 204,

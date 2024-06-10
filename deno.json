@@ -14,11 +14,27 @@
   "lint": {
     "rules": {
       "tags": ["fresh", "recommended"],
-      "exclude": ["no-explicit-any", "no-empty-interface", "ban-types", "no-window"]
+      "exclude": ["no-explicit-any", "no-empty-interface", "ban-types", "no-window", "no-unused-vars"]
     }
   },
   "exclude": ["./_fresh/*", "./node_modules/*", "**/_fresh/*"],
   "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
   "nodeModulesDir": true,
-  "importMap": "./import_map.json"
+  "imports": {
+    "/": "./",
+    "./": "./",
+    "xml": "https://deno.land/x/xml@2.1.3/mod.ts",
+    "mrmime": "https://deno.land/x/mrmime@v2.0.0/mod.ts",
+    "fresh/": "https://deno.land/x/fresh@1.6.8/",
+    "$fresh/": "https://deno.land/x/fresh@1.6.8/",
+    "preact": "https://esm.sh/preact@10.19.6",
+    "preact/": "https://esm.sh/preact@10.19.6/",
+    "@preact/signals": "https://esm.sh/*@preact/signals@1.2.2",
+    "@preact/signals-core": "https://esm.sh/*@preact/signals-core@1.5.1",
+    "tailwindcss": "npm:tailwindcss@3.4.4",
+    "tailwindcss/": "npm:/tailwindcss@3.4.4/",
+    "tailwindcss/plugin": "npm:/tailwindcss@3.4.4/plugin.js",
+    "std/": "https://deno.land/std@0.224.0/",
+    "$std/": "https://deno.land/std@0.224.0/"
+  }
 }

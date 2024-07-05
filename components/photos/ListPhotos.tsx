@@ -48,7 +48,7 @@ export default function ListPhotos(
                     {isImage
                       ? (
                         <img
-                          src={`/files/open/${file.file_name}?path=${file.parent_path}`}
+                          src={`/photos/thumbnail/${file.file_name}?path=${file.parent_path}`}
                           class='h-auto max-w-full rounded-md'
                           alt={file.file_name}
                           title={file.file_name}

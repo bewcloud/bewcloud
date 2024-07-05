@@ -36,6 +36,7 @@ import * as $news_feeds from './routes/news/feeds.tsx';
 import * as $notes from './routes/notes.tsx';
 import * as $notes_open_fileName_ from './routes/notes/open/[fileName].tsx';
 import * as $photos from './routes/photos.tsx';
+import * as $photos_thumbnail_fileName_ from './routes/photos/thumbnail/[fileName].tsx';
 import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
@@ -85,6 +86,7 @@ const manifest = {
     './routes/notes.tsx': $notes,
     './routes/notes/open/[fileName].tsx': $notes_open_fileName_,
     './routes/photos.tsx': $photos,
+    './routes/photos/thumbnail/[fileName].tsx': $photos_thumbnail_fileName_,
     './routes/settings.tsx': $settings,
     './routes/signup.tsx': $signup,
   },

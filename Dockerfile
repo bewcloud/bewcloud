@@ -1,4 +1,4 @@
-FROM denoland/deno:ubuntu-1.44.1
+FROM denoland/deno:ubuntu-1.45.1
 
 EXPOSE 8000
 

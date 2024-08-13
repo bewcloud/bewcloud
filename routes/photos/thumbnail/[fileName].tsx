@@ -1,5 +1,5 @@
 import { Handlers } from 'fresh/server.ts';
-import { ImageMagick, initialize, MagickGeometry } from 'imagemagick';
+import { resize } from 'https://deno.land/x/deno_image@0.0.4/mod.ts';
 
 import { FreshContextState } from '/lib/types.ts';
 import { getFile } from '/lib/data/files.ts';
@@ -53,20 +53,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    await initialize();
-
-    const sizingData = new MagickGeometry(
-      width,
-      height,
-    );
-    sizingData.ignoreAspectRatio = false;
-
-    const resizedImageContents = await new Promise<Uint8Array>((resolve) => {
-      ImageMagick.read(fileResult.contents!, (image) => {
-        image.resize(sizingData);
-        image.write((data) => resolve(data));
-      });
-    });
+    const resizedImageContents = await resize(fileResult.contents!, { width, height, aspectRatio: true });
 
     return new Response(resizedImageContents, {
       status: 200,

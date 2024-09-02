@@ -4,6 +4,10 @@ import { humanFileSize, TRASH_PATH } from '/lib/utils/files.ts';
 interface ListFilesProps {
   directories: Directory[];
   files: DirectoryFile[];
+  chosenDirectories?: Pick<Directory, 'parent_path' | 'directory_name'>[];
+  chosenFiles?: Pick<DirectoryFile, 'parent_path' | 'file_name'>[];
+  onClickChooseFile?: (parentPath: string, name: string) => void;
+  onClickChooseDirectory?: (parentPath: string, name: string) => void;
   onClickOpenRenameDirectory?: (parentPath: string, name: string) => void;
   onClickOpenRenameFile?: (parentPath: string, name: string) => void;
   onClickOpenMoveDirectory?: (parentPath: string, name: string) => void;
@@ -18,6 +22,10 @@ export default function ListFiles(
   {
     directories,
     files,
+    chosenDirectories = [],
+    chosenFiles = [],
+    onClickChooseFile,
+    onClickChooseDirectory,
     onClickOpenRenameDirectory,
     onClickOpenRenameFile,
     onClickOpenMoveDirectory,
@@ -55,13 +63,38 @@ export default function ListFiles(
     return null;
   }
 
+  const isAnyItemChosen = chosenDirectories.length > 0 || chosenFiles.length > 0;
+
+  function chooseAllItems() {
+    if (typeof onClickChooseFile !== 'undefined') {
+      files.forEach((files) => onClickChooseFile(files.parent_path, files.file_name));
+    }
+
+    if (typeof onClickChooseDirectory !== 'undefined') {
+      directories.forEach((directory) => onClickChooseDirectory(directory.parent_path, directory.directory_name));
+    }
+  }
+
   return (
     <section class='mx-auto max-w-7xl my-8'>
       <table class='w-full border-collapse bg-gray-900 text-left text-sm text-slate-500 shadow-sm rounded-md'>
         <thead>
           <tr class='border-b border-slate-600'>
+            {(directories.length === 0 && files.length === 0) ||
+                (typeof onClickChooseFile === 'undefined' && typeof onClickChooseDirectory === 'undefined')
+              ? null
+              : (
+                <th scope='col' class='pl-6 pr-2 font-medium text-white w-3'>
+                  <input
+                    class='w-3 h-3 cursor-pointer text-[#51A4FB] bg-slate-100 border-slate-300 rounded dark:bg-slate-700 dark:border-slate-600'
+                    type='checkbox'
+                    onClick={() => chooseAllItems()}
+                    checked={isAnyItemChosen}
+                  />
+                </th>
+              )}
             <th scope='col' class='px-6 py-4 font-medium text-white'>Name</th>
-            <th scope='col' class='px-6 py-4 font-medium text-white w-56'>Last update</th>
+            <th scope='col' class='px-6 py-4 font-medium text-white w-64'>Last update</th>
             {isShowingNotes || isShowingPhotos
               ? null
               : <th scope='col' class='px-6 py-4 font-medium text-white w-32'>Size</th>}
@@ -74,6 +107,21 @@ export default function ListFiles(
 
             return (
               <tr class='bg-slate-700 hover:bg-slate-600 group'>
+                {typeof onClickChooseDirectory === 'undefined' ? null : (
+                  <td class='gap-3 pl-6 pr-2 py-4'>
+                    {fullPath === TRASH_PATH ? null : (
+                      <input
+                        class='w-3 h-3 cursor-pointer text-[#51A4FB] bg-slate-100 border-slate-300 rounded dark:bg-slate-700 dark:border-slate-600'
+                        type='checkbox'
+                        onClick={() => onClickChooseDirectory(directory.parent_path, directory.directory_name)}
+                        checked={Boolean(chosenDirectories.find((_directory) =>
+                          _directory.parent_path === directory.parent_path &&
+                          _directory.directory_name === directory.directory_name
+                        ))}
+                      />
+                    )}
+                  </td>
+                )}
                 <td class='flex gap-3 px-6 py-4'>
                   <a
                     href={`/${routePath}?path=${fullPath}`}
@@ -155,6 +203,20 @@ export default function ListFiles(
           })}
           {files.map((file) => (
             <tr class='bg-slate-700 hover:bg-slate-600 group'>
+              {typeof onClickChooseFile === 'undefined' ? null : (
+                <td class='gap-3 pl-6 pr-2 py-4'>
+                  <input
+                    class='w-3 h-3 cursor-pointer text-[#51A4FB] bg-slate-100 border-slate-300 rounded dark:bg-slate-700 dark:border-slate-600'
+                    type='checkbox'
+                    onClick={() => onClickChooseFile(file.parent_path, file.file_name)}
+                    checked={Boolean(
+                      chosenFiles.find((_file) =>
+                        _file.parent_path === file.parent_path && _file.file_name === file.file_name
+                      ),
+                    )}
+                  />
+                </td>
+              )}
               <td class='flex gap-3 px-6 py-4'>
                 <a
                   href={`/${routePath}/open/${file.file_name}?path=${file.parent_path}`}
@@ -237,7 +299,7 @@ export default function ListFiles(
           {directories.length === 0 && files.length === 0
             ? (
               <tr>
-                <td class='flex gap-3 px-6 py-4 font-normal' colspan={4}>
+                <td class='flex gap-3 px-6 py-4 font-normal' colspan={5}>
                   <div class='text-md'>
                     <div class='font-medium text-slate-400'>No {itemPluralLabel} to show</div>
                   </div>

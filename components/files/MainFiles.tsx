@@ -43,7 +43,12 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
   const directories = useSignal<Directory[]>(initialDirectories);
   const files = useSignal<DirectoryFile[]>(initialFiles);
   const path = useSignal<string>(initialPath);
-  const areNewOptionsOption = useSignal<boolean>(false);
+  const chosenDirectories = useSignal<Pick<Directory, 'parent_path' | 'directory_name'>[]>([]);
+  const chosenFiles = useSignal<Pick<DirectoryFile, 'parent_path' | 'file_name'>[]>([]);
+  const isAnyItemChosen = chosenDirectories.value.length > 0 || chosenFiles.value.length > 0;
+  const bulkItemsCount = chosenDirectories.value.length + chosenFiles.value.length;
+  const areNewOptionsOpen = useSignal<boolean>(false);
+  const areBulkOptionsOpen = useSignal<boolean>(false);
   const isNewDirectoryModalOpen = useSignal<boolean>(false);
   const renameDirectoryOrFileModal = useSignal<
     { isOpen: boolean; isDirectory: boolean; parentPath: string; name: string } | null
@@ -70,7 +75,7 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
           continue;
         }
 
-        areNewOptionsOption.value = false;
+        areNewOptionsOpen.value = false;
 
         const requestBody = new FormData();
         requestBody.set('parent_path', path.value);
@@ -116,7 +121,7 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
       return;
     }
 
-    areNewOptionsOption.value = false;
+    areNewOptionsOpen.value = false;
     isAdding.value = true;
 
     try {
@@ -149,7 +154,11 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
   }
 
   function toggleNewOptionsDropdown() {
-    areNewOptionsOption.value = !areNewOptionsOption.value;
+    areNewOptionsOpen.value = !areNewOptionsOpen.value;
+  }
+
+  function toggleBulkOptionsDropdown() {
+    areBulkOptionsOpen.value = !areBulkOptionsOpen.value;
   }
 
   function onClickOpenRenameDirectory(parentPath: string, name: string) {
@@ -328,9 +337,9 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
     moveDirectoryOrFileModal.value = null;
   }
 
-  async function onClickDeleteDirectory(parentPath: string, name: string) {
-    if (confirm('Are you sure you want to delete this directory?')) {
-      if (isDeleting.value) {
+  async function onClickDeleteDirectory(parentPath: string, name: string, isBulkDeleting = false) {
+    if (isBulkDeleting || confirm('Are you sure you want to delete this directory?')) {
+      if (!isBulkDeleting && isDeleting.value) {
         return;
       }
 
@@ -360,9 +369,9 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
     }
   }
 
-  async function onClickDeleteFile(parentPath: string, name: string) {
-    if (confirm('Are you sure you want to delete this file?')) {
-      if (isDeleting.value) {
+  async function onClickDeleteFile(parentPath: string, name: string, isBulkDeleting = false) {
+    if (isBulkDeleting || confirm('Are you sure you want to delete this file?')) {
+      if (!isBulkDeleting && isDeleting.value) {
         return;
       }
 
@@ -392,12 +401,122 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
     }
   }
 
+  function onClickChooseDirectory(parentPath: string, name: string) {
+    if (parentPath === '/' && name === '.Trash') {
+      return;
+    }
+
+    const chosenDirectoryIndex = chosenDirectories.value.findIndex((directory) =>
+      directory.parent_path === parentPath && directory.directory_name === name
+    );
+
+    if (chosenDirectoryIndex === -1) {
+      chosenDirectories.value = [...chosenDirectories.value, { parent_path: parentPath, directory_name: name }];
+    } else {
+      const newChosenDirectories = chosenDirectories.peek();
+      newChosenDirectories.splice(chosenDirectoryIndex, 1);
+      chosenDirectories.value = [...newChosenDirectories];
+    }
+  }
+
+  function onClickChooseFile(parentPath: string, name: string) {
+    const chosenFileIndex = chosenFiles.value.findIndex((file) =>
+      file.parent_path === parentPath && file.file_name === name
+    );
+
+    if (chosenFileIndex === -1) {
+      chosenFiles.value = [...chosenFiles.value, { parent_path: parentPath, file_name: name }];
+    } else {
+      const newChosenFiles = chosenFiles.peek();
+      newChosenFiles.splice(chosenFileIndex, 1);
+      chosenFiles.value = [...newChosenFiles];
+    }
+  }
+
+  async function onClickBulkDelete() {
+    if (
+      confirm(
+        `Are you sure you want to delete ${bulkItemsCount === 1 ? 'this' : 'these'} ${bulkItemsCount} item${
+          bulkItemsCount === 1 ? '' : 's'
+        }?`,
+      )
+    ) {
+      if (isDeleting.value) {
+        return;
+      }
+
+      isDeleting.value = true;
+
+      try {
+        for (const directory of chosenDirectories.value) {
+          await onClickDeleteDirectory(directory.parent_path, directory.directory_name, true);
+        }
+
+        for (const file of chosenFiles.value) {
+          await onClickDeleteDirectory(file.parent_path, file.file_name, true);
+        }
+
+        chosenDirectories.value = [];
+        chosenFiles.value = [];
+      } catch (error) {
+        console.error(error);
+      }
+
+      isDeleting.value = false;
+    }
+  }
+
   return (
     <>
       <section class='flex flex-row items-center justify-between mb-4'>
         <section class='relative inline-block text-left mr-2'>
           <section class='flex flex-row items-center justify-start'>
             <SearchFiles />
+
+            {isAnyItemChosen
+              ? (
+                <section class='relative inline-block text-left ml-2'>
+                  <div>
+                    <button
+                      class='inline-block justify-center gap-x-1.5 rounded-md bg-[#51A4FB] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-400 ml-2 w-11 h-9'
+                      type='button'
+                      title='Bulk actions'
+                      id='bulk-button'
+                      aria-expanded='true'
+                      aria-haspopup='true'
+                      onClick={() => toggleBulkOptionsDropdown()}
+                    >
+                      <img
+                        src={`/images/${areBulkOptionsOpen.value ? 'hide-options' : 'show-options'}.svg`}
+                        alt='Bulk actions'
+                        class={`white w-5 max-w-5`}
+                        width={20}
+                        height={20}
+                      />
+                    </button>
+                  </div>
+
+                  <div
+                    class={`absolute left-0 z-10 mt-2 w-44 origin-top-left rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none ${
+                      !areBulkOptionsOpen.value ? 'hidden' : ''
+                    }`}
+                    role='menu'
+                    aria-orientation='vertical'
+                    aria-labelledby='bulk-button'
+                    tabindex={-1}
+                  >
+                    <div class='py-1'>
+                      <button
+                        class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
+                        onClick={() => onClickBulkDelete()}
+                      >
+                        Delete {bulkItemsCount} item{bulkItemsCount === 1 ? '' : 's'}
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )
+              : null}
           </section>
         </section>
 
@@ -427,7 +546,7 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
 
             <div
               class={`absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none ${
-                !areNewOptionsOption.value ? 'hidden' : ''
+                !areNewOptionsOpen.value ? 'hidden' : ''
               }`}
               role='menu'
               aria-orientation='vertical'
@@ -457,6 +576,10 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
         <ListFiles
           directories={directories.value}
           files={files.value}
+          chosenDirectories={chosenDirectories.value}
+          chosenFiles={chosenFiles.value}
+          onClickChooseDirectory={onClickChooseDirectory}
+          onClickChooseFile={onClickChooseFile}
           onClickOpenRenameDirectory={onClickOpenRenameDirectory}
           onClickOpenRenameFile={onClickOpenRenameFile}
           onClickOpenMoveDirectory={onClickOpenMoveDirectory}

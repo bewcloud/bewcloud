@@ -48,7 +48,7 @@ import * as $news_Feeds from './islands/news/Feeds.tsx';
 import * as $notes_Note from './islands/notes/Note.tsx';
 import * as $notes_NotesWrapper from './islands/notes/NotesWrapper.tsx';
 import * as $photos_PhotosWrapper from './islands/photos/PhotosWrapper.tsx';
-import { type Manifest } from '$fresh/server.ts';
+import type { Manifest } from '$fresh/server.ts';
 
 const manifest = {
   routes: {

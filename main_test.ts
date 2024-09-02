@@ -5,6 +5,7 @@ import { createHandler, ServeHandlerInfo } from 'fresh/server.ts';
 import manifest from './fresh.gen.ts';
 import config from './fresh.config.ts';
 
+// @ts-ignore Deno's newer types seem to have messed this up
 const CONN_INFO: ServeHandlerInfo = {
   remoteAddr: { hostname: '127.0.0.1', port: 53496, transport: 'tcp' },
 };

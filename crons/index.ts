@@ -1,8 +1,8 @@
-import { Cron } from 'https://deno.land/x/croner@8.0.1/dist/croner.js';
+import { Cron } from 'https://deno.land/x/croner@8.1.2/dist/croner.js';
 
 import { isAppEnabled } from '/lib/config.ts';
-import { cleanupSessions } from './cleanup.ts';
-import { fetchNewArticles } from './news.ts';
+import { cleanupSessions } from './sessions.ts';
+import { cleanupOldArticles, fetchNewArticles } from './news.ts';
 
 export function startCrons() {
   new Cron(
@@ -14,6 +14,10 @@ export function startCrons() {
     },
     async () => {
       await cleanupSessions();
+
+      if (isAppEnabled('news')) {
+        await cleanupOldArticles();
+      }
     },
   );
 

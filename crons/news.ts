@@ -41,10 +41,10 @@ export async function cleanupOldArticles() {
     for (const feed of feeds) {
       const recentArticlesCount = (await db.query<{ count: number }>(
         sql`SELECT COUNT("id") AS "count" FROM "bewcloud_news_feed_articles" WHERE "feed_id" = $1 AND "article_date" >= $2`,
-        [feed.id, oneMonthAgo],
+        [feed.id, oneMonthAgo.toISOString().substring(0, 10)],
       ))[0].count;
 
-      // Don't delete old articles if the feed doesn't have recent articles (to skip feeds with less items in total)
+      // Don't delete old articles if the feed doesn't have many recent articles (low frequency feeds)
       if (recentArticlesCount <= 5) {
         feedIdsToSkip.add(feed.id);
       }

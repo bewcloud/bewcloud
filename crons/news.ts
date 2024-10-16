@@ -52,7 +52,7 @@ export async function cleanupOldArticles() {
 
     const result = await db.query<{ count: number }>(
       sql`WITH "deleted" AS (
-        DELETE FROM "bewcloud_news_feed_articles" WHERE "is_read" = TRUE AND "article_date" <= $1 AND "feed_id" != ANY($2) RETURNING *
+        DELETE FROM "bewcloud_news_feed_articles" WHERE "is_read" = TRUE AND "article_date" <= $1 AND NOT ("feed_id" != ANY($2)) RETURNING *
       )
         SELECT COUNT(*) FROM "deleted"`,
       [

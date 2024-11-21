@@ -43,8 +43,11 @@ async function getMissingMigrations() {
     existingMigrations.add(migrationFile.name);
   }
 
+  // Sort migrations
+  const sortedExistingMigrations = [...existingMigrations].sort();
+
   // Add everything to run, by default
-  const migrationsToExecute = new Set([...existingMigrations]);
+  const migrationsToExecute = new Set([...sortedExistingMigrations]);
 
   try {
     const executedMigrations = await getExecutedMigrations();

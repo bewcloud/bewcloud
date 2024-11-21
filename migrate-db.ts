@@ -80,14 +80,22 @@ async function runMigrations(missingMigrations: Set<string>) {
     } catch (error) {
       console.log('Failed!');
       console.error(error);
+      throw error;
     }
   }
 }
 
-const missingMigrations = await getMissingMigrations();
+try {
+  const missingMigrations = await getMissingMigrations();
 
-await runMigrations(missingMigrations);
+  await runMigrations(missingMigrations);
 
-if (missingMigrations.size === 0) {
-  console.log('No migrations to run!');
+  if (missingMigrations.size === 0) {
+    console.log('No migrations to run!');
+  }
+
+  Deno.exit(0);
+} catch (error) {
+  console.error(error);
+  Deno.exit(1);
 }

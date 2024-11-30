@@ -35,9 +35,9 @@ spec:
           value: ${db.PORT}
         - key: POSTGRESQL_CAFILE
           scope: RUN_AND_BUILD_TIME
-          value: ""
+          value: ''
   databases:
     - name: db
       engine: PG
       production: false
-      version: "15"
+      version: '15'

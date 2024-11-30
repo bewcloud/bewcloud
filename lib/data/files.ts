@@ -69,7 +69,7 @@ async function getPathEntries(userId: string, path: string): Promise<Deno.DirEnt
     try {
       await Deno.stat(rootPath);
     } catch (error) {
-      if (error.toString().includes('NotFound')) {
+      if ((error as Error).toString().includes('NotFound')) {
         await Deno.mkdir(join(rootPath, TRASH_PATH), { recursive: true });
       }
     }
@@ -80,7 +80,7 @@ async function getPathEntries(userId: string, path: string): Promise<Deno.DirEnt
     try {
       await Deno.stat(rootPath);
     } catch (error) {
-      if (error.toString().includes('NotFound')) {
+      if ((error as Error).toString().includes('NotFound')) {
         await Deno.mkdir(rootPath, { recursive: true });
       }
     }

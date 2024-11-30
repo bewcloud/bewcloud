@@ -19,7 +19,7 @@
   },
   "exclude": ["./_fresh/*", "./node_modules/*", "**/_fresh/*"],
   "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
-  "nodeModulesDir": true,
+  "nodeModulesDir": "auto",
   "imports": {
     "/": "./",
     "./": "./",
@@ -31,9 +31,9 @@
     "preact/": "https://esm.sh/preact@10.23.2/",
     "@preact/signals": "https://esm.sh/*@preact/signals@1.3.0",
     "@preact/signals-core": "https://esm.sh/*@preact/signals-core@1.8.0",
-    "tailwindcss": "npm:tailwindcss@3.4.9",
-    "tailwindcss/": "npm:/tailwindcss@3.4.9/",
-    "tailwindcss/plugin": "npm:/tailwindcss@3.4.9/plugin.js",
+    "tailwindcss": "npm:tailwindcss@3.4.15",
+    "tailwindcss/": "npm:/tailwindcss@3.4.15/",
+    "tailwindcss/plugin": "npm:/tailwindcss@3.4.15/plugin.js",
     "std/": "https://deno.land/std@0.224.0/",
     "$std/": "https://deno.land/std@0.224.0/"
   }

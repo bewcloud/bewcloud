@@ -76,7 +76,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       });
     } catch (error) {
       console.error(error);
-      return await context.render({ error: error.toString(), email, formData });
+      return await context.render({ error: (error as Error).toString(), email, formData });
     }
   },
 };

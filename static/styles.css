@@ -7,7 +7,7 @@ h1 {
 }
 
 a {
-  @apply text-[#51A4FB] no-underline hover:underline font-semibold;
+  @apply text-[#51a4fb] no-underline hover:underline font-semibold;
 }
 
 main {
@@ -19,7 +19,7 @@ form {
 }
 
 .button {
-  @apply inline-block rounded text-white bg-[#51A4FB] hover:bg-sky-400 hover:shadow-sm px-4 py-2;
+  @apply inline-block rounded text-white bg-[#51a4fb] hover:bg-sky-400 hover:shadow-sm px-4 py-2;
 }
 
 .button-secondary {
@@ -31,10 +31,11 @@ form {
 }
 
 .input-field {
-  @apply block w-full p-2 rounded-md text-white bg-slate-700 border-transparent border focus:border-[#51A4FB] focus:bg-slate-700 outline-none focus:ring-0 shadow-sm;
+  @apply block w-full p-2 rounded-md text-white bg-slate-700 border-transparent border focus:border-[#51a4fb]
+    focus:bg-slate-700 outline-none focus:ring-0 shadow-sm;
 }
 
-.input-field[type="range"] {
+.input-field[type='range'] {
   @apply w-auto;
 }
 
@@ -74,4 +75,6 @@ img.gray {
   filter: invert(30%) sepia(46%) saturate(356%) hue-rotate(174deg) brightness(90%) contrast(82%);
 }
 
-details summary::-webkit-details-marker { display:none; }
+details summary::-webkit-details-marker {
+  display: none;
+}

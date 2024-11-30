@@ -157,7 +157,7 @@ export async function findFeedInUrl(url: string) {
     }
   } catch (error) {
     // This error can happen for huge responses, but that usually means the URL works
-    if (error.toString().includes('RangeError: Maximum call stack size exceeded')) {
+    if ((error as Error).toString().includes('RangeError: Maximum call stack size exceeded')) {
       return url;
     } else {
       console.error(error);

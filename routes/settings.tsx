@@ -169,7 +169,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       });
     } catch (error) {
       console.error(error);
-      errorMessage = error.toString();
+      errorMessage = (error as Error).toString();
       errorTitle = `Failed to ${actionWords.get(action) || action}!`;
 
       return await context.render({

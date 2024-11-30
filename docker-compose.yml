@@ -5,7 +5,7 @@ services:
     ports:
       - 127.0.0.1:8000:8000
     mem_limit: '256m'
-    user: "${UID}:${GID}" # if you run into issues with permissions for the data-files volume below, see other options at https://stackoverflow.com/a/56904335
+    user: '${UID}:${GID}' # if you run into issues with permissions for the data-files volume below, see other options at https://stackoverflow.com/a/56904335
     env_file:
       - path: .env
         required: true

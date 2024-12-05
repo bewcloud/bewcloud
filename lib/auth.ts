@@ -50,6 +50,13 @@ async function verifyAuthJwt(key: CryptoKey, jwt: string) {
   throw new Error('Invalid JWT');
 }
 
+function resolveCookieDomain(request: Request) {
+  if (!isBaseUrlAnIp() || isRunningLocally(request)) {
+    return baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
+  }
+  return '';
+}
+
 export async function getDataFromRequest(request: Request) {
   const cookies = getCookies(request.headers);
   const authorizationHeader = request.headers.get('authorization');
@@ -158,13 +165,8 @@ export async function logoutUser(request: Request) {
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
+    domain: resolveCookieDomain(request),
   };
-
-  if (!isBaseUrlAnIp()) {
-    cookie.domain = isRunningLocally(request)
-      ? 'localhost'
-      : baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
-  }
 
   const response = new Response('Logged Out', {
     status: 303,
@@ -212,13 +214,8 @@ export async function createSessionCookie(
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
+    domain: resolveCookieDomain(request),
   };
-
-  if (!isBaseUrlAnIp()) {
-    cookie.domain = isRunningLocally(request)
-      ? 'localhost'
-      : baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
-  }
 
   setCookie(response.headers, cookie);
 
@@ -241,13 +238,8 @@ export async function updateSessionCookie(
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
+    domain: resolveCookieDomain(request),
   };
-
-  if (!isBaseUrlAnIp()) {
-    cookie.domain = isRunningLocally(request)
-      ? 'localhost'
-      : baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
-  }
 
   setCookie(response.headers, cookie);
 

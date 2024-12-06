@@ -13,8 +13,43 @@ export const defaultTitle = 'bewCloud is a modern and simpler alternative to Nex
 export const defaultDescription = `Have your files under your own control.`;
 export const helpEmail = 'help@bewcloud.com';
 
-export function isRunningLocally(request: Request) {
-  return request.url.includes('localhost');
+export function isRunningLocally(request: Request): boolean {
+  try {
+    const url = new URL(request.url);
+    const hostname = url.hostname;
+
+    // Local hostnames check
+    if (['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname)) {
+      return true;
+    }
+
+    // Private IP ranges check
+    const ipParts = hostname.split('.').map(Number);
+    
+    // Check if valid IP address
+    if (ipParts.length !== 4 || ipParts.some(part => isNaN(part) || part < 0 || part > 255)) {
+      return false;
+    }
+
+    // 10.0.0.0 - 10.255.255.255
+    if (ipParts[0] === 10) {
+      return true;
+    }
+
+    // 172.16.0.0 - 172.31.255.255
+    if (ipParts[0] === 172 && ipParts[1] >= 16 && ipParts[1] <= 31) {
+      return true;
+    }
+
+    // 192.168.0.0 - 192.168.255.255
+    if (ipParts[0] === 192 && ipParts[1] === 168) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export function escapeHtml(unsafe: string) {

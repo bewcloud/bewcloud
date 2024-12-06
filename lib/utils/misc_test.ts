@@ -8,6 +8,7 @@ import {
   splitArrayInChunks,
   validateEmail,
   validateUrl,
+  isRunningLocally,
 } from './misc.ts';
 
 Deno.test('that escapeHtml works', () => {
@@ -246,3 +247,24 @@ Deno.test('that convertObjectToFormData works', () => {
     assertEquals(convertFormDataToObject(output), convertFormDataToObject(test.expected));
   }
 });
+
+
+Deno.test('that isRunningLocally works', () => {
+  const tests: { url: string; expected: boolean }[] = [
+    { url: 'http://localhost:8000', expected: true },
+    { url: 'http://127.0.0.1:8000', expected: true },
+    { url: 'http://0.0.0.0:8000', expected: true },
+    { url: 'http://10.0.0.1:8000', expected: true },
+    { url: 'http://172.16.0.1:8000', expected: true },
+    { url: 'http://192.168.0.1:8000', expected: true },
+    { url: 'http://example.com', expected: false },
+    { url: 'http://68.18.161.245:8000', expected: false },
+  ];
+
+  for (const test of tests) {
+    const request = { url: test.url } as Request;
+    const result = isRunningLocally(request);
+    assertEquals(result, test.expected);
+  }
+});
+

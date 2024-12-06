@@ -25,9 +25,9 @@ export function isRunningLocally(request: Request): boolean {
 
     // Private IP ranges check
     const ipParts = hostname.split('.').map(Number);
-    
-    // Check if valid IP address
-    if (ipParts.length !== 4 || ipParts.some(part => isNaN(part) || part < 0 || part > 255)) {
+
+    // Check if the IP address is valid
+    if (ipParts.length !== 4 || ipParts.some((part) => isNaN(part) || part < 0 || part > 255)) {
       return false;
     }
 
@@ -47,7 +47,8 @@ export function isRunningLocally(request: Request): boolean {
     }
 
     return false;
-  } catch {
+  } catch (error) {
+    console.info('Failed to check if the request is running locally', error);
     return false;
   }
 }

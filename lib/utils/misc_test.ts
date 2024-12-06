@@ -5,10 +5,10 @@ import {
   escapeHtml,
   generateHash,
   generateRandomCode,
+  isRunningLocally,
   splitArrayInChunks,
   validateEmail,
   validateUrl,
-  isRunningLocally,
 } from './misc.ts';
 
 Deno.test('that escapeHtml works', () => {
@@ -248,7 +248,6 @@ Deno.test('that convertObjectToFormData works', () => {
   }
 });
 
-
 Deno.test('that isRunningLocally works', () => {
   const tests: { url: string; expected: boolean }[] = [
     { url: 'http://localhost:8000', expected: true },
@@ -259,6 +258,9 @@ Deno.test('that isRunningLocally works', () => {
     { url: 'http://192.168.0.1:8000', expected: true },
     { url: 'http://example.com', expected: false },
     { url: 'http://68.18.161.245:8000', expected: false },
+    { url: 'https://example.com', expected: false },
+    { url: 'http://2000.10.5000.1111', expected: false },
+    { url: 'http://192.168.0.1', expected: true },
   ];
 
   for (const test of tests) {
@@ -267,4 +269,3 @@ Deno.test('that isRunningLocally works', () => {
     assertEquals(result, test.expected);
   }
 });
-

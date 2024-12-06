@@ -150,7 +150,7 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
         {data?.notice
           ? (
             <section class='notification-success'>
-              <h3>Verify your email!</h3>
+              <h3>{isEmailEnabled() ? 'Verify your email!' : 'Account created!'}</h3>
               <p>{data?.notice}</p>
             </section>
           )

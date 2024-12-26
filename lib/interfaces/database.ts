@@ -33,18 +33,37 @@ export default class Database {
       return this.db;
     }
 
-    const postgresClient = new Client({
-      user: POSTGRESQL_USER,
-      password: POSTGRESQL_PASSWORD,
-      database: POSTGRESQL_DBNAME,
-      hostname: POSTGRESQL_HOST,
-      port: POSTGRESQL_PORT,
-      tls,
-    });
+    try {
+      const postgresClient = new Client({
+        user: POSTGRESQL_USER,
+        password: POSTGRESQL_PASSWORD,
+        database: POSTGRESQL_DBNAME,
+        hostname: POSTGRESQL_HOST,
+        port: POSTGRESQL_PORT,
+        tls,
+      });
 
-    await postgresClient.connect();
+      await postgresClient.connect();
 
-    this.db = postgresClient;
+      this.db = postgresClient;
+    } catch (error) {
+      // Try to connect without TLS, if the connection type is socket
+      if ((error as Error).toString().includes('No TLS options are allowed when host type is set to "socket"')) {
+        const postgresClient = new Client({
+          user: POSTGRESQL_USER,
+          password: POSTGRESQL_PASSWORD,
+          database: POSTGRESQL_DBNAME,
+          hostname: POSTGRESQL_HOST,
+          port: POSTGRESQL_PORT,
+        });
+
+        await postgresClient.connect();
+
+        this.db = postgresClient;
+      } else {
+        throw error;
+      }
+    }
   }
 
   protected async disconnectFromPostgres() {

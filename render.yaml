@@ -33,4 +33,4 @@ services:
 
 databases:
   - name: bewcloud
-    plan: starter
+    plan: basic-256mb

@@ -53,9 +53,9 @@ async function verifyAuthJwt(key: CryptoKey, jwt: string) {
 
 function resolveCookieDomain(request: Request) {
   if (!isBaseUrlAnIp() || isRunningLocally(request)) {
-    const trimmedRequestURL = request.url.replace('https://', '').replace('http://', '').split(':')[0];
-    if (isCookieDomainAllowed(trimmedRequestURL)) {
-      return trimmedRequestURL;
+    const domain = new URL(request.url).hostname;
+    if (isCookieDomainAllowed(domain)) {
+      return domain;
     }
     return baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
   }

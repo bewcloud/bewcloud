@@ -20,6 +20,12 @@ export function isAppEnabled(app: 'news' | 'notes' | 'photos') {
   return enabledApps.includes(app);
 }
 
+export function isCookieDomainAllowed(domain: string) {
+  const allowedDomains = (Deno.env.get('CONFIG_ALLOWED_COOKIE_DOMAINS') || '').split(',') as typeof domain[];
+
+  return allowedDomains.includes(domain);
+}
+
 export function isEmailEnabled() {
   const areEmailsAllowed = Deno.env.get('CONFIG_ENABLE_EMAILS') === 'true';
 

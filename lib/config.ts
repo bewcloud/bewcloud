@@ -22,7 +22,7 @@ export function isAppEnabled(app: 'news' | 'notes' | 'photos') {
 
 export function isCookieDomainAllowed(domain: string) {
   const allowedDomains = (Deno.env.get('CONFIG_ALLOWED_COOKIE_DOMAINS') || '').split(',') as typeof domain[];
-  
+
   if (allowedDomains.length === 0) {
     return true;
   }

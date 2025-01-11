@@ -6,6 +6,7 @@ import 'std/dotenv/load.ts';
 import { baseUrl, generateHash, isRunningLocally } from './utils/misc.ts';
 import { User, UserSession } from './types.ts';
 import { createUserSession, deleteUserSession, getUserByEmail, validateUserAndSession } from './data/user.ts';
+import { isCookieDomainAllowed } from './config.ts';
 
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
 export const PASSWORD_SALT = Deno.env.get('PASSWORD_SALT') || '';
@@ -52,6 +53,10 @@ async function verifyAuthJwt(key: CryptoKey, jwt: string) {
 
 function resolveCookieDomain(request: Request) {
   if (!isBaseUrlAnIp() || isRunningLocally(request)) {
+    const domain = new URL(request.url).hostname;
+    if (isCookieDomainAllowed(domain)) {
+      return domain;
+    }
     return baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
   }
   return '';

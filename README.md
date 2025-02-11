@@ -30,6 +30,9 @@ Alternatively, check the [Development section below](#development).
 > [!IMPORTANT]
 > Even with signups disabled (`CONFIG_ALLOW_SIGNUPS="false"`), the first signup will work and become an admin.
 
+> [!NOTE]
+> `1993:1993` comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it.
+
 ## Development
 
 ### Requirements

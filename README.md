@@ -19,8 +19,8 @@ Or on your own machine:
 Download/copy [`docker-compose.yml`](/docker-compose.yml) and [`.env.sample`](/.env.sample) as `.env`.
 
 ```sh
-$ docker compose up # makes the app available at http://localhost:8000
-$ docker compose run website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any updates)
+$ docker compose up -d # makes the app available at http://localhost:8000
+$ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any updates)
 ```
 
 Alternatively, check the [Development section below](#development).

@@ -19,14 +19,19 @@ Or on your own machine:
 Download/copy [`docker-compose.yml`](/docker-compose.yml) and [`.env.sample`](/.env.sample) as `.env`.
 
 ```sh
-$ docker compose up # makes the app available at http://localhost:8000
-$ docker compose run website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any updates)
+$ mkdir data-files #  local directory for storing user-uploaded files
+$ chown -R 1993:1993 data-files # solves permission related issues
+$ docker compose up -d # makes the app available at http://localhost:8000
+$ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any updates)
 ```
 
 Alternatively, check the [Development section below](#development).
 
 > [!IMPORTANT]
 > Even with signups disabled (`CONFIG_ALLOW_SIGNUPS="false"`), the first signup will work and become an admin.
+
+> [!NOTE]
+> `1993:1993` comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it.
 
 ## Development
 

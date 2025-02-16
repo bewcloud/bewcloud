@@ -1,0 +1,8 @@
+.do
+.github
+.git
+.gitignore
+docker-compose*
+Dockerfile
+Makefile
+render.yaml

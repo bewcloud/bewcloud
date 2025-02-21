@@ -14,7 +14,7 @@ interface Migration {
   executed_at: Date;
 }
 
-async function getExecutedMigrations() {
+async function getExecutedMigrations(): Promise<Set<string>> {
   const executedMigrations = new Set(
     Array.from(
       (await db.query<Migration>(sql`SELECT * FROM "bewcloud_migrations" ORDER BY "name" ASC`)).map((migration) =>
@@ -26,7 +26,7 @@ async function getExecutedMigrations() {
   return executedMigrations;
 }
 
-async function getMissingMigrations() {
+async function getMissingMigrations(): Promise<string[]> {
   const existingMigrations: Set<string> = new Set();
 
   for await (const migrationFile of migrationsDirectory) {
@@ -60,10 +60,10 @@ async function getMissingMigrations() {
     // The table likely doesn't exist, so run everything.
   }
 
-  return migrationsToExecute;
+  return Array.from(migrationsToExecute).sort();
 }
 
-async function runMigrations(missingMigrations: Set<string>) {
+async function runMigrations(missingMigrations: string[]): Promise<void> {
   for (const missingMigration of missingMigrations) {
     console.log(`Running "${missingMigration}"...`);
 
@@ -90,7 +90,7 @@ try {
 
   await runMigrations(missingMigrations);
 
-  if (missingMigrations.size === 0) {
+  if (missingMigrations.length === 0) {
     console.log('No migrations to run!');
   }
 

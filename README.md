@@ -20,7 +20,7 @@ Download/copy [`docker-compose.yml`](/docker-compose.yml) and [`.env.sample`](/.
 
 ```sh
 $ mkdir data-files #  local directory for storing user-uploaded files
-$ chown -R 1993:1993 data-files # solves permission related issues
+$ sudo chown -R 1993:1993 data-files # solves permission related issues in the container with uploading files
 $ docker compose up -d # makes the app available at http://localhost:8000
 $ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any updates)
 ```

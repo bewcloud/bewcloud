@@ -1,3 +1,6 @@
+import { currencyMap } from '/lib/types.ts';
+import { SupportedCurrencySymbol } from '/lib/types.ts';
+
 let BASE_URL = typeof window !== 'undefined' && window.location
   ? `${window.location.protocol}//${window.location.host}`
   : '';
@@ -255,4 +258,13 @@ export const capitalizeWord = (string: string) => {
 
 export function getRandomItem<T>(items: Readonly<Array<T>>): T {
   return items[Math.floor(Math.random() * items.length)];
+}
+
+export function formatNumber(currency: SupportedCurrencySymbol, number: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currencyMap.get(currency) || 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number.parseFloat(`${number}`.replace(',', '.')));
 }

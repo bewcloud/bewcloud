@@ -1,6 +1,6 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
-import { FreshContextState } from '/lib/types.ts';
+import { currencyMap, FreshContextState, SupportedCurrencySymbol } from '/lib/types.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import {
   createVerificationCode,
@@ -25,6 +25,7 @@ interface Data {
     message: string;
   };
   formData: Record<string, any>;
+  currency?: SupportedCurrencySymbol;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -33,7 +34,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
 
-    return await context.render();
+    return await context.render({
+      formData: {},
+      currency: context.state.user.extra.expenses_currency,
+    });
   },
   async POST(request, context) {
     if (!context.state.user) {
@@ -48,9 +52,9 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const formData = await request.clone().formData();
 
-    try {
-      const { user } = context.state;
+    const { user } = context.state;
 
+    try {
       action = getFormDataField(formData, 'action') as Action;
 
       if (action !== 'change-email' && action !== 'verify-change-email') {
@@ -154,6 +158,19 @@ export const handler: Handlers<Data, FreshContextState> = {
           status: 303,
           headers: { 'location': `/signup?success=delete` },
         });
+      } else if (action === 'change-currency') {
+        const newCurrencySymbol = getFormDataField(formData, 'currency') as SupportedCurrencySymbol;
+
+        if (!currencyMap.has(newCurrencySymbol)) {
+          throw new Error(`Invalid currency.`);
+        }
+
+        user.extra.expenses_currency = newCurrencySymbol;
+
+        await updateUser(user);
+
+        successTitle = 'Currency changed!';
+        successMessage = 'Currency changed successfully.';
       }
 
       const notice = successTitle
@@ -166,6 +183,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return await context.render({
         notice,
         formData: convertFormDataToObject(formData),
+        currency: user.extra.expenses_currency,
       });
     } catch (error) {
       console.error(error);
@@ -175,6 +193,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return await context.render({
         error: { title: errorTitle, message: errorMessage },
         formData: convertFormDataToObject(formData),
+        currency: user.extra.expenses_currency,
       });
     }
   },
@@ -183,7 +202,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 export default function SettingsPage({ data }: PageProps<Data, FreshContextState>) {
   return (
     <main>
-      <Settings formData={data?.formData} error={data?.error} notice={data?.notice} />
+      <Settings formData={data?.formData} error={data?.error} notice={data?.notice} currency={data?.currency} />
     </main>
   );
 }

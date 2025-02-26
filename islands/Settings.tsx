@@ -1,5 +1,7 @@
 import { convertObjectToFormData, helpEmail } from '/lib/utils/misc.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
+import { currencyMap, SupportedCurrencySymbol } from '/lib/types.ts';
+import { isAppEnabled } from '/lib/config.ts';
 
 interface SettingsProps {
   formData: Record<string, any>;
@@ -11,6 +13,7 @@ interface SettingsProps {
     title: string;
     message: string;
   };
+  currency?: SupportedCurrencySymbol;
 }
 
 export type Action =
@@ -18,7 +21,8 @@ export type Action =
   | 'verify-change-email'
   | 'change-password'
   | 'change-dav-password'
-  | 'delete-account';
+  | 'delete-account'
+  | 'change-currency';
 
 export const actionWords = new Map<Action, string>([
   ['change-email', 'change email'],
@@ -26,9 +30,10 @@ export const actionWords = new Map<Action, string>([
   ['change-password', 'change password'],
   ['change-dav-password', 'change WebDav password'],
   ['delete-account', 'delete account'],
+  ['change-currency', 'change currency'],
 ]);
 
-function formFields(action: Action, formData: FormData) {
+function formFields(action: Action, formData: FormData, currency?: SupportedCurrencySymbol) {
   const fields: FormField[] = [
     {
       name: 'action',
@@ -98,11 +103,23 @@ function formFields(action: Action, formData: FormData) {
       description: 'You need to input your password in order to delete your account.',
       required: true,
     });
+  } else if (action === 'change-currency') {
+    fields.push({
+      name: 'currency',
+      label: 'Currency',
+      type: 'select',
+      options: Array.from(currencyMap.keys()).map((currencySymbol) => ({
+        value: currencySymbol,
+        label: `${currencySymbol} (${currencyMap.get(currencySymbol)})`,
+      })),
+      value: getFormDataField(formData, 'currency') || currency,
+      required: true,
+    });
   }
   return fields;
 }
 
-export default function Settings({ formData: formDataObject, error, notice }: SettingsProps) {
+export default function Settings({ formData: formDataObject, error, notice, currency }: SettingsProps) {
   const formData = convertObjectToFormData(formDataObject);
 
   const action = getFormDataField(formData, 'action') as Action;
@@ -156,6 +173,24 @@ export default function Settings({ formData: formDataObject, error, notice }: Se
             <button class='button-secondary' type='submit'>Change WebDav password</button>
           </section>
         </form>
+
+        {isAppEnabled('expenses')
+          ? (
+            <>
+              <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Change your currency</h2>
+              <p class='text-left mt-2 mb-6 px-4 max-w-screen-md mx-auto lg:min-w-96'>
+                This is only used in the expenses app, visually. It changes nothing about the stored data or values.
+              </p>
+
+              <form method='POST' class='mb-12'>
+                {formFields('change-currency', formData, currency).map((field) => generateFieldHtml(field, formData))}
+                <section class='flex justify-end mt-8 mb-4'>
+                  <button class='button-secondary' type='submit'>Change currency</button>
+                </section>
+              </form>
+            </>
+          )
+          : null}
 
         <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Delete your account</h2>
         <p class='text-left mt-2 mb-6 px-4 max-w-screen-md mx-auto lg:min-w-96'>

@@ -7,6 +7,15 @@ import * as $_app from './routes/_app.tsx';
 import * as $_middleware from './routes/_middleware.tsx';
 import * as $api_dashboard_save_links from './routes/api/dashboard/save-links.tsx';
 import * as $api_dashboard_save_notes from './routes/api/dashboard/save-notes.tsx';
+import * as $api_expenses_add_budget from './routes/api/expenses/add-budget.tsx';
+import * as $api_expenses_add_expense from './routes/api/expenses/add-expense.tsx';
+import * as $api_expenses_auto_complete from './routes/api/expenses/auto-complete.tsx';
+import * as $api_expenses_delete_budget from './routes/api/expenses/delete-budget.tsx';
+import * as $api_expenses_delete_expense from './routes/api/expenses/delete-expense.tsx';
+import * as $api_expenses_export_expenses from './routes/api/expenses/export-expenses.tsx';
+import * as $api_expenses_import_expenses from './routes/api/expenses/import-expenses.tsx';
+import * as $api_expenses_update_budget from './routes/api/expenses/update-budget.tsx';
+import * as $api_expenses_update_expense from './routes/api/expenses/update-expense.tsx';
 import * as $api_files_create_directory from './routes/api/files/create-directory.tsx';
 import * as $api_files_delete_directory from './routes/api/files/delete-directory.tsx';
 import * as $api_files_delete from './routes/api/files/delete.tsx';
@@ -26,6 +35,7 @@ import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.
 import * as $api_notes_save from './routes/api/notes/save.tsx';
 import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav from './routes/dav.tsx';
+import * as $expenses from './routes/expenses.tsx';
 import * as $files from './routes/files.tsx';
 import * as $files_open_fileName_ from './routes/files/open/[fileName].tsx';
 import * as $index from './routes/index.tsx';
@@ -42,6 +52,7 @@ import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
 import * as $dashboard_Links from './islands/dashboard/Links.tsx';
 import * as $dashboard_Notes from './islands/dashboard/Notes.tsx';
+import * as $expenses_ExpensesWrapper from './islands/expenses/ExpensesWrapper.tsx';
 import * as $files_FilesWrapper from './islands/files/FilesWrapper.tsx';
 import * as $news_Articles from './islands/news/Articles.tsx';
 import * as $news_Feeds from './islands/news/Feeds.tsx';
@@ -57,6 +68,15 @@ const manifest = {
     './routes/_middleware.tsx': $_middleware,
     './routes/api/dashboard/save-links.tsx': $api_dashboard_save_links,
     './routes/api/dashboard/save-notes.tsx': $api_dashboard_save_notes,
+    './routes/api/expenses/add-budget.tsx': $api_expenses_add_budget,
+    './routes/api/expenses/add-expense.tsx': $api_expenses_add_expense,
+    './routes/api/expenses/auto-complete.tsx': $api_expenses_auto_complete,
+    './routes/api/expenses/delete-budget.tsx': $api_expenses_delete_budget,
+    './routes/api/expenses/delete-expense.tsx': $api_expenses_delete_expense,
+    './routes/api/expenses/export-expenses.tsx': $api_expenses_export_expenses,
+    './routes/api/expenses/import-expenses.tsx': $api_expenses_import_expenses,
+    './routes/api/expenses/update-budget.tsx': $api_expenses_update_budget,
+    './routes/api/expenses/update-expense.tsx': $api_expenses_update_expense,
     './routes/api/files/create-directory.tsx': $api_files_create_directory,
     './routes/api/files/delete-directory.tsx': $api_files_delete_directory,
     './routes/api/files/delete.tsx': $api_files_delete,
@@ -76,6 +96,7 @@ const manifest = {
     './routes/api/notes/save.tsx': $api_notes_save,
     './routes/dashboard.tsx': $dashboard,
     './routes/dav.tsx': $dav,
+    './routes/expenses.tsx': $expenses,
     './routes/files.tsx': $files,
     './routes/files/open/[fileName].tsx': $files_open_fileName_,
     './routes/index.tsx': $index,
@@ -94,6 +115,7 @@ const manifest = {
     './islands/Settings.tsx': $Settings,
     './islands/dashboard/Links.tsx': $dashboard_Links,
     './islands/dashboard/Notes.tsx': $dashboard_Notes,
+    './islands/expenses/ExpensesWrapper.tsx': $expenses_ExpensesWrapper,
     './islands/files/FilesWrapper.tsx': $files_FilesWrapper,
     './islands/news/Articles.tsx': $news_Articles,
     './islands/news/Feeds.tsx': $news_Feeds,

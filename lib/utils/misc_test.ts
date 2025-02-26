@@ -1,8 +1,11 @@
 import { assertEquals } from 'std/assert/assert_equals.ts';
+
+import { SupportedCurrencySymbol } from '/lib/types.ts';
 import {
   convertFormDataToObject,
   convertObjectToFormData,
   escapeHtml,
+  formatNumber,
   generateHash,
   generateRandomCode,
   isRunningLocally,
@@ -266,6 +269,25 @@ Deno.test('that isRunningLocally works', () => {
   for (const test of tests) {
     const request = { url: test.url } as Request;
     const result = isRunningLocally(request);
+    assertEquals(result, test.expected);
+  }
+});
+
+Deno.test('that formatNumber works', () => {
+  const tests: { currency: SupportedCurrencySymbol; number: number; expected: string }[] = [
+    { currency: '$', number: 10000, expected: '$10,000' },
+    { currency: '$', number: 10000.5, expected: '$10,000.5' },
+    { currency: '€', number: 10000, expected: '€10,000' },
+    { currency: '€', number: 900.999, expected: '€901' },
+    { currency: '€', number: 900.991, expected: '€900.99' },
+    { currency: '$', number: 50.11, expected: '$50.11' },
+    { currency: '£', number: 900.999, expected: '£901' },
+    { currency: '£', number: 900.991, expected: '£900.99' },
+    { currency: '£', number: 50.11, expected: '£50.11' },
+  ];
+
+  for (const test of tests) {
+    const result = formatNumber(test.currency, test.number);
     assertEquals(result, test.expected);
   }
 });

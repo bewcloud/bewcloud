@@ -14,7 +14,7 @@ export async function isSignupAllowed() {
   return false;
 }
 
-export function isAppEnabled(app: 'news' | 'notes' | 'photos') {
+export function isAppEnabled(app: 'news' | 'notes' | 'photos' | 'expenses') {
   const enabledApps = (Deno.env.get('CONFIG_ENABLED_APPS') || '').split(',') as typeof app[];
 
   return enabledApps.includes(app);

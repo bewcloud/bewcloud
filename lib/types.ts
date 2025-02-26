@@ -12,6 +12,7 @@ export interface User {
     is_email_verified: boolean;
     is_admin?: boolean;
     dav_hashed_password?: string;
+    expenses_currency?: SupportedCurrencySymbol;
   };
   created_at: Date;
 }
@@ -81,7 +82,7 @@ export interface NewsFeedArticle {
   article_summary: string;
   article_date: Date;
   is_read: boolean;
-  extra: Record<never, never>;
+  extra: Record<never, never>; // NOTE: Here for potential future fields
   created_at: Date;
 }
 
@@ -104,3 +105,39 @@ export interface DirectoryFile {
   updated_at: Date;
   created_at: Date;
 }
+
+export interface Budget {
+  id: string;
+  user_id: string;
+  name: string;
+  month: string;
+  value: number;
+  extra: {
+    usedValue: number;
+    availableValue: number;
+  };
+  created_at: Date;
+}
+
+export interface Expense {
+  id: string;
+  user_id: string;
+  cost: number;
+  description: string;
+  budget: string;
+  date: string;
+  is_recurring: boolean;
+  extra: Record<never, never>; // NOTE: Here for potential future fields
+  created_at: Date;
+}
+
+export type SupportedCurrencySymbol = '$' | '€' | '£' | '¥' | '₹';
+type SupportedCurrency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'INR';
+
+export const currencyMap = new Map<SupportedCurrencySymbol, SupportedCurrency>([
+  ['$', 'USD'],
+  ['€', 'EUR'],
+  ['£', 'GBP'],
+  ['¥', 'JPY'],
+  ['₹', 'INR'],
+]);

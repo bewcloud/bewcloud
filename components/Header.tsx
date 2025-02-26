@@ -50,6 +50,12 @@ export default function Header({ route, user }: Data) {
         label: 'Photos',
       }
       : null,
+    isAppEnabled('expenses')
+      ? {
+        url: '/expenses',
+        label: 'Expenses',
+      }
+      : null,
   ];
 
   const menuItems = potentialMenuItems.filter(Boolean) as MenuItem[];
@@ -65,6 +71,10 @@ export default function Header({ route, user }: Data) {
 
     if (route.startsWith('/settings')) {
       pageLabel = 'Settings';
+    }
+
+    if (route.startsWith('/expenses')) {
+      pageLabel = 'Budgets & Expenses';
     }
 
     return (

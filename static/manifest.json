@@ -1,0 +1,22 @@
+{
+  "name": "bewCloud",
+  "short_name": "bewCloud",
+  "icons": [
+    {
+      "src": "/images/logomark.svg",
+      "sizes": "1024x1024 any",
+      "type": "image/svg+xml",
+      "purpose": "monochrome maskable"
+    },
+    {
+      "src": "/images/favicon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#51a4fb",
+  "background_color": "#1e293b",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait"
+}

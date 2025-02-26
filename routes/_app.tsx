@@ -19,6 +19,7 @@ export default function App({ route, Component, state }: PageProps<Data, FreshCo
         <link rel='icon' href='/images/favicon.png' type='image/png' />
         <link rel='apple-touch-icon' href='/images/favicon.png' />
         <link rel='stylesheet' href='/styles.css' />
+        <link rel='manifest' href='/manifest.json' />
       </head>
       <body class='h-full'>
         <Header route={route} user={state.user} />

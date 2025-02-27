@@ -16,8 +16,8 @@ export default function App({ route, Component, state }: PageProps<Data, FreshCo
         <meta name='description' content={defaultDescription} />
         <meta name='author' content='Bruno Bernardino' />
         <meta property='og:title' content={defaultTitle} />
-        <link rel='icon' href='/images/favicon.png' type='image/png' />
-        <link rel='apple-touch-icon' href='/images/favicon.png' />
+        <link rel='icon' href='/images/favicon-dark.png' type='image/png' />
+        <link rel='apple-touch-icon' href='/images/favicon-dark.png' />
         <link rel='stylesheet' href='/styles.css' />
         <link rel='manifest' href='/manifest.json' />
       </head>

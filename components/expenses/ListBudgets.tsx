@@ -102,7 +102,7 @@ export default function ListBudgets(
                 return (
                   <div
                     onClick={() => budget.id === 'total' ? swapView('chart') : onClickEditBudget(budget.id)}
-                    class='flex max-w-sm gap-y-4 gap-x-4 rounded shadow-md bg-slate-700 relative cursor-pointer py-4 px-6 hover:opacity-80'
+                    class='flex w-full md:w-auto max-w-sm gap-y-4 gap-x-4 rounded shadow-md bg-slate-700 relative cursor-pointer py-4 px-6 hover:opacity-80'
                   >
                     <article class='order-first tracking-tight flex flex-col text-base mr-4'>
                       <span class='font-bold text-lg' title='Amount used from budgeted amount'>

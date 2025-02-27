@@ -1,11 +1,33 @@
 import { join } from 'std/path/join.ts';
+import { resolve } from 'std/path/resolve.ts';
 import { lookup } from 'mrmime';
 
 import { getFilesRootPath } from '/lib/config.ts';
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { sortDirectoriesByName, sortEntriesByName, sortFilesByName, TRASH_PATH } from '/lib/utils/files.ts';
 
+/**
+ * Ensures the user path is valid and securely accessible (meaning it's not trying to access files outside of the user's root directory).
+ * Does not check if the path exists.
+ *
+ * @param userId - The user ID
+ * @param path - The relative path (user-provided) to check
+ */
+export function ensureUserPathIsValidAndSecurelyAccessible(userId: string, path: string): void {
+  const userRootPath = join(getFilesRootPath(), userId, '/');
+
+  const fullPath = join(userRootPath, path);
+
+  const resolvedFullPath = `${resolve(fullPath)}/`;
+
+  if (!resolvedFullPath.startsWith(userRootPath)) {
+    throw new Error('Invalid file path');
+  }
+}
+
 export async function getDirectories(userId: string, path: string): Promise<Directory[]> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, path);
+
   const rootPath = join(getFilesRootPath(), userId, path);
 
   const directories: Directory[] = [];
@@ -34,6 +56,8 @@ export async function getDirectories(userId: string, path: string): Promise<Dire
 }
 
 export async function getFiles(userId: string, path: string): Promise<DirectoryFile[]> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, path);
+
   const rootPath = join(getFilesRootPath(), userId, path);
 
   const files: DirectoryFile[] = [];
@@ -62,6 +86,8 @@ export async function getFiles(userId: string, path: string): Promise<DirectoryF
 }
 
 async function getPathEntries(userId: string, path: string): Promise<Deno.DirEntry[]> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, path);
+
   const rootPath = join(getFilesRootPath(), userId, path);
 
   // Ensure the user directory exists
@@ -98,6 +124,8 @@ async function getPathEntries(userId: string, path: string): Promise<Deno.DirEnt
 }
 
 export async function createDirectory(userId: string, path: string, name: string): Promise<boolean> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+
   const rootPath = join(getFilesRootPath(), userId, path);
 
   try {
@@ -117,6 +145,9 @@ export async function renameDirectoryOrFile(
   oldName: string,
   newName: string,
 ): Promise<boolean> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, join(oldPath, oldName));
+  ensureUserPathIsValidAndSecurelyAccessible(userId, join(newPath, newName));
+
   const oldRootPath = join(getFilesRootPath(), userId, oldPath);
   const newRootPath = join(getFilesRootPath(), userId, newPath);
 
@@ -131,6 +162,8 @@ export async function renameDirectoryOrFile(
 }
 
 export async function deleteDirectoryOrFile(userId: string, path: string, name: string): Promise<boolean> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+
   const rootPath = join(getFilesRootPath(), userId, path);
 
   try {
@@ -154,6 +187,8 @@ export async function createFile(
   name: string,
   contents: string | ArrayBuffer,
 ): Promise<boolean> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+
   const rootPath = join(getFilesRootPath(), userId, path);
 
   try {
@@ -176,6 +211,8 @@ export async function updateFile(
   name: string,
   contents: string,
 ): Promise<boolean> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+
   const rootPath = join(getFilesRootPath(), userId, path);
 
   try {
@@ -193,6 +230,8 @@ export async function getFile(
   path: string,
   name?: string,
 ): Promise<{ success: boolean; contents?: Uint8Array; contentType?: string; byteSize?: number }> {
+  ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name || ''));
+
   const rootPath = join(getFilesRootPath(), userId, path);
 
   try {

@@ -59,6 +59,8 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
   const editingExpense = useSignal<Expense | null>(null);
   const isBudgetModalOpen = useSignal<boolean>(false);
   const editingBudget = useSignal<Budget | null>(null);
+  const shouldResetExpenseModal = useSignal<boolean>(false);
+  const shouldResetBudgetModal = useSignal<boolean>(false);
   const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long' });
@@ -197,6 +199,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
       return;
     }
 
+    shouldResetExpenseModal.value = false;
     editingExpense.value = null;
     isExpenseModalOpen.value = true;
   }
@@ -209,6 +212,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
       return;
     }
 
+    shouldResetBudgetModal.value = false;
     editingBudget.value = null;
     isBudgetModalOpen.value = true;
   }
@@ -221,6 +225,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
       return;
     }
 
+    shouldResetExpenseModal.value = false;
     editingExpense.value = expenses.value.find((expense) => expense.id === expenseId)!;
     isExpenseModalOpen.value = true;
   }
@@ -238,6 +243,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
       return;
     }
 
+    shouldResetBudgetModal.value = false;
     editingBudget.value = budgets.value.find((budget) => budget.id === budgetId)!;
     isBudgetModalOpen.value = true;
   }
@@ -292,6 +298,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
 
         isExpenseModalOpen.value = false;
         editingExpense.value = null;
+        shouldResetExpenseModal.value = true;
       } catch (error) {
         console.error(error);
         alert(error);
@@ -326,6 +333,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
         budgets.value = [...result.newBudgets];
 
         isExpenseModalOpen.value = false;
+        shouldResetExpenseModal.value = true;
       } catch (error) {
         console.error(error);
         alert(error);
@@ -379,6 +387,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
 
         isBudgetModalOpen.value = false;
         editingBudget.value = null;
+        shouldResetBudgetModal.value = true;
       } catch (error) {
         console.error(error);
         alert(error);
@@ -410,6 +419,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
         budgets.value = [...result.newBudgets];
 
         isBudgetModalOpen.value = false;
+        shouldResetBudgetModal.value = true;
       } catch (error) {
         console.error(error);
         alert(error);
@@ -460,6 +470,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
 
       isExpenseModalOpen.value = false;
       editingExpense.value = null;
+      shouldResetExpenseModal.value = true;
     } catch (error) {
       console.error(error);
       alert(error);
@@ -508,6 +519,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
 
       isBudgetModalOpen.value = false;
       editingBudget.value = null;
+      shouldResetBudgetModal.value = true;
     } catch (error) {
       console.error(error);
       alert(error);
@@ -519,11 +531,13 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
   function onCloseExpense() {
     isExpenseModalOpen.value = false;
     editingExpense.value = null;
+    shouldResetExpenseModal.value = true;
   }
 
   function onCloseBudget() {
     isBudgetModalOpen.value = false;
     editingBudget.value = null;
+    shouldResetBudgetModal.value = true;
   }
 
   function toggleNewOptionsDropdown() {
@@ -780,6 +794,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
         onClickSave={onClickSaveExpense}
         onClickDelete={onClickDeleteExpense}
         onClose={onCloseExpense}
+        shouldResetForm={shouldResetExpenseModal.value}
       />
 
       <BudgetModal
@@ -788,6 +803,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
         onClickSave={onClickSaveBudget}
         onClickDelete={onClickDeleteBudget}
         onClose={onCloseBudget}
+        shouldResetForm={shouldResetBudgetModal.value}
       />
     </>
   );

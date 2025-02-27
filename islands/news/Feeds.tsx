@@ -195,13 +195,12 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
 
     isExporting.value = true;
 
-    const fileName = ['feeds-', new Date().toISOString().substring(0, 19).replace(/:/g, '-'), '.opml']
-      .join('');
+    const fileName = `feeds-${new Date().toISOString().substring(0, 19).replace(/:/g, '-')}.opml`;
 
     const exportContents = formatNewsFeedsToOpml([...feeds.peek()]);
 
     // Add content-type
-    const xmlContent = ['data:application/xml; charset=utf-8,', exportContents].join('');
+    const xmlContent = `data:application/xml; charset=utf-8,${exportContents}`;
 
     // Download the file
     const data = encodeURI(xmlContent);

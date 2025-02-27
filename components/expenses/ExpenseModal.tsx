@@ -21,10 +21,11 @@ interface ExpenseModalProps {
   ) => Promise<void>;
   onClickDelete: () => Promise<void>;
   onClose: () => void;
+  shouldResetForm: boolean;
 }
 
 export default function ExpenseModal(
-  { isOpen, expense, budgets, onClickSave, onClickDelete, onClose }: ExpenseModalProps,
+  { isOpen, expense, budgets, onClickSave, onClickDelete, onClose, shouldResetForm }: ExpenseModalProps,
 ) {
   const newExpenseCost = useSignal<number | ''>(expense?.cost ?? '');
   const newExpenseDescription = useSignal<string>(expense?.description ?? '');
@@ -34,6 +35,14 @@ export default function ExpenseModal(
   const suggestions = useSignal<string[]>([]);
   const showSuggestions = useSignal<boolean>(false);
 
+  const resetForm = () => {
+    newExpenseCost.value = '';
+    newExpenseDescription.value = '';
+    newExpenseBudget.value = 'Misc';
+    newExpenseDate.value = '';
+    newExpenseIsRecurring.value = false;
+  };
+
   useEffect(() => {
     if (expense) {
       newExpenseCost.value = expense.cost;
@@ -42,15 +51,12 @@ export default function ExpenseModal(
       newExpenseDate.value = expense.date;
       newExpenseIsRecurring.value = expense.is_recurring;
       showSuggestions.value = false;
-    } else {
-      newExpenseCost.value = '';
-      newExpenseDescription.value = '';
-      newExpenseBudget.value = 'Misc';
-      newExpenseDate.value = '';
-      newExpenseIsRecurring.value = false;
-      showSuggestions.value = false;
     }
-  }, [expense]);
+
+    if (shouldResetForm) {
+      resetForm();
+    }
+  }, [expense, shouldResetForm]);
 
   const sortedBudgetNames = budgets.map((budget) => budget.name).sort();
 
@@ -225,14 +231,15 @@ export default function ExpenseModal(
             : null}
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md mr-2'
-            onClick={() =>
+            onClick={() => {
               onClickSave(
                 newExpenseCost.value as number,
                 newExpenseDescription.value,
                 newExpenseBudget.value,
                 newExpenseDate.value,
                 newExpenseIsRecurring.value,
-              )}
+              );
+            }}
           >
             {expense ? 'Update' : 'Create'}
           </button>

@@ -9,26 +9,33 @@ interface BudgetModalProps {
   onClickSave: (newBudgetName: string, newBudgetMonth: string, newBudgetValue: number) => Promise<void>;
   onClickDelete: () => Promise<void>;
   onClose: () => void;
+  shouldResetForm: boolean;
 }
 
 export default function BudgetModal(
-  { isOpen, budget, onClickSave, onClickDelete, onClose }: BudgetModalProps,
+  { isOpen, budget, onClickSave, onClickDelete, onClose, shouldResetForm }: BudgetModalProps,
 ) {
   const newBudgetName = useSignal<string>(budget?.name ?? '');
   const newBudgetMonth = useSignal<string>(budget?.month ?? new Date().toISOString().substring(0, 10));
   const newBudgetValue = useSignal<number>(budget?.value ?? 100);
+
+  const resetForm = () => {
+    newBudgetName.value = '';
+    newBudgetMonth.value = new Date().toISOString().substring(0, 10);
+    newBudgetValue.value = 100;
+  };
 
   useEffect(() => {
     if (budget) {
       newBudgetName.value = budget.name;
       newBudgetMonth.value = `${budget.month}-15`;
       newBudgetValue.value = budget.value;
-    } else {
-      newBudgetName.value = '';
-      newBudgetMonth.value = new Date().toISOString().substring(0, 10);
-      newBudgetValue.value = 100;
     }
-  }, [budget]);
+
+    if (shouldResetForm) {
+      resetForm();
+    }
+  }, [budget, shouldResetForm]);
 
   return (
     <>

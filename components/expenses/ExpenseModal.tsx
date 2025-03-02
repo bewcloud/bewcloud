@@ -119,6 +119,7 @@ export default function ExpenseModal(
               onInput={(event) => {
                 newExpenseCost.value = Number(event.currentTarget.value);
               }}
+              inputmode='decimal'
               placeholder='10.99'
             />
           </fieldset>
@@ -222,7 +223,7 @@ export default function ExpenseModal(
           {expense
             ? (
               <button
-                class='px-5 py-2 bg-slate-600 hover:bg-red-600 text-white cursor-pointer rounded-md mr-2'
+                class='px-5 py-2 bg-red-600 text-white cursor-pointer rounded-md mr-2 opacity-30 hover:opacity-100'
                 onClick={() => onClickDelete()}
               >
                 Delete
@@ -231,6 +232,12 @@ export default function ExpenseModal(
             : null}
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md mr-2'
+            onClick={() => onClose()}
+          >
+            {expense ? 'Cancel' : 'Close'}
+          </button>
+          <button
+            class='px-5 py-2 bg-slate-700 hover:bg-slate-500 text-white cursor-pointer rounded-md ml-2'
             onClick={() => {
               onClickSave(
                 newExpenseCost.value as number,
@@ -242,12 +249,6 @@ export default function ExpenseModal(
             }}
           >
             {expense ? 'Update' : 'Create'}
-          </button>
-          <button
-            class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md ml-2'
-            onClick={() => onClose()}
-          >
-            {expense ? 'Cancel' : 'Close'}
           </button>
         </footer>
       </section>

@@ -85,13 +85,15 @@ export default function BudgetModal(
             <label class='text-slate-300 block pb-1' for='budget_value'>Value</label>
             <input
               class='input-field'
-              type='text'
+              type='number'
               name='budget_value'
               id='budget_value'
               value={newBudgetValue.value}
               onInput={(event) => {
                 newBudgetValue.value = Number(event.currentTarget.value);
               }}
+              min='0'
+              inputmode='decimal'
               placeholder='100'
             />
           </fieldset>
@@ -100,7 +102,7 @@ export default function BudgetModal(
           {budget
             ? (
               <button
-                class='px-5 py-2 bg-slate-600 hover:bg-red-600 text-white cursor-pointer rounded-md mr-2'
+                class='px-5 py-2 bg-red-600 text-white cursor-pointer rounded-md mr-2 opacity-30 hover:opacity-100'
                 onClick={() => onClickDelete()}
               >
                 Delete
@@ -109,15 +111,15 @@ export default function BudgetModal(
             : null}
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md mr-2'
-            onClick={() => onClickSave(newBudgetName.value, newBudgetMonth.value.substring(0, 7), newBudgetValue.value)}
-          >
-            {budget ? 'Update' : 'Create'}
-          </button>
-          <button
-            class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md ml-2'
             onClick={() => onClose()}
           >
             {budget ? 'Cancel' : 'Close'}
+          </button>
+          <button
+            class='px-5 py-2 bg-slate-700 hover:bg-slate-500 text-white cursor-pointer rounded-md ml-2'
+            onClick={() => onClickSave(newBudgetName.value, newBudgetMonth.value.substring(0, 7), newBudgetValue.value)}
+          >
+            {budget ? 'Update' : 'Create'}
           </button>
         </footer>
       </section>

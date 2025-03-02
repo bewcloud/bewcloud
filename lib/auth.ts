@@ -6,7 +6,7 @@ import 'std/dotenv/load.ts';
 import { baseUrl, generateHash, isRunningLocally } from './utils/misc.ts';
 import { User, UserSession } from './types.ts';
 import { createUserSession, deleteUserSession, getUserByEmail, validateUserAndSession } from './data/user.ts';
-import { isCookieDomainAllowed } from './config.ts';
+import { isCookieDomainAllowed, isCookieDomainSecurityDisabled } from './config.ts';
 
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
 export const PASSWORD_SALT = Deno.env.get('PASSWORD_SALT') || '';
@@ -173,6 +173,10 @@ export async function logoutUser(request: Request) {
     domain: resolveCookieDomain(request),
   };
 
+  if (isCookieDomainSecurityDisabled()) {
+    delete cookie.domain;
+  }
+
   const response = new Response('Logged Out', {
     status: 303,
     headers: { 'Location': '/', 'Content-Type': 'text/html; charset=utf-8' },
@@ -222,6 +226,10 @@ export async function createSessionCookie(
     domain: resolveCookieDomain(request),
   };
 
+  if (isCookieDomainSecurityDisabled()) {
+    delete cookie.domain;
+  }
+
   setCookie(response.headers, cookie);
 
   return response;
@@ -245,6 +253,10 @@ export async function updateSessionCookie(
     sameSite: 'Lax',
     domain: resolveCookieDomain(request),
   };
+
+  if (isCookieDomainSecurityDisabled()) {
+    delete cookie.domain;
+  }
 
   setCookie(response.headers, cookie);
 

@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  /* This is needed to ensure that the system color scheme is dark and matches the dark theme of the app */
+  color-scheme: dark;
+}
+
 h1 {
   @apply text-4xl font-bold;
 }

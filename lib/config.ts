@@ -30,6 +30,12 @@ export function isCookieDomainAllowed(domain: string) {
   return allowedDomains.includes(domain);
 }
 
+export function isCookieDomainSecurityDisabled() {
+  const isCookieDomainSecurityDisabled = Deno.env.get('CONFIG_SKIP_COOKIE_DOMAIN_SECURITY') === 'true';
+
+  return isCookieDomainSecurityDisabled;
+}
+
 export function isEmailEnabled() {
   const areEmailsAllowed = Deno.env.get('CONFIG_ENABLE_EMAILS') === 'true';
 

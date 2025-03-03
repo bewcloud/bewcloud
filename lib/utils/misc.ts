@@ -268,3 +268,7 @@ export function formatNumber(currency: SupportedCurrencySymbol, number: number) 
     maximumFractionDigits: 2,
   }).format(Number.parseFloat(`${number}`.replace(',', '.')));
 }
+
+export function formatInputToNumber(numberInput: number | string): number {
+  return Number.parseFloat(`${numberInput}`.replace(',', '.'));
+}

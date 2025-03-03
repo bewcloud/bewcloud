@@ -5,6 +5,7 @@ import {
   convertFormDataToObject,
   convertObjectToFormData,
   escapeHtml,
+  formatInputToNumber,
   formatNumber,
   generateHash,
   generateRandomCode,
@@ -288,6 +289,26 @@ Deno.test('that formatNumber works', () => {
 
   for (const test of tests) {
     const result = formatNumber(test.currency, test.number);
+    assertEquals(result, test.expected);
+  }
+});
+
+Deno.test('that formatInputToNumber works', () => {
+  const tests: { input: number | string; expected: number }[] = [
+    { input: 42, expected: 42 },
+    { input: '42', expected: 42 },
+    { input: 42.5, expected: 42.5 },
+    { input: '42.5', expected: 42.5 },
+    { input: '42,5', expected: 42.5 },
+    { input: '1234,56', expected: 1234.56 },
+    { input: 0, expected: 0 },
+    { input: '0', expected: 0 },
+    { input: '0,0', expected: 0 },
+    { input: '0.0', expected: 0 },
+  ];
+
+  for (const test of tests) {
+    const result = formatInputToNumber(test.input);
     assertEquals(result, test.expected);
   }
 });

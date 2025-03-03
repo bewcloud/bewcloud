@@ -2,6 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Budget } from '/lib/types.ts';
+import { formatInputToNumber } from '/lib/utils/misc.ts';
 
 interface BudgetModalProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ export default function BudgetModal(
 ) {
   const newBudgetName = useSignal<string>(budget?.name ?? '');
   const newBudgetMonth = useSignal<string>(budget?.month ?? new Date().toISOString().substring(0, 10));
-  const newBudgetValue = useSignal<number>(budget?.value ?? 100);
+  const newBudgetValue = useSignal<number | string>(budget?.value ?? 100);
 
   const resetForm = () => {
     newBudgetName.value = '';
@@ -85,14 +86,13 @@ export default function BudgetModal(
             <label class='text-slate-300 block pb-1' for='budget_value'>Value</label>
             <input
               class='input-field'
-              type='number'
+              type='text'
               name='budget_value'
               id='budget_value'
               value={newBudgetValue.value}
               onInput={(event) => {
-                newBudgetValue.value = Number(event.currentTarget.value);
+                newBudgetValue.value = event.currentTarget.value;
               }}
-              min='0'
               inputmode='decimal'
               placeholder='100'
             />
@@ -117,7 +117,12 @@ export default function BudgetModal(
           </button>
           <button
             class='px-5 py-2 bg-slate-700 hover:bg-slate-500 text-white cursor-pointer rounded-md ml-2'
-            onClick={() => onClickSave(newBudgetName.value, newBudgetMonth.value.substring(0, 7), newBudgetValue.value)}
+            onClick={() =>
+              onClickSave(
+                newBudgetName.value,
+                newBudgetMonth.value.substring(0, 7),
+                formatInputToNumber(newBudgetValue.value),
+              )}
           >
             {budget ? 'Update' : 'Create'}
           </button>

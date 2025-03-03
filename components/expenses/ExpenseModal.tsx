@@ -2,6 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Budget, Expense } from '/lib/types.ts';
+import { formatInputToNumber } from '/lib/utils/misc.ts';
 
 import {
   RequestBody as SuggestionsRequestBody,
@@ -27,7 +28,7 @@ interface ExpenseModalProps {
 export default function ExpenseModal(
   { isOpen, expense, budgets, onClickSave, onClickDelete, onClose, shouldResetForm }: ExpenseModalProps,
 ) {
-  const newExpenseCost = useSignal<number | ''>(expense?.cost ?? '');
+  const newExpenseCost = useSignal<number | string>(expense?.cost ?? '');
   const newExpenseDescription = useSignal<string>(expense?.description ?? '');
   const newExpenseBudget = useSignal<string>(expense?.budget ?? 'Misc');
   const newExpenseDate = useSignal<string>(expense?.date ?? '');
@@ -112,12 +113,12 @@ export default function ExpenseModal(
             <label class='text-slate-300 block pb-1' for='expense_cost'>Cost</label>
             <input
               class='input-field'
-              type='number'
+              type='text'
               name='expense_cost'
               id='expense_cost'
               value={newExpenseCost.value}
               onInput={(event) => {
-                newExpenseCost.value = Number(event.currentTarget.value);
+                newExpenseCost.value = event.currentTarget.value;
               }}
               inputmode='decimal'
               placeholder='10.99'
@@ -240,7 +241,7 @@ export default function ExpenseModal(
             class='px-5 py-2 bg-slate-700 hover:bg-slate-500 text-white cursor-pointer rounded-md ml-2'
             onClick={() => {
               onClickSave(
-                newExpenseCost.value as number,
+                formatInputToNumber(newExpenseCost.value),
                 newExpenseDescription.value,
                 newExpenseBudget.value,
                 newExpenseDate.value,

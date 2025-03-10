@@ -1,5 +1,5 @@
 import { useSignal } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { useCallback, useEffect } from 'preact/hooks';
 
 import { Budget, Expense, SupportedCurrencySymbol } from '/lib/types.ts';
 import {
@@ -615,6 +615,13 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
     }, 500);
   }
 
+  // Open the expense modal if the window is small
+  const handleWindowResize = useCallback(() => {
+    if (globalThis.innerWidth < 600 && !isExpenseModalOpen.value && !editingExpense.value) {
+      isExpenseModalOpen.value = true;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       if (searchTimeout.value) {
@@ -622,6 +629,15 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
       }
     };
   }, []);
+
+  useEffect(() => {
+    handleWindowResize();
+    globalThis.addEventListener('resize', handleWindowResize);
+
+    return () => {
+      globalThis.removeEventListener('resize', handleWindowResize);
+    };
+  }, [handleWindowResize]);
 
   return (
     <>

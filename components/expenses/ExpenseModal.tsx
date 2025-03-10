@@ -175,7 +175,7 @@ export default function ExpenseModal(
               name='expense_budget'
               id='expense_budget'
               value={newExpenseBudget.value}
-              onSelect={(event) => {
+              onChange={(event) => {
                 newExpenseBudget.value = event.currentTarget.value;
               }}
               placeholder='Misc'

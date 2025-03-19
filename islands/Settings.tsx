@@ -194,12 +194,13 @@ export default function Settings({ formData: formDataObject, error, notice, curr
 
         <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Delete your account</h2>
         <p class='text-left mt-2 mb-6 px-4 max-w-screen-md mx-auto lg:min-w-96'>
-          Deleting your account is instant and deletes all your data.{' '}{helpEmail !== '' ? (
-            <span>
-              If you need help, please{' '}
-              <a href={`mailto:${helpEmail}`}>reach out</a>.
-            </span>
-          ) : null}
+          Deleting your account is instant and deletes all your data. {helpEmail !== ''
+            ? (
+              <span>
+                If you need help, please <a href={`mailto:${helpEmail}`}>reach out</a>.
+              </span>
+            )
+            : null}
         </p>
 
         <form method='POST' class='mb-12'>

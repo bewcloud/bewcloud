@@ -144,13 +144,19 @@ export default function Signup({ data }: PageProps<Data, FreshContextState>) {
           </strong>.
         </p>
 
-        <h2 class='text-2xl mb-4 text-center'>Need help?</h2>
-        <p class='text-center mt-2 mb-6'>
-          If you're having any issues or have any questions,{' '}
-          <strong>
-            <a href={`mailto:${helpEmail}`}>please reach out</a>
-          </strong>.
-        </p>
+        {helpEmail !== ''
+          ? (
+            <section>
+              <h2 class='text-2xl mb-4 text-center'>Need help?</h2>
+              <p class='text-center mt-2 mb-6'>
+                If you're having any issues or have any questions,{' '}
+                <strong>
+                  <a href={`mailto:${helpEmail}`}>please reach out</a>
+                </strong>.
+              </p>
+            </section>
+          )
+          : null}
       </section>
     </main>
   );

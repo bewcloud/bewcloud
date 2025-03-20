@@ -196,9 +196,9 @@ export default function Settings({ formData: formDataObject, error, notice, curr
         <p class='text-left mt-2 mb-6 px-4 max-w-screen-md mx-auto lg:min-w-96'>
           Deleting your account is instant and deletes all your data. {helpEmail !== ''
             ? (
-              <span>
+              <>
                 If you need help, please <a href={`mailto:${helpEmail}`}>reach out</a>.
-              </span>
+              </>
             )
             : null}
         </p>

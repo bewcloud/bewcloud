@@ -146,7 +146,7 @@ export default function Signup({ data }: PageProps<Data, FreshContextState>) {
 
         {helpEmail !== ''
           ? (
-            <section>
+            <>
               <h2 class='text-2xl mb-4 text-center'>Need help?</h2>
               <p class='text-center mt-2 mb-6'>
                 If you're having any issues or have any questions,{' '}
@@ -154,7 +154,7 @@ export default function Signup({ data }: PageProps<Data, FreshContextState>) {
                   <a href={`mailto:${helpEmail}`}>please reach out</a>
                 </strong>.
               </p>
-            </section>
+            </>
           )
           : null}
       </section>

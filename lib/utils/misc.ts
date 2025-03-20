@@ -4,23 +4,23 @@ import { SupportedCurrencySymbol } from '/lib/types.ts';
 let BASE_URL = typeof window !== 'undefined' && window.location
   ? `${window.location.protocol}//${window.location.host}`
   : '';
-let CUSTOM_TITLE = '';
-let CUSTOM_DESCRIPTION = '';
-let HELP_EMAIL = '';
+let CUSTOM_TITLE = `bewCloud is a modern and simpler alternative to Nextcloud and ownCloud`;
+let CUSTOM_DESCRIPTION = `Have your files under your own control.`;
+let HELP_EMAIL = ``;
 
 if (typeof Deno !== 'undefined') {
   await import('std/dotenv/load.ts');
 
   BASE_URL = Deno.env.get('BASE_URL') || '';
 
-  CUSTOM_TITLE = Deno.env.get('CUSTOM_TITLE') || '';
-  CUSTOM_DESCRIPTION = Deno.env.get('CUSTOM_DESCRIPTION') || '';
-  HELP_EMAIL = Deno.env.get('HELP_EMAIL') || '';
+  CUSTOM_TITLE = Deno.env.get('CUSTOM_TITLE') || CUSTOM_TITLE;
+  CUSTOM_DESCRIPTION = Deno.env.get('CUSTOM_DESCRIPTION') || CUSTOM_DESCRIPTION;
+  HELP_EMAIL = Deno.env.get('HELP_EMAIL') || HELP_EMAIL;
 }
 
 export const baseUrl = BASE_URL || 'http://localhost:8000';
-export const defaultTitle = CUSTOM_TITLE || 'bewCloud is a modern and simpler alternative to Nextcloud and ownCloud';
-export const defaultDescription = CUSTOM_DESCRIPTION || `Have your files under your own control.`;
+export const defaultTitle = CUSTOM_TITLE;
+export const defaultDescription = CUSTOM_DESCRIPTION;
 export const helpEmail = HELP_EMAIL;
 
 export function isRunningLocally(request: Request): boolean {

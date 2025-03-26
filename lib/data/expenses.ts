@@ -124,7 +124,7 @@ export async function getExpenseByName(userId: string, name: string) {
 
 export async function getExpenseSuggestions(userId: string, name: string) {
   const expenses = await db.query<Pick<Expense, 'description'>>(
-    sql`SELECT DISTINCT "description" FROM "bewcloud_expenses" WHERE "user_id" = $1 AND LOWER("description") ILIKE LOWER($2) ORDER BY "description" ASC`,
+    sql`SELECT "description" FROM "bewcloud_expenses" WHERE "user_id" = $1 AND LOWER("description") ILIKE LOWER($2) GROUP BY "description" ORDER BY LENGTH("description") ASC, "description" ASC`,
     [
       userId,
       `%${name}%`,

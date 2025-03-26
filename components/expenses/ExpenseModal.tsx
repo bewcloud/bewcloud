@@ -137,6 +137,17 @@ export default function ExpenseModal(
                 newExpenseDescription.value = event.currentTarget.value;
                 fetchSuggestions(event.currentTarget.value);
               }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  onClickSave(
+                    formatInputToNumber(newExpenseCost.value),
+                    newExpenseDescription.value,
+                    newExpenseBudget.value,
+                    newExpenseDate.value,
+                    newExpenseIsRecurring.value,
+                  );
+                }
+              }}
               onFocus={() => {
                 if (suggestions.value.length > 0) {
                   showSuggestions.value = true;

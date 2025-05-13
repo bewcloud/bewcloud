@@ -104,6 +104,7 @@ export default function BudgetModal(
               <button
                 class='px-5 py-2 bg-red-600 text-white cursor-pointer rounded-md mr-2 opacity-30 hover:opacity-100'
                 onClick={() => onClickDelete()}
+                type='button'
               >
                 Delete
               </button>
@@ -112,6 +113,7 @@ export default function BudgetModal(
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md mr-2'
             onClick={() => onClose()}
+            type='button'
           >
             {budget ? 'Cancel' : 'Close'}
           </button>
@@ -123,6 +125,7 @@ export default function BudgetModal(
                 newBudgetMonth.value.substring(0, 7),
                 formatInputToNumber(newBudgetValue.value),
               )}
+            type='button'
           >
             {budget ? 'Update' : 'Create'}
           </button>

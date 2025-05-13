@@ -237,6 +237,7 @@ export default function ExpenseModal(
               <button
                 class='px-5 py-2 bg-red-600 text-white cursor-pointer rounded-md mr-2 opacity-30 hover:opacity-100'
                 onClick={() => onClickDelete()}
+                type='button'
               >
                 Delete
               </button>
@@ -245,6 +246,7 @@ export default function ExpenseModal(
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md mr-2'
             onClick={() => onClose()}
+            type='button'
           >
             {expense ? 'Cancel' : 'Close'}
           </button>
@@ -259,6 +261,7 @@ export default function ExpenseModal(
                 newExpenseIsRecurring.value,
               );
             }}
+            type='button'
           >
             {expense ? 'Update' : 'Create'}
           </button>

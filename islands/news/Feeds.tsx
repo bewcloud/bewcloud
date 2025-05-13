@@ -252,12 +252,14 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickImportOpml()}
+                  type='button'
                 >
                   Import OPML
                 </button>
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickExportOpml()}
+                  type='button'
                 >
                   Export OPML
                 </button>

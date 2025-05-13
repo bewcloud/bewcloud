@@ -5,3 +5,6 @@
 docker-compose*
 Dockerfile
 render.yaml
+LICENSE
+README.md
+.env.sample

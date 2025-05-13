@@ -44,12 +44,14 @@ export default function CreateNoteModal(
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md'
             onClick={() => onClickSave(newNoteName.value)}
+            type='button'
           >
             Create
           </button>
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md'
             onClick={() => onClose()}
+            type='button'
           >
             Close
           </button>

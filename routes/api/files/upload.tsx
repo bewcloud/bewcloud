@@ -1,13 +1,14 @@
 import { Handlers } from 'fresh/server.ts';
 
-import { DirectoryFile, FreshContextState } from '/lib/types.ts';
-import { createFile, getFiles } from '/lib/data/files.ts';
+import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
+import { createFile, getDirectories, getFiles } from '/lib/data/files.ts';
 
 interface Data {}
 
 export interface ResponseBody {
   success: boolean;
   newFiles: DirectoryFile[];
+  newDirectories: Directory[];
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -18,13 +19,14 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const requestBody = await request.clone().formData();
 
+    const pathInView = requestBody.get('path_in_view') as string;
     const parentPath = requestBody.get('parent_path') as string;
     const name = requestBody.get('name') as string;
     const contents = requestBody.get('contents') as File | string;
 
     if (
-      !parentPath || !name.trim() || !contents || !parentPath.startsWith('/') ||
-      parentPath.includes('../')
+      !parentPath || !pathInView || !name.trim() || !contents || !parentPath.startsWith('/') ||
+      parentPath.includes('../') || !pathInView.startsWith('/') || pathInView.includes('../')
     ) {
       return new Response('Bad Request', { status: 400 });
     }
@@ -33,9 +35,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const createdFile = await createFile(context.state.user.id, parentPath, name.trim(), fileContents);
 
-    const newFiles = await getFiles(context.state.user.id, parentPath);
+    const newFiles = await getFiles(context.state.user.id, pathInView);
+    const newDirectories = await getDirectories(context.state.user.id, pathInView);
 
-    const responseBody: ResponseBody = { success: createdFile, newFiles };
+    const responseBody: ResponseBody = { success: createdFile, newFiles, newDirectories };
 
     return new Response(JSON.stringify(responseBody));
   },

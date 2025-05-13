@@ -729,12 +729,14 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickCreateExpense()}
+                  type='button'
                 >
                   New Expense
                 </button>
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickCreateBudget()}
+                  type='button'
                 >
                   New Budget
                 </button>
@@ -746,12 +748,14 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickImportFile()}
+                  type='button'
                 >
                   Import
                 </button>
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickExportFile()}
+                  type='button'
                 >
                   Export
                 </button>

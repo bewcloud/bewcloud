@@ -51,12 +51,14 @@ export default function RenameDirectoryOrFileModal(
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md'
             onClick={() => onClickSave(newName.value)}
+            type='button'
           >
             Save
           </button>
           <button
             class='px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white cursor-pointer rounded-md'
             onClick={() => onClose()}
+            type='button'
           >
             Close
           </button>

@@ -131,7 +131,7 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
     <>
       <section class='flex flex-row items-center justify-between mb-4'>
         <section class='flex items-center justify-end w-full'>
-          <FilesBreadcrumb path={path.value} isShowingPhotos={true} />
+          <FilesBreadcrumb path={path.value} isShowingPhotos />
 
           <section class='relative inline-block text-left ml-2'>
             <div>
@@ -167,12 +167,14 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickUploadFile()}
+                  type='button'
                 >
                   Upload Photo
                 </button>
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickCreateDirectory()}
+                  type='button'
                 >
                   New Directory
                 </button>
@@ -186,7 +188,7 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
         <ListFiles
           directories={directories.value}
           files={[]}
-          isShowingPhotos={true}
+          isShowingPhotos
         />
 
         <ListPhotos

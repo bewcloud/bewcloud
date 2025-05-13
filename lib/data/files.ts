@@ -192,6 +192,15 @@ export async function createFile(
   const rootPath = join(getFilesRootPath(), userId, path);
 
   try {
+    // Ensure the directory exist, if being requested
+    try {
+      await Deno.stat(rootPath);
+    } catch (error) {
+      if ((error as Error).toString().includes('NotFound')) {
+        await Deno.mkdir(rootPath, { recursive: true });
+      }
+    }
+
     if (typeof contents === 'string') {
       await Deno.writeTextFile(join(rootPath, name), contents, { append: false, createNew: true });
     } else {

@@ -68,7 +68,7 @@ export default function Note({ fileName, currentPath, contents }: NoteProps) {
   return (
     <section class='flex flex-col'>
       <section class='mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 w-full flex flex-row items-center justify-start'>
-        <FilesBreadcrumb path={currentPath} isShowingNotes={true} />
+        <FilesBreadcrumb path={currentPath} isShowingNotes />
         <h3 class='text-base text-white font-semibold'>
           <span class='mr-2 text-xs'>/</span>
           {decodeURIComponent(fileName)}

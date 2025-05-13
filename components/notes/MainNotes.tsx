@@ -205,7 +205,7 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
     <>
       <section class='flex flex-row items-center justify-between mb-4'>
         <section class='flex items-center justify-end w-full'>
-          <FilesBreadcrumb path={path.value} isShowingNotes={true} />
+          <FilesBreadcrumb path={path.value} isShowingNotes />
 
           <section class='relative inline-block text-left ml-2'>
             <div>
@@ -241,12 +241,14 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickCreateNote()}
+                  type='button'
                 >
                   New Note
                 </button>
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickCreateDirectory()}
+                  type='button'
                 >
                   New Directory
                 </button>
@@ -262,7 +264,7 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
           files={files.value}
           onClickDeleteDirectory={onClickDeleteDirectory}
           onClickDeleteFile={onClickDeleteFile}
-          isShowingNotes={true}
+          isShowingNotes
         />
 
         <span

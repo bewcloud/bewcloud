@@ -61,6 +61,11 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
+    fileInput.webkitdirectory = true;
+    // @ts-expect-error - mozdirectory is not typed
+    fileInput.mozdirectory = true;
+    // @ts-expect-error - directory is not typed
+    fileInput.directory = true;
     fileInput.click();
 
     fileInput.onchange = async (event) => {
@@ -78,9 +83,18 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
         areNewOptionsOpen.value = false;
 
         const requestBody = new FormData();
+        requestBody.set('path_in_view', path.value);
         requestBody.set('parent_path', path.value);
         requestBody.set('name', chosenFile.name);
         requestBody.set('contents', chosenFile);
+
+        // Keep directory structure if the file comes from a chosen directory
+        if (chosenFile.webkitRelativePath) {
+          const directoryPath = chosenFile.webkitRelativePath.replace(chosenFile.name, '');
+
+          // We don't need to worry about path joining here, the API will handle it (and make sure it's secure)
+          requestBody.set('parent_path', `${path.value}${directoryPath}`);
+        }
 
         try {
           const response = await fetch(`/api/files/upload`, {
@@ -94,6 +108,7 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
           }
 
           files.value = [...result.newFiles];
+          directories.value = [...result.newDirectories];
         } catch (error) {
           console.error(error);
         }
@@ -509,6 +524,7 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
                       <button
                         class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                         onClick={() => onClickBulkDelete()}
+                        type='button'
                       >
                         Delete {bulkItemsCount} item{bulkItemsCount === 1 ? '' : 's'}
                       </button>
@@ -557,12 +573,14 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickUploadFile()}
+                  type='button'
                 >
-                  Upload File
+                  Upload Files
                 </button>
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                   onClick={() => onClickCreateDirectory()}
+                  type='button'
                 >
                   New Directory
                 </button>

@@ -175,6 +175,7 @@ export default function Articles({ initialArticles }: ArticlesProps) {
                     filter.value.status === 'unread' ? 'font-semibold' : ''
                   }`}
                   onClick={() => setNewFilter({ status: 'unread' })}
+                  type='button'
                 >
                   Show only unread
                 </button>
@@ -183,6 +184,7 @@ export default function Articles({ initialArticles }: ArticlesProps) {
                     filter.value.status === 'all' ? 'font-semibold' : ''
                   }`}
                   onClick={() => setNewFilter({ status: 'all' })}
+                  type='button'
                 >
                   Show all
                 </button>

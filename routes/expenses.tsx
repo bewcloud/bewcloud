@@ -2,7 +2,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Budget, Expense, FreshContextState, SupportedCurrencySymbol } from '/lib/types.ts';
 import { isAppEnabled } from '/lib/config.ts';
-import { generateMonthlyBudgetsAndExpenses, getBudgets, getExpenses } from '/lib/data/expenses.ts';
+import { BudgetModel, ExpenseModel, generateMonthlyBudgetsAndExpenses } from '/lib/models/expenses.ts';
 import ExpensesWrapper from '/islands/expenses/ExpensesWrapper.tsx';
 
 interface Data {
@@ -41,16 +41,16 @@ export const handler: Handlers<Data, FreshContextState> = {
       initialMonth = nextMonth;
     }
 
-    let userBudgets = await getBudgets(context.state.user.id, initialMonth);
+    let userBudgets = await BudgetModel.list(context.state.user.id, initialMonth);
 
-    let userExpenses = await getExpenses(context.state.user.id, initialMonth);
+    let userExpenses = await ExpenseModel.list(context.state.user.id, initialMonth);
 
     // If there are no budgets or expenses, and the selected month is in the future, generate the month's budgets and expenses
     if (userBudgets.length === 0 && userExpenses.length === 0 && initialMonth >= currentMonth) {
       await generateMonthlyBudgetsAndExpenses(context.state.user.id, initialMonth);
 
-      userBudgets = await getBudgets(context.state.user.id, initialMonth);
-      userExpenses = await getExpenses(context.state.user.id, initialMonth);
+      userBudgets = await BudgetModel.list(context.state.user.id, initialMonth);
+      userExpenses = await ExpenseModel.list(context.state.user.id, initialMonth);
     }
 
     const currency = context.state.user.extra.expenses_currency || '$';

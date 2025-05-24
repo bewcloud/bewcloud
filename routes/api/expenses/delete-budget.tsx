@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Budget, FreshContextState } from '/lib/types.ts';
-import { deleteBudget, getBudgetById, getBudgets } from '/lib/data/expenses.ts';
+import { BudgetModel } from '/lib/models/expenses.ts';
 
 interface Data {}
 
@@ -29,20 +29,20 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad request', { status: 400 });
     }
 
-    const budget = await getBudgetById(context.state.user.id, requestBody.id);
+    const budget = await BudgetModel.getById(context.state.user.id, requestBody.id);
 
     if (!budget) {
       return new Response('Not found', { status: 404 });
     }
 
     try {
-      await deleteBudget(context.state.user.id, requestBody.id);
+      await BudgetModel.delete(context.state.user.id, requestBody.id);
     } catch (error) {
       console.error(error);
       return new Response(`${error}`, { status: 500 });
     }
 
-    const newBudgets = await getBudgets(context.state.user.id, requestBody.currentMonth);
+    const newBudgets = await BudgetModel.list(context.state.user.id, requestBody.currentMonth);
 
     const responseBody: ResponseBody = { success: true, newBudgets };
 

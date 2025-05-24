@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { DashboardLink, FreshContextState } from '/lib/types.ts';
-import { getDashboardByUserId, updateDashboard } from '/lib/data/dashboard.ts';
+import { DashboardModel } from '/lib/models/dashboard.ts';
 
 interface Data {}
 
@@ -19,7 +19,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const userDashboard = await getDashboardByUserId(context.state.user.id);
+    const userDashboard = await DashboardModel.getByUserId(context.state.user.id);
 
     if (!userDashboard) {
       return new Response('Not found', { status: 404 });
@@ -30,7 +30,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     if (typeof requestBody.links !== 'undefined') {
       userDashboard.data.links = requestBody.links;
 
-      await updateDashboard(userDashboard);
+      await DashboardModel.update(userDashboard);
     }
 
     const responseBody: ResponseBody = { success: true };

@@ -11,7 +11,7 @@ import {
   getProperDestinationPath,
   getPropertyNames,
 } from '/lib/utils/webdav.ts';
-import { ensureUserPathIsValidAndSecurelyAccessible, getFile } from '/lib/data/files.ts';
+import { ensureUserPathIsValidAndSecurelyAccessible, FileModel } from '/lib/models/files.ts';
 
 interface Data {}
 
@@ -53,7 +53,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
   if (request.method === 'GET') {
     try {
-      const fileResult = await getFile(userId, filePath);
+      const fileResult = await FileModel.get(userId, filePath);
 
       if (!fileResult.success) {
         return new Response('Not Found', { status: 404 });

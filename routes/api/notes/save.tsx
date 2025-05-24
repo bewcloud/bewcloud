@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { getFile, updateFile } from '/lib/data/files.ts';
+import { FileModel } from '/lib/models/files.ts';
 
 interface Data {}
 
@@ -42,7 +42,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Not Found', { status: 404 });
     }
 
-    const fileResult = await getFile(
+    const fileResult = await FileModel.get(
       context.state.user.id,
       requestBody.currentPath,
       decodeURIComponent(requestBody.fileName),
@@ -52,7 +52,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Not Found', { status: 404 });
     }
 
-    const updatedFile = await updateFile(
+    const updatedFile = await FileModel.update(
       context.state.user.id,
       requestBody.currentPath,
       decodeURIComponent(requestBody.fileName),

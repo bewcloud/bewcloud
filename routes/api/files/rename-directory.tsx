@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Directory, FreshContextState } from '/lib/types.ts';
-import { getDirectories, renameDirectoryOrFile } from '/lib/data/files.ts';
+import { DirectoryModel } from '/lib/models/files.ts';
 
 interface Data {}
 
@@ -32,7 +32,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const movedDirectory = await renameDirectoryOrFile(
+    const movedDirectory = await DirectoryModel.rename(
       context.state.user.id,
       requestBody.parentPath,
       requestBody.parentPath,
@@ -40,7 +40,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       requestBody.newName.trim(),
     );
 
-    const newDirectories = await getDirectories(context.state.user.id, requestBody.parentPath);
+    const newDirectories = await DirectoryModel.list(context.state.user.id, requestBody.parentPath);
 
     const responseBody: ResponseBody = { success: movedDirectory, newDirectories };
 

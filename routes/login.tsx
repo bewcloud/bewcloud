@@ -3,7 +3,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 import { generateHash, helpEmail, validateEmail } from '/lib/utils/misc.ts';
 import { createSessionResponse, PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
-import { createVerificationCode, getUserByEmail, updateUser, validateVerificationCode } from '/lib/data/user.ts';
+import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { isEmailEnabled } from '/lib/config.ts';
@@ -61,7 +61,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       const hashedPassword = await generateHash(`${password}:${PASSWORD_SALT}`, 'SHA-256');
 
-      const user = await getUserByEmail(email);
+      const user = await UserModel.getByEmail(email);
 
       if (!user || user.hashed_password !== hashedPassword) {
         throw new Error('Email not found or invalid password.');
@@ -70,24 +70,24 @@ export const handler: Handlers<Data, FreshContextState> = {
       if (!isEmailEnabled() && !user.extra.is_email_verified) {
         user.extra.is_email_verified = true;
 
-        await updateUser(user);
+        await UserModel.update(user);
       }
 
       if (!user.extra.is_email_verified) {
         const code = getFormDataField(formData, 'verification-code');
 
         if (!code) {
-          const verificationCode = await createVerificationCode(user, user.email, 'email');
+          const verificationCode = await VerificationCodeModel.create(user, user.email, 'email');
 
           await sendVerifyEmailEmail(user.email, verificationCode);
 
           throw new Error('Email not verified. New code sent to verify your email.');
         } else {
-          await validateVerificationCode(user, user.email, code, 'email');
+          await VerificationCodeModel.validate(user, user.email, code, 'email');
 
           user.extra.is_email_verified = true;
 
-          await updateUser(user);
+          await UserModel.update(user);
         }
       }
 

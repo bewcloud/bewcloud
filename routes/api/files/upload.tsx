@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
-import { createFile, getDirectories, getFiles } from '/lib/data/files.ts';
+import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 
 interface Data {}
 
@@ -33,10 +33,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const fileContents = typeof contents === 'string' ? contents : await contents.arrayBuffer();
 
-    const createdFile = await createFile(context.state.user.id, parentPath, name.trim(), fileContents);
+    const createdFile = await FileModel.create(context.state.user.id, parentPath, name.trim(), fileContents);
 
-    const newFiles = await getFiles(context.state.user.id, pathInView);
-    const newDirectories = await getDirectories(context.state.user.id, pathInView);
+    const newFiles = await FileModel.list(context.state.user.id, pathInView);
+    const newDirectories = await DirectoryModel.list(context.state.user.id, pathInView);
 
     const responseBody: ResponseBody = { success: createdFile, newFiles, newDirectories };
 

@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Directory, FreshContextState } from '/lib/types.ts';
-import { deleteDirectoryOrFile, getDirectories } from '/lib/data/files.ts';
+import { DirectoryModel } from '/lib/models/files.ts';
 
 interface Data {}
 
@@ -30,13 +30,13 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const deletedDirectory = await deleteDirectoryOrFile(
+    const deletedDirectory = await DirectoryModel.delete(
       context.state.user.id,
       requestBody.parentPath,
       requestBody.name.trim(),
     );
 
-    const newDirectories = await getDirectories(context.state.user.id, requestBody.parentPath);
+    const newDirectories = await DirectoryModel.list(context.state.user.id, requestBody.parentPath);
 
     const responseBody: ResponseBody = { success: deletedDirectory, newDirectories };
 

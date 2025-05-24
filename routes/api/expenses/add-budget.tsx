@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Budget, FreshContextState } from '/lib/types.ts';
-import { createBudget, getBudgets } from '/lib/data/expenses.ts';
+import { BudgetModel } from '/lib/models/expenses.ts';
 
 interface Data {}
 
@@ -33,7 +33,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     try {
-      const newBudget = await createBudget(
+      const newBudget = await BudgetModel.create(
         context.state.user.id,
         requestBody.name,
         requestBody.month,
@@ -48,7 +48,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response(`${error}`, { status: 500 });
     }
 
-    const newBudgets = await getBudgets(context.state.user.id, requestBody.currentMonth);
+    const newBudgets = await BudgetModel.list(context.state.user.id, requestBody.currentMonth);
 
     const responseBody: ResponseBody = { success: true, newBudgets };
 

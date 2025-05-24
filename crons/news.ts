@@ -1,7 +1,7 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { NewsFeed } from '/lib/types.ts';
 import { concurrentPromises } from '/lib/utils/misc.ts';
-import { crawlNewsFeed } from '/lib/data/news.ts';
+import { FeedModel } from '/lib/models/news.ts';
 
 const db = new Database();
 
@@ -18,7 +18,7 @@ export async function fetchNewArticles(forceFetch = false) {
 
     console.info('Will crawl', feedsToCrawl.length, 'news feeds');
 
-    await concurrentPromises(feedsToCrawl.map((newsFeed) => () => crawlNewsFeed(newsFeed)), 3);
+    await concurrentPromises(feedsToCrawl.map((newsFeed) => () => FeedModel.crawl(newsFeed)), 3);
 
     console.info('Crawled', feedsToCrawl.length, 'news feeds');
   } catch (error) {

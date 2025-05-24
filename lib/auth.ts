@@ -5,7 +5,7 @@ import 'std/dotenv/load.ts';
 
 import { baseUrl, generateHash, isRunningLocally } from './utils/misc.ts';
 import { User, UserSession } from './types.ts';
-import { createUserSession, deleteUserSession, getUserByEmail, validateUserAndSession } from './data/user.ts';
+import { UserModel, UserSessionModel, validateUserAndSession } from './models/user.ts';
 import { isCookieDomainAllowed, isCookieDomainSecurityDisabled } from './config.ts';
 
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
@@ -102,7 +102,7 @@ async function getDataFromAuthorizationHeader(authorizationHeader: string) {
 
     const hashedPassword = await generateHash(`${basicAuthPassword}:${PASSWORD_SALT}`, 'SHA-256');
 
-    const user = await getUserByEmail(basicAuthUsername);
+    const user = await UserModel.getByEmail(basicAuthUsername);
 
     if (!user || (user.hashed_password !== hashedPassword && user.extra.dav_hashed_password !== hashedPassword)) {
       throw new Error('Email not found or invalid password.');
@@ -159,7 +159,7 @@ export async function logoutUser(request: Request) {
   const { session_id } = tokenData;
 
   // Delete user session
-  await deleteUserSession(session_id);
+  await UserSessionModel.delete(session_id);
 
   // Generate response with empty and expiring cookie
   const cookie: Cookie = {
@@ -210,7 +210,7 @@ export async function createSessionCookie(
   response: Response,
   isShortLived = false,
 ) {
-  const newSession = await createUserSession(user, isShortLived);
+  const newSession = await UserSessionModel.create(user, isShortLived);
 
   // Generate response with session cookie
   const token = await generateToken({ user_id: user.id, session_id: newSession.id });

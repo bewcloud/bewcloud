@@ -2,7 +2,7 @@ import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState, NewsFeed } from '/lib/types.ts';
 import { concurrentPromises } from '/lib/utils/misc.ts';
-import { createNewsFeed, getNewsFeeds } from '/lib/data/news.ts';
+import { FeedModel } from '/lib/models/news.ts';
 import { fetchNewArticles } from '/crons/news.ts';
 
 interface Data {}
@@ -30,14 +30,14 @@ export const handler: Handlers<Data, FreshContextState> = {
       }
 
       await concurrentPromises(
-        requestBody.feedUrls.map((feedUrl) => () => createNewsFeed(context.state.user!.id, feedUrl)),
+        requestBody.feedUrls.map((feedUrl) => () => FeedModel.create(context.state.user!.id, feedUrl)),
         5,
       );
     }
 
     await fetchNewArticles();
 
-    const newFeeds = await getNewsFeeds(context.state.user.id);
+    const newFeeds = await FeedModel.list(context.state.user.id);
 
     const responseBody: ResponseBody = { success: true, newFeeds };
 

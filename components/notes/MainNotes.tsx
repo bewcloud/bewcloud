@@ -55,6 +55,7 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
 
     const requestBody = new FormData();
     requestBody.set('parent_path', path.value);
+    requestBody.set('path_in_view', path.value);
     requestBody.set('name', `${newNoteName}.md`);
     requestBody.set('contents', `# ${newNoteName}\n\nStart your new note!\n`);
 

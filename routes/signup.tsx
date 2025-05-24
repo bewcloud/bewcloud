@@ -3,7 +3,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 import { generateHash, helpEmail, validateEmail } from '/lib/utils/misc.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
-import { createUser, createVerificationCode, getUserByEmail, updateUser } from '/lib/data/user.ts';
+import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { isEmailEnabled, isSignupAllowed } from '/lib/config.ts';
 import { FreshContextState } from '/lib/types.ts';
@@ -54,7 +54,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         throw new Error(`Password is too short.`);
       }
 
-      const existingUser = await getUserByEmail(email);
+      const existingUser = await UserModel.getByEmail(email);
 
       if (existingUser) {
         throw new Error('Email is already in use. Perhaps you want to login instead?');
@@ -62,10 +62,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       const hashedPassword = await generateHash(`${password}:${PASSWORD_SALT}`, 'SHA-256');
 
-      const user = await createUser(email, hashedPassword);
+      const user = await UserModel.create(email, hashedPassword);
 
       if (isEmailEnabled()) {
-        const verificationCode = await createVerificationCode(user, user.email, 'email');
+        const verificationCode = await VerificationCodeModel.create(user, user.email, 'email');
 
         await sendVerifyEmailEmail(user.email, verificationCode);
       }

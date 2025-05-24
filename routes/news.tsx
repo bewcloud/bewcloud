@@ -2,7 +2,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { FreshContextState, NewsFeedArticle } from '/lib/types.ts';
 import { isAppEnabled } from '/lib/config.ts';
-import { getNewsArticles } from '/lib/data/news.ts';
+import { ArticleModel } from '/lib/models/news.ts';
 import Articles from '/islands/news/Articles.tsx';
 
 interface Data {
@@ -19,7 +19,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/dashboard` } });
     }
 
-    const userArticles = await getNewsArticles(context.state.user.id);
+    const userArticles = await ArticleModel.list(context.state.user.id);
 
     return await context.render({ userArticles });
   },

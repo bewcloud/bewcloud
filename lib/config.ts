@@ -1,11 +1,11 @@
 import 'std/dotenv/load.ts';
 
-import { isThereAnAdmin } from './data/user.ts';
+import { UserModel } from './models/user.ts';
 
 export async function isSignupAllowed() {
   const areSignupsAllowed = Deno.env.get('CONFIG_ALLOW_SIGNUPS') === 'true';
 
-  const areThereAdmins = await isThereAnAdmin();
+  const areThereAdmins = await UserModel.isThereAnAdmin();
 
   if (areSignupsAllowed || !areThereAdmins) {
     return true;

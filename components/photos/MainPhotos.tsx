@@ -49,6 +49,7 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
 
         const requestBody = new FormData();
         requestBody.set('parent_path', path.value);
+        requestBody.set('path_in_view', path.value);
         requestBody.set('name', chosenFile.name);
         requestBody.set('contents', chosenFile);
 

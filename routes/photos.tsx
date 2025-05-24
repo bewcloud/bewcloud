@@ -2,7 +2,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import { isAppEnabled } from '/lib/config.ts';
-import { getDirectories, getFiles } from '/lib/data/files.ts';
+import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { PHOTO_EXTENSIONS } from '/lib/utils/photos.ts';
 import PhotosWrapper from '/islands/photos/PhotosWrapper.tsx';
 
@@ -36,9 +36,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath = `${currentPath}/`;
     }
 
-    const userDirectories = await getDirectories(context.state.user.id, currentPath);
+    const userDirectories = await DirectoryModel.list(context.state.user.id, currentPath);
 
-    const userFiles = await getFiles(context.state.user.id, currentPath);
+    const userFiles = await FileModel.list(context.state.user.id, currentPath);
 
     const userPhotos = userFiles.filter((file) => {
       const lowercaseFileName = file.file_name.toLowerCase();

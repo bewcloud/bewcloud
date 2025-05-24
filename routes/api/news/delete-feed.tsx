@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState, NewsFeed } from '/lib/types.ts';
-import { deleteNewsFeed, getNewsFeed, getNewsFeeds } from '/lib/data/news.ts';
+import { FeedModel } from '/lib/models/news.ts';
 
 interface Data {}
 
@@ -23,16 +23,16 @@ export const handler: Handlers<Data, FreshContextState> = {
     const requestBody = await request.clone().json() as RequestBody;
 
     if (requestBody.feedId) {
-      const newsFeed = await getNewsFeed(requestBody.feedId, context.state.user.id);
+      const newsFeed = await FeedModel.get(requestBody.feedId, context.state.user.id);
 
       if (!newsFeed) {
         return new Response('Not found', { status: 404 });
       }
 
-      await deleteNewsFeed(requestBody.feedId, context.state.user.id);
+      await FeedModel.delete(requestBody.feedId, context.state.user.id);
     }
 
-    const newFeeds = await getNewsFeeds(context.state.user.id);
+    const newFeeds = await FeedModel.list(context.state.user.id);
 
     const responseBody: ResponseBody = { success: true, newFeeds };
 

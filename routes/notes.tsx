@@ -2,7 +2,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import { isAppEnabled } from '/lib/config.ts';
-import { getDirectories, getFiles } from '/lib/data/files.ts';
+import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import NotesWrapper from '/islands/notes/NotesWrapper.tsx';
 
 interface Data {
@@ -35,9 +35,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath = `${currentPath}/`;
     }
 
-    const userDirectories = await getDirectories(context.state.user.id, currentPath);
+    const userDirectories = await DirectoryModel.list(context.state.user.id, currentPath);
 
-    const userFiles = await getFiles(context.state.user.id, currentPath);
+    const userFiles = await FileModel.list(context.state.user.id, currentPath);
 
     const userNotes = userFiles.filter((file) => file.file_name.endsWith('.md'));
 

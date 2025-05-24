@@ -8,3 +8,6 @@ render.yaml
 LICENSE
 README.md
 .env.sample
+node_modules
+_fresh
+data-files

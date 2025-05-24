@@ -2,13 +2,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { currencyMap, FreshContextState, SupportedCurrencySymbol } from '/lib/types.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
-import {
-  createVerificationCode,
-  deleteUser,
-  getUserByEmail,
-  updateUser,
-  validateVerificationCode,
-} from '/lib/data/user.ts';
+import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { convertFormDataToObject, generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
@@ -72,14 +66,14 @@ export const handler: Handlers<Data, FreshContextState> = {
           throw new Error(`New email is the same as the current email.`);
         }
 
-        const matchingUser = await getUserByEmail(email);
+        const matchingUser = await UserModel.getByEmail(email);
 
         if (matchingUser) {
           throw new Error('Email is already in use.');
         }
 
         if (action === 'change-email' && isEmailEnabled()) {
-          const verificationCode = await createVerificationCode(user, email, 'email');
+          const verificationCode = await VerificationCodeModel.create(user, email, 'email');
 
           await sendVerifyEmailEmail(email, verificationCode);
 
@@ -89,12 +83,12 @@ export const handler: Handlers<Data, FreshContextState> = {
           if (isEmailEnabled()) {
             const code = getFormDataField(formData, 'verification-code');
 
-            await validateVerificationCode(user, email, code, 'email');
+            await VerificationCodeModel.validate(user, email, code, 'email');
           }
 
           user.email = email;
 
-          await updateUser(user);
+          await UserModel.update(user);
 
           successTitle = 'Email updated!';
           successMessage = 'Email updated successfully.';
@@ -120,7 +114,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
         user.hashed_password = hashedNewPassword;
 
-        await updateUser(user);
+        await UserModel.update(user);
 
         successTitle = 'Password changed!';
         successMessage = 'Password changed successfully.';
@@ -139,7 +133,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
         user.extra.dav_hashed_password = hashedNewDavPassword;
 
-        await updateUser(user);
+        await UserModel.update(user);
 
         successTitle = 'DAV Password changed!';
         successMessage = 'DAV Password changed successfully.';
@@ -152,7 +146,7 @@ export const handler: Handlers<Data, FreshContextState> = {
           throw new Error('Invalid current password.');
         }
 
-        await deleteUser(user.id);
+        await UserModel.delete(user.id);
 
         return new Response('Account deleted successfully', {
           status: 303,
@@ -167,7 +161,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
         user.extra.expenses_currency = newCurrencySymbol;
 
-        await updateUser(user);
+        await UserModel.update(user);
 
         successTitle = 'Currency changed!';
         successMessage = 'Currency changed successfully.';

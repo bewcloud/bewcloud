@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { FreshContextState, NewsFeed } from '/lib/types.ts';
-import { getNewsFeeds } from '/lib/data/news.ts';
+import { FeedModel } from '/lib/models/news.ts';
 import Feeds from '/islands/news/Feeds.tsx';
 
 interface Data {
@@ -14,7 +14,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
 
-    const userFeeds = await getNewsFeeds(context.state.user.id);
+    const userFeeds = await FeedModel.list(context.state.user.id);
 
     return await context.render({ userFeeds });
   },

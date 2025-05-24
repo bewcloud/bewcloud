@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState, NewsFeed } from '/lib/types.ts';
-import { createNewsFeed, getNewsFeeds } from '/lib/data/news.ts';
+import { FeedModel } from '/lib/models/news.ts';
 import { fetchNewArticles } from '/crons/news.ts';
 
 interface Data {}
@@ -24,7 +24,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const requestBody = await request.clone().json() as RequestBody;
 
     if (requestBody.feedUrl) {
-      const newFeed = await createNewsFeed(context.state.user.id, requestBody.feedUrl);
+      const newFeed = await FeedModel.create(context.state.user.id, requestBody.feedUrl);
 
       if (!newFeed) {
         return new Response('Not found', { status: 404 });
@@ -33,7 +33,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     await fetchNewArticles();
 
-    const newFeeds = await getNewsFeeds(context.state.user.id);
+    const newFeeds = await FeedModel.list(context.state.user.id);
 
     const responseBody: ResponseBody = { success: true, newFeeds };
 

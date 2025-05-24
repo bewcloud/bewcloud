@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { getExpenseSuggestions } from '/lib/data/expenses.ts';
+import { ExpenseModel } from '/lib/models/expenses.ts';
 
 interface Data {}
 
@@ -26,7 +26,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad request', { status: 400 });
     }
 
-    const suggestions = await getExpenseSuggestions(
+    const suggestions = await ExpenseModel.listSuggestions(
       context.state.user.id,
       requestBody.name,
     );

@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { getFile } from '/lib/data/files.ts';
+import { FileModel } from '/lib/models/files.ts';
 import Note from '/islands/notes/Note.tsx';
 
 interface Data {
@@ -41,7 +41,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Not Found', { status: 404 });
     }
 
-    const fileResult = await getFile(context.state.user.id, currentPath, decodeURIComponent(fileName));
+    const fileResult = await FileModel.get(context.state.user.id, currentPath, decodeURIComponent(fileName));
 
     if (!fileResult.success) {
       return new Response('Not Found', { status: 404 });

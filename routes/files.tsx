@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
-import { getDirectories, getFiles } from '/lib/data/files.ts';
+import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import FilesWrapper from '/islands/files/FilesWrapper.tsx';
 
 interface Data {
@@ -30,9 +30,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath = `${currentPath}/`;
     }
 
-    const userDirectories = await getDirectories(context.state.user.id, currentPath);
+    const userDirectories = await DirectoryModel.list(context.state.user.id, currentPath);
 
-    const userFiles = await getFiles(context.state.user.id, currentPath);
+    const userFiles = await FileModel.list(context.state.user.id, currentPath);
 
     return await context.render({ userDirectories, userFiles, currentPath });
   },

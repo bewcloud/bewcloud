@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Directory, FreshContextState } from '/lib/types.ts';
-import { getDirectories } from '/lib/data/files.ts';
+import { DirectoryModel } from '/lib/models/files.ts';
 
 interface Data {}
 
@@ -29,7 +29,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const directories = await getDirectories(
+    const directories = await DirectoryModel.list(
       context.state.user.id,
       requestBody.parentPath,
     );

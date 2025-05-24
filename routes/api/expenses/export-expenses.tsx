@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { Budget, Expense, FreshContextState } from '/lib/types.ts';
-import { getAllBudgetsForExport, getAllExpensesForExport } from '/lib/data/expenses.ts';
+import { BudgetModel, ExpenseModel } from '/lib/models/expenses.ts';
 
 interface Data {}
 
@@ -21,9 +21,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const newExpenses = await getAllExpensesForExport(context.state.user.id);
+    const newExpenses = await ExpenseModel.getAllForExport(context.state.user.id);
 
-    const newBudgets = await getAllBudgetsForExport(context.state.user.id);
+    const newBudgets = await BudgetModel.getAllForExport(context.state.user.id);
 
     const responseBody: ResponseBody = { success: true, jsonContents: { expenses: newExpenses, budgets: newBudgets } };
 

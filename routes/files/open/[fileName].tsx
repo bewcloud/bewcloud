@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { getFile } from '/lib/data/files.ts';
+import { FileModel } from '/lib/models/files.ts';
 
 interface Data {}
 
@@ -31,7 +31,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath = `${currentPath}/`;
     }
 
-    const fileResult = await getFile(context.state.user.id, currentPath, decodeURIComponent(fileName));
+    const fileResult = await FileModel.get(context.state.user.id, currentPath, decodeURIComponent(fileName));
 
     if (!fileResult.success) {
       return new Response('Not Found', { status: 404 });

@@ -1,7 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
-import { getNewsArticle, markAllArticlesRead, updateNewsArticle } from '/lib/data/news.ts';
+import { ArticleModel } from '/lib/models/news.ts';
 
 interface Data {}
 
@@ -23,9 +23,9 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     if (requestBody.articleId) {
       if (requestBody.articleId === 'all') {
-        await markAllArticlesRead(context.state.user.id);
+        await ArticleModel.markAllRead(context.state.user.id);
       } else {
-        const article = await getNewsArticle(requestBody.articleId, context.state.user.id);
+        const article = await ArticleModel.get(requestBody.articleId, context.state.user.id);
 
         if (!article) {
           return new Response('Not found', { status: 404 });
@@ -33,7 +33,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
         article.is_read = true;
 
-        await updateNewsArticle(article);
+        await ArticleModel.update(article);
       }
     }
 

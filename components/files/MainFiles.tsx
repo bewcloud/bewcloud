@@ -1,7 +1,6 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { baseUrl } from '/lib/utils/misc.ts';
 import { ResponseBody as UploadResponseBody } from '/routes/api/files/upload.tsx';
 import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/routes/api/files/rename.tsx';
 import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/routes/api/files/move.tsx';
@@ -33,9 +32,10 @@ interface MainFilesProps {
   initialDirectories: Directory[];
   initialFiles: DirectoryFile[];
   initialPath: string;
+  baseUrl: string;
 }
 
-export default function MainFiles({ initialDirectories, initialFiles, initialPath }: MainFilesProps) {
+export default function MainFiles({ initialDirectories, initialFiles, initialPath, baseUrl }: MainFilesProps) {
   const isAdding = useSignal<boolean>(false);
   const isUploading = useSignal<boolean>(false);
   const isDeleting = useSignal<boolean>(false);

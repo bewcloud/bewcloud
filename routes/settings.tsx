@@ -6,7 +6,7 @@ import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { convertFormDataToObject, generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
-import { isEmailEnabled } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 import Settings, { Action, actionWords } from '/islands/Settings.tsx';
 
 interface Data {
@@ -20,6 +20,8 @@ interface Data {
   };
   formData: Record<string, any>;
   currency?: SupportedCurrencySymbol;
+  isExpensesAppEnabled: boolean;
+  helpEmail: string;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -28,15 +30,23 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
 
+    const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
+    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+
     return await context.render({
       formData: {},
       currency: context.state.user.extra.expenses_currency,
+      isExpensesAppEnabled,
+      helpEmail,
     });
   },
   async POST(request, context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
+
+    const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
+    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     let action: Action = 'change-email';
     let errorTitle = '';
@@ -72,7 +82,7 @@ export const handler: Handlers<Data, FreshContextState> = {
           throw new Error('Email is already in use.');
         }
 
-        if (action === 'change-email' && isEmailEnabled()) {
+        if (action === 'change-email' && (await AppConfig.isEmailVerificationEnabled())) {
           const verificationCode = await VerificationCodeModel.create(user, email, 'email');
 
           await sendVerifyEmailEmail(email, verificationCode);
@@ -80,7 +90,7 @@ export const handler: Handlers<Data, FreshContextState> = {
           successTitle = 'Verify your email!';
           successMessage = 'You have received a code in your new email. Use it to verify it here.';
         } else {
-          if (isEmailEnabled()) {
+          if (await AppConfig.isEmailVerificationEnabled()) {
             const code = getFormDataField(formData, 'verification-code');
 
             await VerificationCodeModel.validate(user, email, code, 'email');
@@ -178,6 +188,8 @@ export const handler: Handlers<Data, FreshContextState> = {
         notice,
         formData: convertFormDataToObject(formData),
         currency: user.extra.expenses_currency,
+        isExpensesAppEnabled,
+        helpEmail,
       });
     } catch (error) {
       console.error(error);
@@ -188,6 +200,8 @@ export const handler: Handlers<Data, FreshContextState> = {
         error: { title: errorTitle, message: errorMessage },
         formData: convertFormDataToObject(formData),
         currency: user.extra.expenses_currency,
+        isExpensesAppEnabled,
+        helpEmail,
       });
     }
   },
@@ -196,7 +210,14 @@ export const handler: Handlers<Data, FreshContextState> = {
 export default function SettingsPage({ data }: PageProps<Data, FreshContextState>) {
   return (
     <main>
-      <Settings formData={data?.formData} error={data?.error} notice={data?.notice} currency={data?.currency} />
+      <Settings
+        formData={data?.formData}
+        error={data?.error}
+        notice={data?.notice}
+        currency={data?.currency}
+        isExpensesAppEnabled={data?.isExpensesAppEnabled}
+        helpEmail={data?.helpEmail}
+      />
     </main>
   );
 }

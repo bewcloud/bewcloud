@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
-import { isAppEnabled } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import NotesWrapper from '/islands/notes/NotesWrapper.tsx';
 
@@ -17,7 +17,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
 
-    if (!isAppEnabled('notes')) {
+    if (!(await AppConfig.isAppEnabled('notes'))) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/files` } });
     }
 

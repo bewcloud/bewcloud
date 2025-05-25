@@ -1,57 +1,203 @@
-import 'std/dotenv/load.ts';
-
 import { UserModel } from './models/user.ts';
+import { Config, OptionalApp } from './types.ts';
 
-export async function isSignupAllowed() {
-  const areSignupsAllowed = Deno.env.get('CONFIG_ALLOW_SIGNUPS') === 'true';
+export class AppConfig {
+  private static config: Config;
 
-  const areThereAdmins = await UserModel.isThereAnAdmin();
-
-  if (areSignupsAllowed || !areThereAdmins) {
-    return true;
+  private static getDefaultConfig(): Config {
+    return {
+      auth: {
+        baseUrl: 'http://localhost:8000',
+        allowSignups: false,
+        enableEmailVerification: false,
+        enableForeverSignup: true,
+        allowedCookieDomains: [],
+        skipCookieDomainSecurity: false,
+      },
+      files: {
+        rootPath: 'data-files',
+      },
+      core: {
+        enabledApps: ['news', 'notes', 'photos', 'expenses'],
+      },
+      visuals: {
+        title: '',
+        description: '',
+        helpEmail: 'help@bewcloud.com',
+      },
+    };
   }
 
-  return false;
-}
+  /** This allows for backwards-compatibility with the old config format, which was in the .env file. */
+  private static async getLegacyConfigFromEnv(): Promise<Config> {
+    const defaultConfig = this.getDefaultConfig();
 
-export function isAppEnabled(app: 'news' | 'notes' | 'photos' | 'expenses') {
-  const enabledApps = (Deno.env.get('CONFIG_ENABLED_APPS') || '').split(',') as typeof app[];
+    if (typeof Deno === 'undefined') {
+      return defaultConfig;
+    }
 
-  return enabledApps.includes(app);
-}
+    await import('std/dotenv/load.ts');
 
-export function isCookieDomainAllowed(domain: string) {
-  const allowedDomains = (Deno.env.get('CONFIG_ALLOWED_COOKIE_DOMAINS') || '').split(',') as typeof domain[];
+    const baseUrl = Deno.env.get('BASE_URL') ?? defaultConfig.auth.baseUrl;
+    const allowSignups = Deno.env.get('CONFIG_ALLOW_SIGNUPS') === 'true';
+    const enabledApps = (Deno.env.get('CONFIG_ENABLED_APPS') ?? '').split(',') as OptionalApp[];
+    const filesRootPath = Deno.env.get('CONFIG_FILES_ROOT_PATH') ?? defaultConfig.files.rootPath;
+    const enableEmailVerification = (Deno.env.get('CONFIG_ENABLE_EMAILS') ?? 'false') === 'true';
+    const enableForeverSignup = (Deno.env.get('CONFIG_ENABLE_FOREVER_SIGNUP') ?? 'true') === 'true';
+    const allowedCookieDomains = (Deno.env.get('CONFIG_ALLOWED_COOKIE_DOMAINS') || '').split(',').filter(
+      Boolean,
+    ) as string[];
+    const skipCookieDomainSecurity = Deno.env.get('CONFIG_SKIP_COOKIE_DOMAIN_SECURITY') === 'true';
+    const title = Deno.env.get('CUSTOM_TITLE') ?? defaultConfig.visuals.title;
+    const description = Deno.env.get('CUSTOM_DESCRIPTION') ?? defaultConfig.visuals.description;
+    const helpEmail = Deno.env.get('HELP_EMAIL') ?? defaultConfig.visuals.helpEmail;
 
-  if (allowedDomains.length === 0) {
-    return true;
+    return {
+      ...defaultConfig,
+      auth: {
+        ...defaultConfig.auth,
+        baseUrl,
+        allowSignups,
+        enableEmailVerification,
+        enableForeverSignup,
+        allowedCookieDomains,
+        skipCookieDomainSecurity,
+      },
+      files: {
+        ...defaultConfig.files,
+        rootPath: filesRootPath,
+      },
+      core: {
+        ...defaultConfig.core,
+        enabledApps,
+      },
+      visuals: {
+        ...defaultConfig.visuals,
+        title,
+        description,
+        helpEmail,
+      },
+    };
   }
 
-  return allowedDomains.includes(domain);
-}
+  private static async loadConfig(): Promise<void> {
+    if (this.config) {
+      return;
+    }
 
-export function isCookieDomainSecurityDisabled() {
-  const isCookieDomainSecurityDisabled = Deno.env.get('CONFIG_SKIP_COOKIE_DOMAIN_SECURITY') === 'true';
+    let initialConfig = this.getDefaultConfig();
 
-  return isCookieDomainSecurityDisabled;
-}
+    if (
+      typeof Deno.env.get('BASE_URL') === 'string' || typeof Deno.env.get('CONFIG_ALLOW_SIGNUPS') === 'string' ||
+      typeof Deno.env.get('CONFIG_ENABLED_APPS') === 'string'
+    ) {
+      console.warn(
+        '\nDEPRECATION WARNING: .env file has config variables. This will be used but is deprecated. Please use the bewcloud.config.ts file instead.',
+      );
 
-export function isEmailEnabled() {
-  const areEmailsAllowed = Deno.env.get('CONFIG_ENABLE_EMAILS') === 'true';
+      initialConfig = await this.getLegacyConfigFromEnv();
+    }
 
-  return areEmailsAllowed;
-}
+    const config: Config = {
+      ...initialConfig,
+    };
 
-export function isForeverSignupEnabled() {
-  const areForeverAccountsEnabled = Deno.env.get('CONFIG_ENABLE_FOREVER_SIGNUP') === 'true';
+    try {
+      const configFromFile: Config = (await import(`${Deno.cwd()}/bewcloud.config.ts`)).default;
 
-  return areForeverAccountsEnabled;
-}
+      this.config = {
+        ...config,
+        auth: {
+          ...config.auth,
+          ...configFromFile.auth,
+        },
+        files: {
+          ...config.files,
+          ...configFromFile.files,
+        },
+        core: {
+          ...config.core,
+          ...configFromFile.core,
+        },
+        visuals: {
+          ...config.visuals,
+          ...configFromFile.visuals,
+        },
+      };
 
-export function getFilesRootPath() {
-  const configRootPath = Deno.env.get('CONFIG_FILES_ROOT_PATH') || '';
+      console.info('\nConfig loaded from bewcloud.config.ts', JSON.stringify(this.config, null, 2), '\n');
 
-  const filesRootPath = `${Deno.cwd()}/${configRootPath}`;
+      return;
+    } catch (error) {
+      console.error('Error loading config from bewcloud.config.ts. Using default and legacy config instead.', error);
+    }
 
-  return filesRootPath;
+    this.config = config;
+  }
+
+  static async getConfig(): Promise<Config> {
+    await this.loadConfig();
+
+    return this.config;
+  }
+
+  static async isSignupAllowed(): Promise<boolean> {
+    await this.loadConfig();
+
+    const areSignupsAllowed = this.config.auth.allowSignups;
+
+    const areThereAdmins = await UserModel.isThereAnAdmin();
+
+    if (areSignupsAllowed || !areThereAdmins) {
+      return true;
+    }
+
+    return false;
+  }
+
+  static async isAppEnabled(app: OptionalApp): Promise<boolean> {
+    await this.loadConfig();
+
+    const enabledApps = this.config.core.enabledApps;
+
+    return enabledApps.includes(app);
+  }
+
+  static async isCookieDomainAllowed(domain: string): Promise<boolean> {
+    await this.loadConfig();
+
+    const allowedDomains = this.config.auth.allowedCookieDomains;
+
+    if (allowedDomains.length === 0) {
+      return true;
+    }
+
+    return allowedDomains.includes(domain);
+  }
+
+  static async isCookieDomainSecurityDisabled(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.auth.skipCookieDomainSecurity;
+  }
+
+  static async isEmailVerificationEnabled(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.auth.enableEmailVerification;
+  }
+
+  static async isForeverSignupEnabled(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.auth.enableForeverSignup;
+  }
+
+  static async getFilesRootPath(): Promise<string> {
+    await this.loadConfig();
+
+    const filesRootPath = `${Deno.cwd()}/${this.config.files.rootPath}`;
+
+    return filesRootPath;
+  }
 }

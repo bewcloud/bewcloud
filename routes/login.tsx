@@ -1,18 +1,20 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
-import { generateHash, helpEmail, validateEmail } from '/lib/utils/misc.ts';
+import { generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { createSessionResponse, PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
 import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { FreshContextState } from '/lib/types.ts';
-import { isEmailEnabled } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {
   error?: string;
   notice?: string;
   email?: string;
   formData?: FormData;
+  isEmailVerificationEnabled: boolean;
+  helpEmail: string;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -20,6 +22,9 @@ export const handler: Handlers<Data, FreshContextState> = {
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
+
+    const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     const searchParams = new URL(request.url).searchParams;
 
@@ -31,19 +36,22 @@ export const handler: Handlers<Data, FreshContextState> = {
       email = searchParams.get('email') || '';
       formData.set('email', email);
 
-      if (isEmailEnabled()) {
+      if (await AppConfig.isEmailVerificationEnabled()) {
         notice = `You have received a code in your email. Use it to verify your email and login.`;
       } else {
         notice = `Your account was created successfully. Login below.`;
       }
     }
 
-    return await context.render({ notice, email, formData });
+    return await context.render({ notice, email, formData, isEmailVerificationEnabled, helpEmail });
   },
   async POST(request, context) {
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
+
+    const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     const formData = await request.clone().formData();
     const email = getFormDataField(formData, 'email');
@@ -67,7 +75,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         throw new Error('Email not found or invalid password.');
       }
 
-      if (!isEmailEnabled() && !user.extra.is_email_verified) {
+      if (!(await AppConfig.isEmailVerificationEnabled()) && !user.extra.is_email_verified) {
         user.extra.is_email_verified = true;
 
         await UserModel.update(user);
@@ -94,7 +102,13 @@ export const handler: Handlers<Data, FreshContextState> = {
       return createSessionResponse(request, user, { urlToRedirectTo: `/` });
     } catch (error) {
       console.error(error);
-      return await context.render({ error: (error as Error).toString(), email, formData });
+      return await context.render({
+        error: (error as Error).toString(),
+        email,
+        formData,
+        isEmailVerificationEnabled,
+        helpEmail,
+      });
     }
   },
 };
@@ -150,16 +164,17 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
         {data?.notice
           ? (
             <section class='notification-success'>
-              <h3>{isEmailEnabled() ? 'Verify your email!' : 'Account created!'}</h3>
+              <h3>{data?.isEmailVerificationEnabled ? 'Verify your email!' : 'Account created!'}</h3>
               <p>{data?.notice}</p>
             </section>
           )
           : null}
 
         <form method='POST' class='mb-12'>
-          {formFields(data?.email, data?.notice?.includes('verify your email') && isEmailEnabled()).map((field) =>
-            generateFieldHtml(field, data?.formData || new FormData())
-          )}
+          {formFields(
+            data?.email,
+            data?.notice?.includes('verify your email') && data?.isEmailVerificationEnabled,
+          ).map((field) => generateFieldHtml(field, data?.formData || new FormData()))}
           <section class='flex justify-center mt-8 mb-4'>
             <button class='button' type='submit'>Login</button>
           </section>
@@ -173,14 +188,14 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
           </strong>.
         </p>
 
-        {helpEmail !== ''
+        {data?.helpEmail !== ''
           ? (
             <>
               <h2 class='text-2xl mb-4 text-center'>Need help?</h2>
               <p class='text-center mt-2 mb-6'>
                 If you're having any issues or have any questions,{' '}
                 <strong>
-                  <a href={`mailto:${helpEmail}`}>please reach out</a>
+                  <a href={`mailto:${data?.helpEmail}`}>please reach out</a>
                 </strong>.
               </p>
             </>

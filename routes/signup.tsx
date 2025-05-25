@@ -1,11 +1,11 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
-import { generateHash, helpEmail, validateEmail } from '/lib/utils/misc.ts';
+import { generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
 import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
-import { isEmailEnabled, isSignupAllowed } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 import { FreshContextState } from '/lib/types.ts';
 
 interface Data {
@@ -13,6 +13,7 @@ interface Data {
   notice?: string;
   email?: string;
   formData?: FormData;
+  helpEmail: string;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -20,6 +21,8 @@ export const handler: Handlers<Data, FreshContextState> = {
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
+
+    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     const searchParams = new URL(request.url).searchParams;
 
@@ -29,18 +32,20 @@ export const handler: Handlers<Data, FreshContextState> = {
       notice = `Your account and all its data has been deleted.`;
     }
 
-    return await context.render({ notice });
+    return await context.render({ notice, helpEmail });
   },
   async POST(request, context) {
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
 
+    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+
     const formData = await request.clone().formData();
     const email = getFormDataField(formData, 'email');
 
     try {
-      if (!(await isSignupAllowed())) {
+      if (!(await AppConfig.isSignupAllowed())) {
         throw new Error(`Signups are not allowed.`);
       }
 
@@ -64,7 +69,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       const user = await UserModel.create(email, hashedPassword);
 
-      if (isEmailEnabled()) {
+      if (await AppConfig.isEmailVerificationEnabled()) {
         const verificationCode = await VerificationCodeModel.create(user, user.email, 'email');
 
         await sendVerifyEmailEmail(user.email, verificationCode);
@@ -76,7 +81,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       });
     } catch (error) {
       console.error(error);
-      return await context.render({ error: (error as Error).toString(), email, formData });
+      return await context.render({ error: (error as Error).toString(), email, formData, helpEmail });
     }
   },
 };
@@ -144,14 +149,14 @@ export default function Signup({ data }: PageProps<Data, FreshContextState>) {
           </strong>.
         </p>
 
-        {helpEmail !== ''
+        {data?.helpEmail !== ''
           ? (
             <>
               <h2 class='text-2xl mb-4 text-center'>Need help?</h2>
               <p class='text-center mt-2 mb-6'>
                 If you're having any issues or have any questions,{' '}
                 <strong>
-                  <a href={`mailto:${helpEmail}`}>please reach out</a>
+                  <a href={`mailto:${data?.helpEmail}`}>please reach out</a>
                 </strong>.
               </p>
             </>

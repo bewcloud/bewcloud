@@ -12,3 +12,6 @@ db/
 
 # Files
 data-files/
+
+# Config
+bewcloud.config.ts

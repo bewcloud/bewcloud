@@ -2,15 +2,15 @@ import { join } from 'std/path/join.ts';
 import { resolve } from 'std/path/resolve.ts';
 import { lookup } from 'mrmime';
 
-import { getFilesRootPath } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { sortDirectoriesByName, sortEntriesByName, sortFilesByName, TRASH_PATH } from '/lib/utils/files.ts';
 
 export class DirectoryModel {
   static async list(userId: string, path: string): Promise<Directory[]> {
-    ensureUserPathIsValidAndSecurelyAccessible(userId, path);
+    await ensureUserPathIsValidAndSecurelyAccessible(userId, path);
 
-    const rootPath = join(getFilesRootPath(), userId, path);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
     const directories: Directory[] = [];
 
@@ -40,9 +40,9 @@ export class DirectoryModel {
   }
 
   static async create(userId: string, path: string, name: string): Promise<boolean> {
-    ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+    await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
 
-    const rootPath = join(getFilesRootPath(), userId, path);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
     try {
       await Deno.mkdir(join(rootPath, name), { recursive: true });
@@ -72,7 +72,7 @@ export class DirectoryModel {
     userId: string,
     searchTerm: string,
   ): Promise<{ success: boolean; directories: Directory[] }> {
-    const rootPath = join(getFilesRootPath(), userId);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId);
 
     const directories: Directory[] = [];
 
@@ -142,9 +142,9 @@ export class DirectoryModel {
 
 export class FileModel {
   static async list(userId: string, path: string): Promise<DirectoryFile[]> {
-    ensureUserPathIsValidAndSecurelyAccessible(userId, path);
+    await ensureUserPathIsValidAndSecurelyAccessible(userId, path);
 
-    const rootPath = join(getFilesRootPath(), userId, path);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
     const files: DirectoryFile[] = [];
 
@@ -177,9 +177,9 @@ export class FileModel {
     name: string,
     contents: string | ArrayBuffer,
   ): Promise<boolean> {
-    ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+    await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
 
-    const rootPath = join(getFilesRootPath(), userId, path);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
     try {
       // Ensure the directory exist, if being requested
@@ -210,9 +210,9 @@ export class FileModel {
     name: string,
     contents: string,
   ): Promise<boolean> {
-    ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+    await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
 
-    const rootPath = join(getFilesRootPath(), userId, path);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
     try {
       await Deno.writeTextFile(join(rootPath, name), contents, { append: false, createNew: false });
@@ -229,9 +229,9 @@ export class FileModel {
     path: string,
     name?: string,
   ): Promise<{ success: boolean; contents?: Uint8Array; contentType?: string; byteSize?: number }> {
-    ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name || ''));
+    await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name || ''));
 
-    const rootPath = join(getFilesRootPath(), userId, path);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
     try {
       const stat = await Deno.stat(join(rootPath, name || ''));
@@ -277,7 +277,7 @@ export class FileModel {
     userId: string,
     searchTerm: string,
   ): Promise<{ success: boolean; files: DirectoryFile[] }> {
-    const rootPath = join(getFilesRootPath(), userId);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId);
 
     const files: DirectoryFile[] = [];
 
@@ -348,7 +348,7 @@ export class FileModel {
     userId: string,
     searchTerm: string,
   ): Promise<{ success: boolean; files: DirectoryFile[] }> {
-    const rootPath = join(getFilesRootPath(), userId);
+    const rootPath = join(await AppConfig.getFilesRootPath(), userId);
 
     const files: DirectoryFile[] = [];
 
@@ -421,8 +421,8 @@ export class FileModel {
  * @param userId - The user ID
  * @param path - The relative path (user-provided) to check
  */
-export function ensureUserPathIsValidAndSecurelyAccessible(userId: string, path: string): void {
-  const userRootPath = join(getFilesRootPath(), userId, '/');
+export async function ensureUserPathIsValidAndSecurelyAccessible(userId: string, path: string): Promise<void> {
+  const userRootPath = join(await AppConfig.getFilesRootPath(), userId, '/');
 
   const fullPath = join(userRootPath, path);
 
@@ -434,9 +434,9 @@ export function ensureUserPathIsValidAndSecurelyAccessible(userId: string, path:
 }
 
 async function getPathEntries(userId: string, path: string): Promise<Deno.DirEntry[]> {
-  ensureUserPathIsValidAndSecurelyAccessible(userId, path);
+  await ensureUserPathIsValidAndSecurelyAccessible(userId, path);
 
-  const rootPath = join(getFilesRootPath(), userId, path);
+  const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
   // Ensure the user directory exists
   if (path === '/') {
@@ -478,11 +478,11 @@ async function renameDirectoryOrFile(
   oldName: string,
   newName: string,
 ): Promise<boolean> {
-  ensureUserPathIsValidAndSecurelyAccessible(userId, join(oldPath, oldName));
-  ensureUserPathIsValidAndSecurelyAccessible(userId, join(newPath, newName));
+  await ensureUserPathIsValidAndSecurelyAccessible(userId, join(oldPath, oldName));
+  await ensureUserPathIsValidAndSecurelyAccessible(userId, join(newPath, newName));
 
-  const oldRootPath = join(getFilesRootPath(), userId, oldPath);
-  const newRootPath = join(getFilesRootPath(), userId, newPath);
+  const oldRootPath = join(await AppConfig.getFilesRootPath(), userId, oldPath);
+  const newRootPath = join(await AppConfig.getFilesRootPath(), userId, newPath);
 
   try {
     await Deno.rename(join(oldRootPath, oldName), join(newRootPath, newName));
@@ -495,15 +495,15 @@ async function renameDirectoryOrFile(
 }
 
 async function deleteDirectoryOrFile(userId: string, path: string, name: string): Promise<boolean> {
-  ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+  await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
 
-  const rootPath = join(getFilesRootPath(), userId, path);
+  const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
   try {
     if (path.startsWith(TRASH_PATH)) {
       await Deno.remove(join(rootPath, name), { recursive: true });
     } else {
-      const trashPath = join(getFilesRootPath(), userId, TRASH_PATH);
+      const trashPath = join(await AppConfig.getFilesRootPath(), userId, TRASH_PATH);
       await Deno.rename(join(rootPath, name), join(trashPath, name));
     }
   } catch (error) {

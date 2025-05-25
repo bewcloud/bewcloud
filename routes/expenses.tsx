@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Budget, Expense, FreshContextState, SupportedCurrencySymbol } from '/lib/types.ts';
-import { isAppEnabled } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 import { BudgetModel, ExpenseModel, generateMonthlyBudgetsAndExpenses } from '/lib/models/expenses.ts';
 import ExpensesWrapper from '/islands/expenses/ExpensesWrapper.tsx';
 
@@ -18,7 +18,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
 
-    if (!isAppEnabled('expenses')) {
+    if (!(await AppConfig.isAppEnabled('expenses'))) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/files` } });
     }
 

@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { FreshContextState, NewsFeedArticle } from '/lib/types.ts';
-import { isAppEnabled } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 import { ArticleModel } from '/lib/models/news.ts';
 import Articles from '/islands/news/Articles.tsx';
 
@@ -15,7 +15,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
 
-    if (!isAppEnabled('news')) {
+    if (!(await AppConfig.isAppEnabled('news'))) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/dashboard` } });
     }
 

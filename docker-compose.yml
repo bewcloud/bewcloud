@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:main
+    image: ghcr.io/bewcloud/bewcloud:main # alternatively, you can use a specific version/tag, for greater stability
     restart: always
     ports:
       - 127.0.0.1:8000:8000

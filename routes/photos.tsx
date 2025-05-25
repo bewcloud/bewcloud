@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
-import { isAppEnabled } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { PHOTO_EXTENSIONS } from '/lib/utils/photos.ts';
 import PhotosWrapper from '/islands/photos/PhotosWrapper.tsx';
@@ -18,7 +18,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
 
-    if (!isAppEnabled('photos')) {
+    if (!(await AppConfig.isAppEnabled('photos'))) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/files` } });
     }
 

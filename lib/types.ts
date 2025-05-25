@@ -141,3 +141,40 @@ export const currencyMap = new Map<SupportedCurrencySymbol, SupportedCurrency>([
   ['¥', 'JPY'],
   ['₹', 'INR'],
 ]);
+
+export type PartialDeep<T> = (T extends (infer U)[] ? PartialDeep<U>[] : { [P in keyof T]?: PartialDeep<T[P]> }) | T;
+
+export type OptionalApp = 'news' | 'notes' | 'photos' | 'expenses';
+
+export interface Config {
+  auth: {
+    /** The base URL of the application you use to access the app, i.e. "http://localhost:8000" or "https://cloud.example.com" */
+    baseUrl: string;
+    /** If true, anyone can sign up for an account. Note that it's always possible to sign up for the first user, and they will be an admin */
+    allowSignups: boolean;
+    /** If true, email verification will be required for signups (using Brevo) */
+    enableEmailVerification: boolean;
+    /** If true, all signups become active for 100 years */
+    enableForeverSignup: boolean;
+    /** Can be set to allow more than the baseUrl's domain for session cookies */
+    allowedCookieDomains: string[];
+    /** If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel. */
+    skipCookieDomainSecurity: boolean;
+  };
+  files: {
+    /** The root-relative root path for files, i.e. "data-files" */
+    rootPath: string;
+  };
+  core: {
+    /** dashboard and files cannot be disabled */
+    enabledApps: OptionalApp[];
+  };
+  visuals: {
+    /** An override title of the application. Empty shows the default title. */
+    title: string;
+    /** An override description of the application. Empty shows the default description. */
+    description: string;
+    /** The email address to contact for help. Empty will disable/hide the "need help" sections. */
+    helpEmail: string;
+  };
+}

@@ -6,7 +6,7 @@ import { startCrons } from '/crons/index.ts';
 const isBuildMode = Deno.args.includes('build');
 
 if (!isBuildMode) {
-  startCrons();
+  await startCrons();
 }
 
 export default defineConfig({

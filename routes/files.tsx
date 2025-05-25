@@ -2,12 +2,14 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
+import { AppConfig } from '/lib/config.ts';
 import FilesWrapper from '/islands/files/FilesWrapper.tsx';
 
 interface Data {
   userDirectories: Directory[];
   userFiles: DirectoryFile[];
   currentPath: string;
+  baseUrl: string;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -15,6 +17,8 @@ export const handler: Handlers<Data, FreshContextState> = {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
+
+    const baseUrl = (await AppConfig.getConfig()).auth.baseUrl;
 
     const searchParams = new URL(request.url).searchParams;
 
@@ -34,7 +38,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const userFiles = await FileModel.list(context.state.user.id, currentPath);
 
-    return await context.render({ userDirectories, userFiles, currentPath });
+    return await context.render({ userDirectories, userFiles, currentPath, baseUrl });
   },
 };
 
@@ -45,6 +49,7 @@ export default function FilesPage({ data }: PageProps<Data, FreshContextState>) 
         initialDirectories={data.userDirectories}
         initialFiles={data.userFiles}
         initialPath={data.currentPath}
+        baseUrl={data.baseUrl}
       />
     </main>
   );

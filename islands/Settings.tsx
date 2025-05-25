@@ -1,7 +1,6 @@
-import { convertObjectToFormData, helpEmail } from '/lib/utils/misc.ts';
+import { convertObjectToFormData } from '/lib/utils/misc.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
 import { currencyMap, SupportedCurrencySymbol } from '/lib/types.ts';
-import { isAppEnabled } from '/lib/config.ts';
 
 interface SettingsProps {
   formData: Record<string, any>;
@@ -14,6 +13,8 @@ interface SettingsProps {
     message: string;
   };
   currency?: SupportedCurrencySymbol;
+  isExpensesAppEnabled: boolean;
+  helpEmail: string;
 }
 
 export type Action =
@@ -119,7 +120,9 @@ function formFields(action: Action, formData: FormData, currency?: SupportedCurr
   return fields;
 }
 
-export default function Settings({ formData: formDataObject, error, notice, currency }: SettingsProps) {
+export default function Settings(
+  { formData: formDataObject, error, notice, currency, isExpensesAppEnabled, helpEmail }: SettingsProps,
+) {
   const formData = convertObjectToFormData(formDataObject);
 
   const action = getFormDataField(formData, 'action') as Action;
@@ -174,7 +177,7 @@ export default function Settings({ formData: formDataObject, error, notice, curr
           </section>
         </form>
 
-        {isAppEnabled('expenses')
+        {isExpensesAppEnabled
           ? (
             <>
               <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Change your currency</h2>

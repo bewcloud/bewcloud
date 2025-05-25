@@ -3,7 +3,7 @@ import { join } from 'std/path/join.ts';
 import { parse, stringify } from 'xml';
 
 import { FreshContextState } from '/lib/types.ts';
-import { getFilesRootPath } from '/lib/config.ts';
+import { AppConfig } from '/lib/config.ts';
 import Locker from '/lib/interfaces/locker.ts';
 import {
   addDavPrefixToKeys,
@@ -37,7 +37,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
   const userId = context.state.user.id;
 
-  const rootPath = join(getFilesRootPath(), userId);
+  const rootPath = join(await AppConfig.getFilesRootPath(), userId);
 
   if (request.method === 'OPTIONS') {
     const headers = new Headers({
@@ -76,7 +76,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
   if (request.method === 'DELETE') {
     try {
-      ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
+      await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 
       await Deno.remove(join(rootPath, filePath));
 
@@ -94,7 +94,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     const body = contentLength === 0 ? new Blob([new Uint8Array([0])]).stream() : request.clone().body;
 
     try {
-      ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
+      await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 
       const newFile = await Deno.open(join(rootPath, filePath), {
         create: true,
@@ -116,8 +116,8 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     const newFilePath = request.headers.get('destination');
     if (newFilePath) {
       try {
-        ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
-        ensureUserPathIsValidAndSecurelyAccessible(userId, getProperDestinationPath(newFilePath));
+        await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
+        await ensureUserPathIsValidAndSecurelyAccessible(userId, getProperDestinationPath(newFilePath));
 
         await Deno.copyFile(join(rootPath, filePath), join(rootPath, getProperDestinationPath(newFilePath)));
         return new Response('Created', { status: 201 });
@@ -133,8 +133,8 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     const newFilePath = request.headers.get('destination');
     if (newFilePath) {
       try {
-        ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
-        ensureUserPathIsValidAndSecurelyAccessible(userId, getProperDestinationPath(newFilePath));
+        await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
+        await ensureUserPathIsValidAndSecurelyAccessible(userId, getProperDestinationPath(newFilePath));
 
         await Deno.rename(join(rootPath, filePath), join(rootPath, getProperDestinationPath(newFilePath)));
         return new Response('Created', { status: 201 });
@@ -146,7 +146,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
   if (request.method === 'MKCOL') {
     try {
-      ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
+      await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
       await Deno.mkdir(join(rootPath, filePath), { recursive: true });
       return new Response('Created', { status: 201 });
     } catch (error) {
@@ -223,7 +223,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
 
     const properties = getPropertyNames(parsedXml);
 
-    ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
+    await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 
     const responseXml = await buildPropFindResponse(properties, rootPath, filePath, depth);
 

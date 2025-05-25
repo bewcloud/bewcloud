@@ -16,28 +16,31 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 Or on your own machine:
 
-Download/copy [`docker-compose.yml`](/docker-compose.yml) and [`.env.sample`](/.env.sample) as `.env`.
+Download/copy [`docker-compose.yml`](/docker-compose.yml), [`.env.sample`](/.env.sample) as `.env`, and [`bewcloud.config.sample.ts`](/bewcloud.config.sample.ts) as `bewcloud.config.ts`.
 
 ```sh
 $ mkdir data-files #  local directory for storing user-uploaded files
-$ sudo chown -R 1993:1993 data-files # solves permission related issues in the container with uploading files
+$ sudo chown -R 1993:1993 data-files # solves permission-related issues in the container with uploading files
 $ docker compose up -d # makes the app available at http://localhost:8000
-$ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any updates)
+$ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any data updates)
 ```
 
 Alternatively, check the [Development section below](#development).
 
 > [!IMPORTANT]
-> Even with signups disabled (`CONFIG_ALLOW_SIGNUPS="false"`), the first signup will work and become an admin.
+> Even with signups disabled (`config.auth.allowSignups=false`), the first signup will work and become an admin.
 
 > [!NOTE]
-> `1993:1993` comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it.
+> `1993:1993` above comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
 
 ## Development
 
 ### Requirements
 
-- Don't forget to set up your `.env` file based on `.env.sample`.
+> [!IMPORTANT]
+> Don't forget to set up your `.env` file based on `.env.sample`.
+> Don't forget to set up your `bewcloud.config.ts` file based on `bewcloud.config.sample.ts`.
+
 - This was tested with [`Deno`](https://deno.land)'s version stated in the `.dvmrc` file, though other versions may work.
 - For the postgres dependency (used when running locally or in CI), you should have `Docker` and `docker compose` installed.
 

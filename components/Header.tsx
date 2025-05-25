@@ -1,11 +1,11 @@
 import { Head } from 'fresh/runtime.ts';
 
-import { User } from '/lib/types.ts';
-import { isAppEnabled } from '/lib/config.ts';
+import { OptionalApp, User } from '/lib/types.ts';
 
 interface Data {
   route: string;
   user?: User;
+  enabledApps: OptionalApp[];
 }
 
 interface MenuItem {
@@ -13,7 +13,7 @@ interface MenuItem {
   label: string;
 }
 
-export default function Header({ route, user }: Data) {
+export default function Header({ route, user, enabledApps }: Data) {
   const activeClass = 'bg-slate-800 text-white rounded-md px-3 py-2 text-sm font-medium';
   const defaultClass = 'text-slate-300 hover:bg-slate-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium';
 
@@ -28,7 +28,7 @@ export default function Header({ route, user }: Data) {
       url: '/dashboard',
       label: 'Dashboard',
     },
-    isAppEnabled('news')
+    enabledApps.includes('news')
       ? {
         url: '/news',
         label: 'News',
@@ -38,19 +38,19 @@ export default function Header({ route, user }: Data) {
       url: '/files',
       label: 'Files',
     },
-    isAppEnabled('notes')
+    enabledApps.includes('notes')
       ? {
         url: '/notes',
         label: 'Notes',
       }
       : null,
-    isAppEnabled('photos')
+    enabledApps.includes('photos')
       ? {
         url: '/photos',
         label: 'Photos',
       }
       : null,
-    isAppEnabled('expenses')
+    enabledApps.includes('expenses')
       ? {
         url: '/expenses',
         label: 'Expenses',

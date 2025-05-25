@@ -1,11 +1,11 @@
 import 'std/dotenv/load.ts';
 
-import { helpEmail } from '/lib/utils/misc.ts';
+import { AppConfig } from '/lib/config.ts';
 
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') || '';
 
 enum BrevoTemplateId {
-  BEWCLOUD_VERIFY_EMAIL = 20,
+  BEWCLOUD_VERIFY_EMAIL = 20, // NOTE: This will likely be different in your own Brevo account
 }
 
 interface BrevoResponse {
@@ -43,6 +43,9 @@ async function sendEmailWithTemplate(
   attachments: BrevoRequestBody['attachment'] = [],
   cc?: string,
 ) {
+  const config = await AppConfig.getConfig();
+  const helpEmail = config.visuals.helpEmail;
+
   const email: BrevoRequestBody = {
     templateId,
     params: data,

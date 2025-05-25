@@ -3,10 +3,10 @@ import { decodeBase64 } from 'std/encoding/base64.ts';
 import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
 import 'std/dotenv/load.ts';
 
-import { baseUrl, generateHash, isRunningLocally } from './utils/misc.ts';
+import { generateHash, isRunningLocally } from './utils/misc.ts';
 import { User, UserSession } from './types.ts';
 import { UserModel, UserSessionModel, validateUserAndSession } from './models/user.ts';
-import { isCookieDomainAllowed, isCookieDomainSecurityDisabled } from './config.ts';
+import { AppConfig } from './config.ts';
 
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
 export const PASSWORD_SALT = Deno.env.get('PASSWORD_SALT') || '';
@@ -19,7 +19,7 @@ export interface JwtData {
   };
 }
 
-const isBaseUrlAnIp = () => /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/.test(baseUrl);
+const isUrlAnIp = (baseUrl: string) => /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/.test(baseUrl);
 
 const textToData = (text: string) => new TextEncoder().encode(text);
 
@@ -51,10 +51,13 @@ async function verifyAuthJwt(key: CryptoKey, jwt: string) {
   throw new Error('Invalid JWT');
 }
 
-function resolveCookieDomain(request: Request) {
-  if (!isBaseUrlAnIp() || isRunningLocally(request)) {
+async function resolveCookieDomain(request: Request) {
+  const config = await AppConfig.getConfig();
+  const baseUrl = config.auth.baseUrl;
+
+  if (!isUrlAnIp(baseUrl) || isRunningLocally(request)) {
     const domain = new URL(request.url).hostname;
-    if (isCookieDomainAllowed(domain)) {
+    if (await AppConfig.isCookieDomainAllowed(domain)) {
       return domain;
     }
     return baseUrl.replace('https://', '').replace('http://', '').split(':')[0];
@@ -170,10 +173,10 @@ export async function logoutUser(request: Request) {
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
-    domain: resolveCookieDomain(request),
+    domain: await resolveCookieDomain(request),
   };
 
-  if (isCookieDomainSecurityDisabled()) {
+  if (await AppConfig.isCookieDomainSecurityDisabled()) {
     delete cookie.domain;
   }
 
@@ -223,10 +226,10 @@ export async function createSessionCookie(
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
-    domain: resolveCookieDomain(request),
+    domain: await resolveCookieDomain(request),
   };
 
-  if (isCookieDomainSecurityDisabled()) {
+  if (await AppConfig.isCookieDomainSecurityDisabled()) {
     delete cookie.domain;
   }
 
@@ -251,10 +254,10 @@ export async function updateSessionCookie(
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,
     sameSite: 'Lax',
-    domain: resolveCookieDomain(request),
+    domain: await resolveCookieDomain(request),
   };
 
-  if (isCookieDomainSecurityDisabled()) {
+  if (await AppConfig.isCookieDomainSecurityDisabled()) {
     delete cookie.domain;
   }
 

@@ -30,4 +30,4 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_KEY }}
 
       - name: Deploy via SSH
-        run: ssh server 'cd apps/bewcloud && git add . && git stash && git pull origin main && git stash clear && git remote prune origin && cp ../../scripts/config/bewcloud/.env . && cp ../../scripts/config/bewcloud/docker-compose.yml . && docker system prune -f && docker compose up -d --build && docker compose ps && docker compose logs'
+        run: ssh server 'cd apps/bewcloud && git add . && git stash && git pull origin main && git stash clear && git remote prune origin && cp ../../scripts/config/bewcloud/.env . && cp ../../scripts/config/bewcloud/bewcloud.config.ts . && cp ../../scripts/config/bewcloud/docker-compose.yml . && docker system prune -f && docker compose up -d --build && docker compose ps && docker compose logs'

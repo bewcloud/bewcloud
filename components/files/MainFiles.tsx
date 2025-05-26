@@ -57,15 +57,17 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
     { isOpen: boolean; isDirectory: boolean; path: string; name: string } | null
   >(null);
 
-  function onClickUploadFile() {
+  function onClickUploadFile(uploadDirectory = false) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
-    fileInput.webkitdirectory = true;
-    // @ts-expect-error - mozdirectory is not typed
-    fileInput.mozdirectory = true;
-    // @ts-expect-error - directory is not typed
-    fileInput.directory = true;
+    if (uploadDirectory) {
+      fileInput.webkitdirectory = true;
+      // @ts-expect-error - mozdirectory is not typed
+      fileInput.mozdirectory = true;
+      // @ts-expect-error - directory is not typed
+      fileInput.directory = true;
+    }
     fileInput.click();
 
     fileInput.onchange = async (event) => {
@@ -576,6 +578,13 @@ export default function MainFiles({ initialDirectories, initialFiles, initialPat
                   type='button'
                 >
                   Upload Files
+                </button>
+                <button
+                  class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
+                  onClick={() => onClickUploadFile(true)}
+                  type='button'
+                >
+                  Upload Directory
                 </button>
                 <button
                   class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}

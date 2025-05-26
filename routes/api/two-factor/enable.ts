@@ -1,6 +1,6 @@
 import { Handlers } from 'fresh/server.ts';
 import { FreshContextState, TwoFactorActionResponse } from '/lib/types.ts';
-import { enableTwoFactorMethod, verifyTOTP } from '/lib/utils/two-factor.ts';
+import { decryptTOTPSecret, enableTwoFactorMethod, verifyTOTP } from '/lib/utils/two-factor.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
 
@@ -73,8 +73,8 @@ export const handler: Handlers<unknown, FreshContextState> = {
       }
 
       if (method.type === 'totp') {
-        const secret = method.metadata.totp?.secret;
-        if (!secret) {
+        const hashedSecret = method.metadata.totp?.hashed_secret;
+        if (!hashedSecret) {
           return new Response(
             JSON.stringify({ success: false, error: 'TOTP secret not found' } as TwoFactorActionResponse),
             {
@@ -84,12 +84,23 @@ export const handler: Handlers<unknown, FreshContextState> = {
           );
         }
 
-        const isValid = verifyTOTP(secret, code);
-        if (!isValid) {
+        try {
+          const secret = await decryptTOTPSecret(hashedSecret);
+          const isValid = verifyTOTP(secret, code);
+          if (!isValid) {
+            return new Response(
+              JSON.stringify({ success: false, error: 'Invalid verification code' } as TwoFactorActionResponse),
+              {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
+          }
+        } catch {
           return new Response(
-            JSON.stringify({ success: false, error: 'Invalid verification code' } as TwoFactorActionResponse),
+            JSON.stringify({ success: false, error: 'Failed to decrypt TOTP secret' } as TwoFactorActionResponse),
             {
-              status: 400,
+              status: 500,
               headers: { 'Content-Type': 'application/json' },
             },
           );

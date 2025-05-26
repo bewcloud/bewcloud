@@ -237,7 +237,7 @@ export default function Settings(
               id: method.id,
               name: method.name,
               enabled: method.enabled,
-              backupCodesCount: method.metadata.totp?.backup_codes?.length,
+              backupCodesCount: method.metadata.totp?.hashed_backup_codes?.length,
             }))}
           />
         )}

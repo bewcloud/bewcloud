@@ -76,9 +76,9 @@ export const handler: Handlers<unknown, FreshContextState> = {
         success: true,
         data: {
           methodId: setup.method.id,
-          secret: setup.method.metadata.totp?.secret,
+          secret: setup.plainTextSecret,
           qrCodeUrl: setup.qrCodeUrl,
-          backupCodes: setup.method.metadata.totp?.backup_codes,
+          backupCodes: setup.plainTextBackupCodes,
         },
       };
 

@@ -192,8 +192,8 @@ export interface TwoFactorMethod {
   created_at: Date;
   metadata: {
     totp?: {
-      secret: string;
-      backup_codes: string[];
+      hashed_secret: string;
+      hashed_backup_codes: string[];
     };
     email?: {
       email: string;

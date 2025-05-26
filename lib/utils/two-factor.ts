@@ -2,11 +2,72 @@ import { Secret, TOTP } from 'otpauth';
 import QRCode from 'qrcode';
 import { crypto } from 'std/crypto/mod.ts';
 import { encodeBase32 } from 'std/encoding/base32.ts';
+import { decodeBase64, encodeBase64 } from 'std/encoding/base64.ts';
 import { TwoFactorMethod, TwoFactorMethodType } from '/lib/types.ts';
+import { generateHash } from '/lib/utils/misc.ts';
+import { PASSWORD_SALT } from '/lib/auth.ts';
 
 export interface TwoFactorSetup {
   method: TwoFactorMethod;
   qrCodeUrl?: string;
+  plainTextSecret?: string;
+  plainTextBackupCodes?: string[];
+}
+
+async function getEncryptionKey(): Promise<CryptoKey> {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(PASSWORD_SALT),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey'],
+  );
+
+  return await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: new TextEncoder().encode('bewcloud-2fa-salt'),
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+}
+
+export async function encryptTOTPSecret(secret: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encodedSecret = new TextEncoder().encode(secret);
+
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encodedSecret,
+  );
+
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(encrypted), iv.length);
+
+  return encodeBase64(combined);
+}
+
+export async function decryptTOTPSecret(encryptedSecret: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const combined = decodeBase64(encryptedSecret);
+  const iv = combined.slice(0, 12);
+  const encrypted = combined.slice(12);
+
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encrypted,
+  );
+
+  return new TextDecoder().decode(decrypted);
 }
 
 export function generateTOTPSecret(): string {
@@ -27,6 +88,24 @@ export function generateBackupCodes(count = 8): string[] {
     codes.push(code);
   }
   return codes;
+}
+
+export async function hashBackupCodes(codes: string[]): Promise<string[]> {
+  const hashedCodes: string[] = [];
+  for (const code of codes) {
+    const hashedCode = await generateHash(`${code}:${PASSWORD_SALT}`, 'SHA-256');
+    hashedCodes.push(hashedCode);
+  }
+  return hashedCodes;
+}
+
+export async function verifyBackupCodeHash(
+  code: string,
+  hashedCodes: string[],
+): Promise<{ isValid: boolean; codeIndex: number }> {
+  const hashedInput = await generateHash(`${code}:${PASSWORD_SALT}`, 'SHA-256');
+  const codeIndex = hashedCodes.indexOf(hashedInput);
+  return { isValid: codeIndex !== -1, codeIndex };
 }
 
 export function generateMethodId(): string {
@@ -75,16 +154,17 @@ export function verifyTOTPToken(secret: string, token: string, window = 1): bool
   return false;
 }
 
-export function verifyBackupCode(
-  userBackupCodes: string[],
+export async function verifyBackupCodeHashed(
+  hashedBackupCodes: string[],
   providedCode: string,
-): { isValid: boolean; remainingCodes: string[] } {
-  const codeIndex = userBackupCodes.indexOf(providedCode);
-  if (codeIndex === -1) {
-    return { isValid: false, remainingCodes: userBackupCodes };
+): Promise<{ isValid: boolean; remainingCodes: string[] }> {
+  const { isValid, codeIndex } = await verifyBackupCodeHash(providedCode, hashedBackupCodes);
+
+  if (!isValid) {
+    return { isValid: false, remainingCodes: hashedBackupCodes };
   }
 
-  const remainingCodes = [...userBackupCodes];
+  const remainingCodes = [...hashedBackupCodes];
   remainingCodes.splice(codeIndex, 1);
 
   return { isValid: true, remainingCodes };
@@ -104,6 +184,9 @@ export async function createTwoFactorMethod(
       const backupCodes = generateBackupCodes();
       const qrCodeUrl = await generateQRCodeDataURL(secret, issuer, accountName);
 
+      const encryptedSecret = await encryptTOTPSecret(secret);
+      const hashedBackupCodes = await hashBackupCodes(backupCodes);
+
       const method: TwoFactorMethod = {
         type: 'totp',
         id: methodId,
@@ -112,13 +195,18 @@ export async function createTwoFactorMethod(
         created_at: new Date(),
         metadata: {
           totp: {
-            secret,
-            backup_codes: backupCodes,
+            hashed_secret: encryptedSecret,
+            hashed_backup_codes: hashedBackupCodes,
           },
         },
       };
 
-      return { method, qrCodeUrl };
+      return {
+        method,
+        qrCodeUrl,
+        plainTextSecret: secret,
+        plainTextBackupCodes: backupCodes,
+      };
     }
 
     case 'email': {
@@ -147,22 +235,29 @@ export async function createTwoFactorMethod(
   }
 }
 
-export function verifyTwoFactorToken(
+export async function verifyTwoFactorToken(
   method: TwoFactorMethod,
   token: string,
-): { isValid: boolean; remainingCodes?: string[] } {
+): Promise<{ isValid: boolean; remainingCodes?: string[] }> {
   switch (method.type) {
     case 'totp': {
       if (!method.metadata.totp) {
         return { isValid: false };
       }
 
+      const { totp } = method.metadata;
+
       if (token.length === 6 && /^\d+$/.test(token)) {
-        const isValid = verifyTOTPToken(method.metadata.totp.secret, token);
-        return { isValid };
+        try {
+          const decryptedSecret = await decryptTOTPSecret(totp.hashed_secret);
+          const isValid = verifyTOTPToken(decryptedSecret, token);
+          return { isValid };
+        } catch {
+          return { isValid: false };
+        }
       } else if (token.length === 8 && /^[a-fA-F0-9]+$/.test(token)) {
-        const { isValid, remainingCodes } = verifyBackupCode(
-          method.metadata.totp.backup_codes,
+        const { isValid, remainingCodes } = await verifyBackupCodeHashed(
+          totp.hashed_backup_codes,
           token.toLowerCase(),
         );
         return { isValid, remainingCodes };

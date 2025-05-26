@@ -85,12 +85,12 @@ export const handler: Handlers<Data, FreshContextState> = {
       const enabledMethods = getEnabledTwoFactorMethods(user);
 
       for (const method of enabledMethods) {
-        const verification = verifyTwoFactorToken(method, token);
+        const verification = await verifyTwoFactorToken(method, token);
         if (verification.isValid) {
           isValid = true;
 
           if (verification.remainingCodes && method.metadata.totp) {
-            method.metadata.totp.backup_codes = verification.remainingCodes;
+            method.metadata.totp.hashed_backup_codes = verification.remainingCodes;
             updateUser = true;
           }
           break;

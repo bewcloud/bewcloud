@@ -33,9 +33,9 @@ import * as $api_news_import_feeds from './routes/api/news/import-feeds.tsx';
 import * as $api_news_mark_read from './routes/api/news/mark-read.tsx';
 import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.tsx';
 import * as $api_notes_save from './routes/api/notes/save.tsx';
-import * as $api_totp_disable from './routes/api/totp/disable.ts';
-import * as $api_totp_enable from './routes/api/totp/enable.ts';
-import * as $api_totp_setup from './routes/api/totp/setup.ts';
+import * as $api_two_factor_disable from './routes/api/two-factor/disable.ts';
+import * as $api_two_factor_enable from './routes/api/two-factor/enable.ts';
+import * as $api_two_factor_setup from './routes/api/two-factor/setup.ts';
 import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav from './routes/dav.tsx';
 import * as $expenses from './routes/expenses.tsx';
@@ -52,9 +52,9 @@ import * as $photos from './routes/photos.tsx';
 import * as $photos_thumbnail_fileName_ from './routes/photos/thumbnail/[fileName].tsx';
 import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
-import * as $totp_verify from './routes/totp-verify.tsx';
+import * as $two_factor_verify from './routes/two-factor-verify.tsx';
 import * as $Settings from './islands/Settings.tsx';
-import * as $TOTPSettings from './islands/TOTPSettings.tsx';
+import * as $TwoFactorSettings from './islands/TwoFactorSettings.tsx';
 import * as $dashboard_Links from './islands/dashboard/Links.tsx';
 import * as $dashboard_Notes from './islands/dashboard/Notes.tsx';
 import * as $expenses_ExpensesWrapper from './islands/expenses/ExpensesWrapper.tsx';
@@ -99,9 +99,9 @@ const manifest = {
     './routes/api/news/mark-read.tsx': $api_news_mark_read,
     './routes/api/news/refresh-articles.tsx': $api_news_refresh_articles,
     './routes/api/notes/save.tsx': $api_notes_save,
-    './routes/api/totp/disable.ts': $api_totp_disable,
-    './routes/api/totp/enable.ts': $api_totp_enable,
-    './routes/api/totp/setup.ts': $api_totp_setup,
+    './routes/api/two-factor/disable.ts': $api_two_factor_disable,
+    './routes/api/two-factor/enable.ts': $api_two_factor_enable,
+    './routes/api/two-factor/setup.ts': $api_two_factor_setup,
     './routes/dashboard.tsx': $dashboard,
     './routes/dav.tsx': $dav,
     './routes/expenses.tsx': $expenses,
@@ -118,11 +118,11 @@ const manifest = {
     './routes/photos/thumbnail/[fileName].tsx': $photos_thumbnail_fileName_,
     './routes/settings.tsx': $settings,
     './routes/signup.tsx': $signup,
-    './routes/totp-verify.tsx': $totp_verify,
+    './routes/two-factor-verify.tsx': $two_factor_verify,
   },
   islands: {
     './islands/Settings.tsx': $Settings,
-    './islands/TOTPSettings.tsx': $TOTPSettings,
+    './islands/TwoFactorSettings.tsx': $TwoFactorSettings,
     './islands/dashboard/Links.tsx': $dashboard_Links,
     './islands/dashboard/Notes.tsx': $dashboard_Notes,
     './islands/expenses/ExpensesWrapper.tsx': $expenses_ExpensesWrapper,

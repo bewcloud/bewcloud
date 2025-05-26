@@ -13,9 +13,7 @@ export interface User {
     is_admin?: boolean;
     dav_hashed_password?: string;
     expenses_currency?: SupportedCurrencySymbol;
-    totp_secret?: string;
-    totp_enabled?: boolean;
-    totp_backup_codes?: string[];
+    two_factor_methods?: TwoFactorMethod[];
   };
   created_at: Date;
 }
@@ -159,8 +157,8 @@ export interface Config {
     enableEmailVerification: boolean;
     /** If true, all signups become active for 100 years */
     enableForeverSignup: boolean;
-    /** If true, users can enable two-factor authentication (TOTP) */
-    enableTOTP: boolean;
+    /** If true, users can enable two-factor authentication (TOTP, Email, Passkey) */
+    enableTwoFactor: boolean;
     /** Can be set to allow more than the baseUrl's domain for session cookies */
     allowedCookieDomains: string[];
     /** If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel. */
@@ -182,4 +180,44 @@ export interface Config {
     /** The email address to contact for help. Empty will disable/hide the "need help" sections. */
     helpEmail: string;
   };
+}
+
+export type TwoFactorMethodType = 'totp' | 'email' | 'passkey';
+
+export interface TwoFactorMethod {
+  type: TwoFactorMethodType;
+  id: string;
+  name: string;
+  enabled: boolean;
+  created_at: Date;
+  metadata: {
+    totp?: {
+      secret: string;
+      backup_codes: string[];
+    };
+    email?: {
+      email: string;
+    };
+    passkey?: {
+      credential_id: string;
+      public_key: string;
+    };
+  };
+}
+
+export interface TwoFactorSetupResponse {
+  success: boolean;
+  error?: string;
+  data?: {
+    methodId?: string;
+    secret?: string;
+    qrCodeUrl?: string;
+    backupCodes?: string[];
+  };
+}
+
+export interface TwoFactorActionResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
 }

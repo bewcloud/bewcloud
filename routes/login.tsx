@@ -7,6 +7,7 @@ import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
+import { hasTwoFactorEnabled } from '/lib/utils/two-factor.ts';
 
 interface Data {
   error?: string;
@@ -99,11 +100,13 @@ export const handler: Handlers<Data, FreshContextState> = {
         }
       }
 
-      if (user.extra.totp_enabled && (await AppConfig.isTOTPEnabled())) {
+      if (user.extra.is_email_verified && hasTwoFactorEnabled(user) && (await AppConfig.isTwoFactorEnabled())) {
+        const userId = user.id;
         const redirectUrl = new URL(request.url).searchParams.get('redirect') || '/';
+
         return new Response('Redirect', {
           status: 303,
-          headers: { 'Location': `/totp-verify?user=${user.id}&redirect=${encodeURIComponent(redirectUrl)}` },
+          headers: { 'Location': `/two-factor-verify?user=${userId}&redirect=${encodeURIComponent(redirectUrl)}` },
         });
       }
 

@@ -1,6 +1,6 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 import { FreshContextState } from '/lib/types.ts';
-import { verifyBackupCode, verifyTOTPToken } from '/lib/utils/totp.ts';
+import { getEnabledTwoFactorMethods, hasTwoFactorEnabled, verifyTwoFactorToken } from '/lib/utils/two-factor.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { createSessionResponse } from '/lib/auth.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
@@ -17,7 +17,7 @@ interface Data {
 
 export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
-    if (!(await AppConfig.isTOTPEnabled())) {
+    if (!(await AppConfig.isTwoFactorEnabled())) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
@@ -31,7 +31,13 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const user = await UserModel.getById(userId);
 
-    if (!user || !user.extra.totp_enabled) {
+    if (!user) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
+    }
+
+    const has2FA = hasTwoFactorEnabled(user);
+
+    if (!has2FA) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
@@ -41,7 +47,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     });
   },
   async POST(request, context) {
-    if (!(await AppConfig.isTOTPEnabled())) {
+    if (!(await AppConfig.isTwoFactorEnabled())) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
@@ -55,7 +61,13 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const user = await UserModel.getById(userId);
 
-    if (!user || !user.extra.totp_enabled) {
+    if (!user) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
+    }
+
+    const has2FA = hasTwoFactorEnabled(user);
+
+    if (!has2FA) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
@@ -64,33 +76,38 @@ export const handler: Handlers<Data, FreshContextState> = {
       const token = getFormDataField(formData, 'token');
 
       if (!token) {
-        throw new Error('TOTP token is required');
+        throw new Error('Authentication token is required');
       }
 
       let isValid = false;
+      let updateUser = false;
 
-      if (token.length === 6 && /^\d+$/.test(token)) {
-        isValid = verifyTOTPToken(user.extra.totp_secret!, token);
-      } else if (token.length === 8 && /^[a-fA-F0-9]+$/.test(token)) {
-        const { isValid: backupValid, remainingCodes } = verifyBackupCode(
-          user.extra.totp_backup_codes || [],
-          token.toLowerCase(),
-        );
+      const enabledMethods = getEnabledTwoFactorMethods(user);
 
-        if (backupValid) {
+      for (const method of enabledMethods) {
+        const verification = verifyTwoFactorToken(method, token);
+        if (verification.isValid) {
           isValid = true;
-          user.extra.totp_backup_codes = remainingCodes;
-          await UserModel.update(user);
+
+          if (verification.remainingCodes && method.metadata.totp) {
+            method.metadata.totp.backup_codes = verification.remainingCodes;
+            updateUser = true;
+          }
+          break;
         }
       }
 
       if (!isValid) {
-        throw new Error('Invalid TOTP token or backup code');
+        throw new Error('Invalid authentication token or backup code');
+      }
+
+      if (updateUser) {
+        await UserModel.update(user);
       }
 
       return await createSessionResponse(request, user, { urlToRedirectTo: redirectUrl });
     } catch (error) {
-      console.error('TOTP verification error:', error);
+      console.error('Two-factor verification error:', error);
 
       return await context.render({
         error: {
@@ -104,37 +121,33 @@ export const handler: Handlers<Data, FreshContextState> = {
   },
 };
 
-export default function TOTPVerifyPage({ data }: PageProps<Data, FreshContextState>) {
+export default function TwoFactorVerifyPage({ data }: PageProps<Data, FreshContextState>) {
   return (
-    <main class='mx-auto max-w-7xl my-8'>
-      <section class='max-w-screen-sm mx-auto'>
-        <h1 class='text-3xl mb-8 text-center'>Two-Factor Authentication</h1>
-
-        {data.error && (
-          <section class='notification-error'>
-            <h3>{data.error.title}</h3>
-            <p>{data.error.message}</p>
-          </section>
-        )}
-
-        <p class='mb-6 text-center'>
-          Enter your 6-digit TOTP code from your authenticator app, or use one of your backup codes.
-        </p>
-
+    <main class='flex flex-col items-center justify-center min-h-screen'>
+      <div class='max-w-md w-full space-y-8'>
+        <div>
+          <h2 class='mt-6 text-center text-3xl font-extrabold text-white'>
+            Two-Factor Authentication
+          </h2>
+          <p class='mt-2 text-center text-sm text-gray-300'>
+            Enter your authentication code to continue
+          </p>
+        </div>
         <form
+          class='mt-8 space-y-6'
           method='POST'
-          action={`/totp-verify?user=${data.userId}&redirect=${encodeURIComponent(data.redirectUrl || '/')}`}
+          action={`/two-factor-verify?user=${data.userId}&redirect=${encodeURIComponent(data.redirectUrl || '/')}`}
         >
           <div class='mb-4'>
-            <label for='token' class='block text-sm font-medium mb-2'>
-              TOTP Code or Backup Code
+            <label for='token' class='block text-sm font-medium mb-2 text-white'>
+              Authentication Token or Backup Code
             </label>
             <input
               type='text'
               id='token'
               name='token'
               placeholder='123456 or backup code'
-              class='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+              class='w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400'
               autocomplete='one-time-code'
               required
             />
@@ -149,11 +162,11 @@ export default function TOTPVerifyPage({ data }: PageProps<Data, FreshContextSta
         </form>
 
         <div class='mt-6 text-center'>
-          <a href='/login' class='text-blue-600 hover:text-blue-800'>
+          <a href='/login' class='text-blue-400 hover:text-blue-300'>
             Back to Login
           </a>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

@@ -1,7 +1,8 @@
-import { convertObjectToFormData } from '/lib/utils/misc.ts';
-import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
-import { currencyMap, SupportedCurrencySymbol } from '/lib/types.ts';
-import TOTPSettings from './TOTPSettings.tsx';
+import { FormField, generateFieldHtml, getFormDataField } from '../lib/form-utils.tsx';
+import { convertObjectToFormData } from '../lib/utils/misc.ts';
+import { currencyMap, SupportedCurrencySymbol, TwoFactorMethod } from '../lib/types.ts';
+import { getTwoFactorMethods } from '../lib/utils/two-factor-client.ts';
+import TwoFactorSettings from './TwoFactorSettings.tsx';
 
 interface SettingsProps {
   formData: Record<string, any>;
@@ -16,9 +17,12 @@ interface SettingsProps {
   currency?: SupportedCurrencySymbol;
   isExpensesAppEnabled: boolean;
   helpEmail: string;
-  totpEnabled: boolean;
-  totpBackupCodesCount: number;
-  isTOTPEnabled: boolean;
+  isTwoFactorEnabled: boolean;
+  user: {
+    extra: {
+      two_factor_methods?: TwoFactorMethod[];
+    };
+  };
 }
 
 export type Action =
@@ -132,14 +136,13 @@ export default function Settings(
     currency,
     isExpensesAppEnabled,
     helpEmail,
-    totpEnabled,
-    totpBackupCodesCount,
-    isTOTPEnabled,
+    isTwoFactorEnabled,
+    user,
   }: SettingsProps,
 ) {
   const formData = convertObjectToFormData(formDataObject);
 
-  const action = getFormDataField(formData, 'action') as Action;
+  const twoFactorMethods = getTwoFactorMethods(user);
 
   return (
     <>
@@ -165,7 +168,7 @@ export default function Settings(
 
         <form method='POST' class='mb-12'>
           {formFields(
-            action === 'change-email' && notice?.message.includes('verify') ? 'verify-change-email' : 'change-email',
+            'change-email',
             formData,
           ).map((field) => generateFieldHtml(field, formData))}
           <section class='flex justify-end mt-8 mb-4'>
@@ -181,14 +184,6 @@ export default function Settings(
             <button class='button-secondary' type='submit'>Change password</button>
           </section>
         </form>
-
-        {isTOTPEnabled && (
-          <TOTPSettings
-            isEnabled={totpEnabled}
-            hasBackupCodes={totpBackupCodesCount > 0}
-            backupCodesCount={totpBackupCodesCount}
-          />
-        )}
 
         <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Change your WebDav password</h2>
 
@@ -234,6 +229,18 @@ export default function Settings(
             <button class='button-danger' type='submit'>Delete account</button>
           </section>
         </form>
+
+        {isTwoFactorEnabled && (
+          <TwoFactorSettings
+            methods={twoFactorMethods.map((method) => ({
+              type: method.type,
+              id: method.id,
+              name: method.name,
+              enabled: method.enabled,
+              backupCodesCount: method.metadata.totp?.backup_codes?.length,
+            }))}
+          />
+        )}
       </section>
     </>
   );

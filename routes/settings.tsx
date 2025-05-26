@@ -22,9 +22,8 @@ interface Data {
   currency?: SupportedCurrencySymbol;
   isExpensesAppEnabled: boolean;
   helpEmail: string;
-  totpEnabled: boolean;
-  totpBackupCodesCount: number;
-  isTOTPEnabled: boolean;
+  isTwoFactorEnabled: boolean;
+  user: any;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -35,16 +34,15 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
-    const isTOTPEnabled = await AppConfig.isTOTPEnabled();
+    const isTwoFactorEnabled = await AppConfig.isTwoFactorEnabled();
 
     return await context.render({
       formData: {},
       currency: context.state.user.extra.expenses_currency,
       isExpensesAppEnabled,
       helpEmail,
-      totpEnabled: !!context.state.user.extra.totp_enabled,
-      totpBackupCodesCount: context.state.user.extra.totp_backup_codes?.length || 0,
-      isTOTPEnabled,
+      isTwoFactorEnabled,
+      user: context.state.user,
     });
   },
   async POST(request, context) {
@@ -54,6 +52,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+    const isTwoFactorEnabled = await AppConfig.isTwoFactorEnabled();
 
     let action: Action = 'change-email';
     let errorTitle = '';
@@ -197,9 +196,8 @@ export const handler: Handlers<Data, FreshContextState> = {
         currency: user.extra.expenses_currency,
         isExpensesAppEnabled,
         helpEmail,
-        totpEnabled: !!user.extra.totp_enabled,
-        totpBackupCodesCount: user.extra.totp_backup_codes?.length || 0,
-        isTOTPEnabled: await AppConfig.isTOTPEnabled(),
+        isTwoFactorEnabled,
+        user: user,
       });
     } catch (error) {
       console.error(error);
@@ -212,9 +210,8 @@ export const handler: Handlers<Data, FreshContextState> = {
         currency: user.extra.expenses_currency,
         isExpensesAppEnabled,
         helpEmail,
-        totpEnabled: !!user.extra.totp_enabled,
-        totpBackupCodesCount: user.extra.totp_backup_codes?.length || 0,
-        isTOTPEnabled: await AppConfig.isTOTPEnabled(),
+        isTwoFactorEnabled,
+        user: user,
       });
     }
   },
@@ -230,9 +227,8 @@ export default function SettingsPage({ data }: PageProps<Data, FreshContextState
         currency={data?.currency}
         isExpensesAppEnabled={data?.isExpensesAppEnabled}
         helpEmail={data?.helpEmail}
-        totpEnabled={data?.totpEnabled}
-        totpBackupCodesCount={data?.totpBackupCodesCount}
-        isTOTPEnabled={data?.isTOTPEnabled}
+        isTwoFactorEnabled={data?.isTwoFactorEnabled}
+        user={data?.user}
       />
     </main>
   );

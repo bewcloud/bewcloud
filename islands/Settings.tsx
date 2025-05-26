@@ -18,6 +18,7 @@ interface SettingsProps {
   helpEmail: string;
   totpEnabled: boolean;
   totpBackupCodesCount: number;
+  isTOTPEnabled: boolean;
 }
 
 export type Action =
@@ -124,7 +125,17 @@ function formFields(action: Action, formData: FormData, currency?: SupportedCurr
 }
 
 export default function Settings(
-  { formData: formDataObject, error, notice, currency, isExpensesAppEnabled, helpEmail, totpEnabled, totpBackupCodesCount }: SettingsProps,
+  {
+    formData: formDataObject,
+    error,
+    notice,
+    currency,
+    isExpensesAppEnabled,
+    helpEmail,
+    totpEnabled,
+    totpBackupCodesCount,
+    isTOTPEnabled,
+  }: SettingsProps,
 ) {
   const formData = convertObjectToFormData(formDataObject);
 
@@ -171,11 +182,13 @@ export default function Settings(
           </section>
         </form>
 
-        <TOTPSettings 
-          isEnabled={totpEnabled}
-          hasBackupCodes={totpBackupCodesCount > 0}
-          backupCodesCount={totpBackupCodesCount}
-        />
+        {isTOTPEnabled && (
+          <TOTPSettings
+            isEnabled={totpEnabled}
+            hasBackupCodes={totpBackupCodesCount > 0}
+            backupCodesCount={totpBackupCodesCount}
+          />
+        )}
 
         <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Change your WebDav password</h2>
 

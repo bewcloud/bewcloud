@@ -3,12 +3,20 @@ import { FreshContextState } from '/lib/types.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import { generateHash } from '/lib/utils/misc.ts';
 import { UserModel } from '/lib/models/user.ts';
+import { AppConfig } from '/lib/config.ts';
 
 export const handler: Handlers<unknown, FreshContextState> = {
   async POST(request, context) {
     if (!context.state.user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!(await AppConfig.isTOTPEnabled())) {
+      return new Response(JSON.stringify({ error: 'TOTP is not enabled on this server' }), {
+        status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -21,7 +29,7 @@ export const handler: Handlers<unknown, FreshContextState> = {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    
+
     try {
       const body = await request.json();
       const { password } = body;
@@ -60,4 +68,4 @@ export const handler: Handlers<unknown, FreshContextState> = {
       });
     }
   },
-}; 
+};

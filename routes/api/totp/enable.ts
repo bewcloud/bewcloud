@@ -2,6 +2,7 @@ import { Handlers } from 'fresh/server.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { verifyTOTPToken } from '/lib/utils/totp.ts';
 import { UserModel } from '/lib/models/user.ts';
+import { AppConfig } from '/lib/config.ts';
 
 export const handler: Handlers<unknown, FreshContextState> = {
   async POST(request, context) {
@@ -12,8 +13,15 @@ export const handler: Handlers<unknown, FreshContextState> = {
       });
     }
 
+    if (!(await AppConfig.isTOTPEnabled())) {
+      return new Response(JSON.stringify({ error: 'TOTP is not enabled on this server' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const { user } = context.state;
-    
+
     try {
       const body = await request.json();
       const { secret, token, backupCodes } = body;
@@ -50,4 +58,4 @@ export const handler: Handlers<unknown, FreshContextState> = {
       });
     }
   },
-}; 
+};

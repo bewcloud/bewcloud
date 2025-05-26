@@ -99,7 +99,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         }
       }
 
-      if (user.extra.totp_enabled) {
+      if (user.extra.totp_enabled && (await AppConfig.isTOTPEnabled())) {
         const redirectUrl = new URL(request.url).searchParams.get('redirect') || '/';
         return new Response('Redirect', {
           status: 303,

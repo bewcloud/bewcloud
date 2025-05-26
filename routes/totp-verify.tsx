@@ -1,9 +1,10 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 import { FreshContextState } from '/lib/types.ts';
-import { verifyTOTPToken, verifyBackupCode } from '/lib/utils/totp.ts';
+import { verifyBackupCode, verifyTOTPToken } from '/lib/utils/totp.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { createSessionResponse } from '/lib/auth.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {
   error?: {
@@ -16,6 +17,10 @@ interface Data {
 
 export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
+    if (!(await AppConfig.isTOTPEnabled())) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
+    }
+
     const url = new URL(request.url);
     const userId = url.searchParams.get('user');
     const redirectUrl = url.searchParams.get('redirect') || '/';
@@ -25,7 +30,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const user = await UserModel.getById(userId);
-    
+
     if (!user || !user.extra.totp_enabled) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
@@ -36,6 +41,10 @@ export const handler: Handlers<Data, FreshContextState> = {
     });
   },
   async POST(request, context) {
+    if (!(await AppConfig.isTOTPEnabled())) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
+    }
+
     const url = new URL(request.url);
     const userId = url.searchParams.get('user');
     const redirectUrl = url.searchParams.get('redirect') || '/';
@@ -45,7 +54,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const user = await UserModel.getById(userId);
-    
+
     if (!user || !user.extra.totp_enabled) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
@@ -65,9 +74,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       } else if (token.length === 8 && /^[a-fA-F0-9]+$/.test(token)) {
         const { isValid: backupValid, remainingCodes } = verifyBackupCode(
           user.extra.totp_backup_codes || [],
-          token.toLowerCase()
+          token.toLowerCase(),
         );
-        
+
         if (backupValid) {
           isValid = true;
           user.extra.totp_backup_codes = remainingCodes;
@@ -82,7 +91,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return await createSessionResponse(request, user, { urlToRedirectTo: redirectUrl });
     } catch (error) {
       console.error('TOTP verification error:', error);
-      
+
       return await context.render({
         error: {
           title: 'Verification Failed',
@@ -100,7 +109,7 @@ export default function TOTPVerifyPage({ data }: PageProps<Data, FreshContextSta
     <main class='mx-auto max-w-7xl my-8'>
       <section class='max-w-screen-sm mx-auto'>
         <h1 class='text-3xl mb-8 text-center'>Two-Factor Authentication</h1>
-        
+
         {data.error && (
           <section class='notification-error'>
             <h3>{data.error.title}</h3>
@@ -112,7 +121,10 @@ export default function TOTPVerifyPage({ data }: PageProps<Data, FreshContextSta
           Enter your 6-digit TOTP code from your authenticator app, or use one of your backup codes.
         </p>
 
-        <form method='POST' action={`/totp-verify?user=${data.userId}&redirect=${encodeURIComponent(data.redirectUrl || '/')}`}>
+        <form
+          method='POST'
+          action={`/totp-verify?user=${data.userId}&redirect=${encodeURIComponent(data.redirectUrl || '/')}`}
+        >
           <div class='mb-4'>
             <label for='token' class='block text-sm font-medium mb-2'>
               TOTP Code or Backup Code
@@ -144,4 +156,4 @@ export default function TOTPVerifyPage({ data }: PageProps<Data, FreshContextSta
       </section>
     </main>
   );
-} 
+}

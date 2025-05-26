@@ -24,6 +24,7 @@ interface Data {
   helpEmail: string;
   totpEnabled: boolean;
   totpBackupCodesCount: number;
+  isTOTPEnabled: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -34,6 +35,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+    const isTOTPEnabled = await AppConfig.isTOTPEnabled();
 
     return await context.render({
       formData: {},
@@ -42,6 +44,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       helpEmail,
       totpEnabled: !!context.state.user.extra.totp_enabled,
       totpBackupCodesCount: context.state.user.extra.totp_backup_codes?.length || 0,
+      isTOTPEnabled,
     });
   },
   async POST(request, context) {
@@ -196,6 +199,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         helpEmail,
         totpEnabled: !!user.extra.totp_enabled,
         totpBackupCodesCount: user.extra.totp_backup_codes?.length || 0,
+        isTOTPEnabled: await AppConfig.isTOTPEnabled(),
       });
     } catch (error) {
       console.error(error);
@@ -210,6 +214,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         helpEmail,
         totpEnabled: !!user.extra.totp_enabled,
         totpBackupCodesCount: user.extra.totp_backup_codes?.length || 0,
+        isTOTPEnabled: await AppConfig.isTOTPEnabled(),
       });
     }
   },
@@ -227,6 +232,7 @@ export default function SettingsPage({ data }: PageProps<Data, FreshContextState
         helpEmail={data?.helpEmail}
         totpEnabled={data?.totpEnabled}
         totpBackupCodesCount={data?.totpBackupCodesCount}
+        isTOTPEnabled={data?.isTOTPEnabled}
       />
     </main>
   );

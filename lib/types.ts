@@ -159,6 +159,8 @@ export interface Config {
     enableEmailVerification: boolean;
     /** If true, all signups become active for 100 years */
     enableForeverSignup: boolean;
+    /** If true, users can enable two-factor authentication (TOTP) */
+    enableTOTP: boolean;
     /** Can be set to allow more than the baseUrl's domain for session cookies */
     allowedCookieDomains: string[];
     /** If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel. */

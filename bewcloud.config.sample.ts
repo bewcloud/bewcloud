@@ -7,6 +7,7 @@ const config: PartialDeep<Config> = {
     allowSignups: false, // If true, anyone can sign up for an account. Note that it's always possible to sign up for the first user, and they will be an admin
     enableEmailVerification: false, // If true, email verification will be required for signups (using Brevo)
     enableForeverSignup: true, // If true, all signups become active for 100 years
+    enableTOTP: false, // If true, users can enable two-factor authentication (TOTP)
     // allowedCookieDomains: ['example.com', 'example.net'], // Can be set to allow more than the baseUrl's domain for session cookies
     // skipCookieDomainSecurity: true, // If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel
   },

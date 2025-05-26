@@ -1,4 +1,4 @@
-import { TOTP, Secret } from 'otpauth';
+import { Secret, TOTP } from 'otpauth';
 import QRCode from 'qrcode';
 import { crypto } from 'std/crypto/mod.ts';
 import { encodeBase32 } from 'std/encoding/base32.ts';
@@ -21,7 +21,7 @@ export function generateBackupCodes(count = 8): string[] {
     const bytes = new Uint8Array(4);
     crypto.getRandomValues(bytes);
     const code = Array.from(bytes)
-      .map(b => b.toString(16).padStart(2, '0'))
+      .map((b) => b.toString(16).padStart(2, '0'))
       .join('')
       .substring(0, 8);
     codes.push(code);
@@ -55,7 +55,7 @@ export function verifyTOTPToken(secret: string, token: string, window = 1): bool
   });
 
   const currentTime = Math.floor(Date.now() / 1000);
-  
+
   for (let i = -window; i <= window; i++) {
     const testTime = currentTime + (i * 30);
     const expectedToken = totp.generate({ timestamp: testTime * 1000 });
@@ -63,18 +63,21 @@ export function verifyTOTPToken(secret: string, token: string, window = 1): bool
       return true;
     }
   }
-  
+
   return false;
 }
 
-export function verifyBackupCode(userBackupCodes: string[], providedCode: string): { isValid: boolean; remainingCodes: string[] } {
+export function verifyBackupCode(
+  userBackupCodes: string[],
+  providedCode: string,
+): { isValid: boolean; remainingCodes: string[] } {
   const codeIndex = userBackupCodes.indexOf(providedCode);
   if (codeIndex === -1) {
     return { isValid: false, remainingCodes: userBackupCodes };
   }
-  
+
   const remainingCodes = [...userBackupCodes];
   remainingCodes.splice(codeIndex, 1);
-  
+
   return { isValid: true, remainingCodes };
-} 
+}

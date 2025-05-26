@@ -1,6 +1,7 @@
 import { convertObjectToFormData } from '/lib/utils/misc.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
 import { currencyMap, SupportedCurrencySymbol } from '/lib/types.ts';
+import TOTPSettings from './TOTPSettings.tsx';
 
 interface SettingsProps {
   formData: Record<string, any>;
@@ -15,6 +16,8 @@ interface SettingsProps {
   currency?: SupportedCurrencySymbol;
   isExpensesAppEnabled: boolean;
   helpEmail: string;
+  totpEnabled: boolean;
+  totpBackupCodesCount: number;
 }
 
 export type Action =
@@ -121,7 +124,7 @@ function formFields(action: Action, formData: FormData, currency?: SupportedCurr
 }
 
 export default function Settings(
-  { formData: formDataObject, error, notice, currency, isExpensesAppEnabled, helpEmail }: SettingsProps,
+  { formData: formDataObject, error, notice, currency, isExpensesAppEnabled, helpEmail, totpEnabled, totpBackupCodesCount }: SettingsProps,
 ) {
   const formData = convertObjectToFormData(formDataObject);
 
@@ -167,6 +170,12 @@ export default function Settings(
             <button class='button-secondary' type='submit'>Change password</button>
           </section>
         </form>
+
+        <TOTPSettings 
+          isEnabled={totpEnabled}
+          hasBackupCodes={totpBackupCodesCount > 0}
+          backupCodesCount={totpBackupCodesCount}
+        />
 
         <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Change your WebDav password</h2>
 

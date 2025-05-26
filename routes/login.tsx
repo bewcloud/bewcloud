@@ -99,6 +99,14 @@ export const handler: Handlers<Data, FreshContextState> = {
         }
       }
 
+      if (user.extra.totp_enabled) {
+        const redirectUrl = new URL(request.url).searchParams.get('redirect') || '/';
+        return new Response('Redirect', {
+          status: 303,
+          headers: { 'Location': `/totp-verify?user=${user.id}&redirect=${encodeURIComponent(redirectUrl)}` },
+        });
+      }
+
       return createSessionResponse(request, user, { urlToRedirectTo: `/` });
     } catch (error) {
       console.error(error);

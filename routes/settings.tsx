@@ -22,6 +22,8 @@ interface Data {
   currency?: SupportedCurrencySymbol;
   isExpensesAppEnabled: boolean;
   helpEmail: string;
+  totpEnabled: boolean;
+  totpBackupCodesCount: number;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -38,6 +40,8 @@ export const handler: Handlers<Data, FreshContextState> = {
       currency: context.state.user.extra.expenses_currency,
       isExpensesAppEnabled,
       helpEmail,
+      totpEnabled: !!context.state.user.extra.totp_enabled,
+      totpBackupCodesCount: context.state.user.extra.totp_backup_codes?.length || 0,
     });
   },
   async POST(request, context) {
@@ -190,6 +194,8 @@ export const handler: Handlers<Data, FreshContextState> = {
         currency: user.extra.expenses_currency,
         isExpensesAppEnabled,
         helpEmail,
+        totpEnabled: !!user.extra.totp_enabled,
+        totpBackupCodesCount: user.extra.totp_backup_codes?.length || 0,
       });
     } catch (error) {
       console.error(error);
@@ -202,6 +208,8 @@ export const handler: Handlers<Data, FreshContextState> = {
         currency: user.extra.expenses_currency,
         isExpensesAppEnabled,
         helpEmail,
+        totpEnabled: !!user.extra.totp_enabled,
+        totpBackupCodesCount: user.extra.totp_backup_codes?.length || 0,
       });
     }
   },
@@ -217,6 +225,8 @@ export default function SettingsPage({ data }: PageProps<Data, FreshContextState
         currency={data?.currency}
         isExpensesAppEnabled={data?.isExpensesAppEnabled}
         helpEmail={data?.helpEmail}
+        totpEnabled={data?.totpEnabled}
+        totpBackupCodesCount={data?.totpBackupCodesCount}
       />
     </main>
   );

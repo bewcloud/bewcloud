@@ -36,6 +36,8 @@
     "tailwindcss/plugin": "npm:/tailwindcss@3.4.15/plugin.js",
     "std/": "https://deno.land/std@0.224.0/",
     "$std/": "https://deno.land/std@0.224.0/",
-    "chart.js": "https://esm.sh/chart.js@4.4.7/auto"
+    "chart.js": "https://esm.sh/chart.js@4.4.9/auto",
+    "otpauth": "https://esm.sh/otpauth@9.4.0",
+    "qrcode": "https://esm.sh/qrcode@1.5.4"
   }
 }

@@ -13,6 +13,9 @@ export interface User {
     is_admin?: boolean;
     dav_hashed_password?: string;
     expenses_currency?: SupportedCurrencySymbol;
+    totp_secret?: string;
+    totp_enabled?: boolean;
+    totp_backup_codes?: string[];
   };
   created_at: Date;
 }

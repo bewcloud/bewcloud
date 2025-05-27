@@ -201,6 +201,10 @@ export interface TwoFactorMethod {
     passkey?: {
       credential_id: string;
       public_key: string;
+      counter?: number;
+      device_type?: string;
+      backed_up?: boolean;
+      transports?: string[];
     };
   };
 }

@@ -105,6 +105,26 @@ export const handler: Handlers<unknown, FreshContextState> = {
             },
           );
         }
+      } else if (method.type === 'passkey') {
+        if (code !== 'passkey-verified') {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Passkey not properly verified' } as TwoFactorActionResponse),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        if (!method.metadata.passkey?.credential_id || !method.metadata.passkey?.public_key) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Passkey credentials not found' } as TwoFactorActionResponse),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
       }
 
       await enableTwoFactorMethod(user, methodId);

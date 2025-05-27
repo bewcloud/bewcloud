@@ -8,6 +8,7 @@ import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
 import { hasTwoFactorEnabled } from '/lib/utils/two-factor.ts';
+import PasswordlessPasskeyLogin from '/islands/PasswordlessPasskeyLogin.tsx';
 
 interface Data {
   error?: string;
@@ -16,6 +17,7 @@ interface Data {
   formData?: FormData;
   isEmailVerificationEnabled: boolean;
   helpEmail: string;
+  isTwoFactorEnabled: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -25,6 +27,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+    const isTwoFactorEnabled = await AppConfig.isTwoFactorEnabled();
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     const searchParams = new URL(request.url).searchParams;
@@ -44,7 +47,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       }
     }
 
-    return await context.render({ notice, email, formData, isEmailVerificationEnabled, helpEmail });
+    return await context.render({ notice, email, formData, isEmailVerificationEnabled, isTwoFactorEnabled, helpEmail });
   },
   async POST(request, context) {
     if (context.state.user) {
@@ -113,11 +116,13 @@ export const handler: Handlers<Data, FreshContextState> = {
       return createSessionResponse(request, user, { urlToRedirectTo: `/` });
     } catch (error) {
       console.error(error);
+      const isTwoFactorEnabled = await AppConfig.isTwoFactorEnabled();
       return await context.render({
         error: (error as Error).toString(),
         email,
         formData,
         isEmailVerificationEnabled,
+        isTwoFactorEnabled,
         helpEmail,
       });
     }
@@ -181,7 +186,7 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
           )
           : null}
 
-        <form method='POST' class='mb-12'>
+        <form method='POST' class='mb-4'>
           {formFields(
             data?.email,
             data?.notice?.includes('verify your email') && data?.isEmailVerificationEnabled,
@@ -190,6 +195,12 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
             <button class='button' type='submit'>Login</button>
           </section>
         </form>
+
+        {data?.isTwoFactorEnabled && (
+          <div class='mb-12 max-w-md mx-auto'>
+            <PasswordlessPasskeyLogin />
+          </div>
+        )}
 
         <h2 class='text-2xl mb-4 text-center'>Need an account?</h2>
         <p class='text-center mt-2 mb-6'>

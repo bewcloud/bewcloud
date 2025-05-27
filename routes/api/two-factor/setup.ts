@@ -49,7 +49,7 @@ export const handler: Handlers<unknown, FreshContextState> = {
         );
       }
 
-      if (type !== 'totp') {
+      if (type !== 'totp' && type !== 'passkey') {
         return new Response(
           JSON.stringify(
             { success: false, error: `${type} authentication is not yet supported` } as TwoFactorSetupResponse,

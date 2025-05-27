@@ -5,6 +5,7 @@ import { UserModel } from '/lib/models/user.ts';
 import { createSessionResponse } from '/lib/auth.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
 import { AppConfig } from '/lib/config.ts';
+import TwoFactorVerifyForm from '/components/TwoFactorVerifyForm.tsx';
 
 interface Data {
   error?: {
@@ -13,6 +14,8 @@ interface Data {
   };
   userId?: string;
   redirectUrl?: string;
+  availableMethods?: string[];
+  hasPasskey?: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -41,9 +44,15 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
+    const enabledMethods = getEnabledTwoFactorMethods(user);
+    const availableMethods = enabledMethods.map((m) => m.type);
+    const hasPasskey = availableMethods.includes('passkey');
+
     return await context.render({
       userId,
       redirectUrl,
+      availableMethods,
+      hasPasskey,
     });
   },
   async POST(request, context) {
@@ -109,6 +118,9 @@ export const handler: Handlers<Data, FreshContextState> = {
     } catch (error) {
       console.error('Two-factor verification error:', error);
 
+      const enabledMethods = getEnabledTwoFactorMethods(user);
+      const availableMethods = enabledMethods.map((m) => m.type);
+
       return await context.render({
         error: {
           title: 'Verification Failed',
@@ -116,6 +128,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         },
         userId,
         redirectUrl,
+        availableMethods,
       });
     }
   },
@@ -124,49 +137,12 @@ export const handler: Handlers<Data, FreshContextState> = {
 export default function TwoFactorVerifyPage({ data }: PageProps<Data, FreshContextState>) {
   return (
     <main class='flex flex-col items-center justify-center min-h-screen'>
-      <div class='max-w-md w-full space-y-8'>
-        <div>
-          <h2 class='mt-6 text-center text-3xl font-extrabold text-white'>
-            Two-Factor Authentication
-          </h2>
-          <p class='mt-2 text-center text-sm text-gray-300'>
-            Enter your authentication code to continue
-          </p>
-        </div>
-        <form
-          class='mt-8 space-y-6'
-          method='POST'
-          action={`/two-factor-verify?user=${data.userId}&redirect=${encodeURIComponent(data.redirectUrl || '/')}`}
-        >
-          <div class='mb-4'>
-            <label for='token' class='block text-sm font-medium mb-2 text-white'>
-              Authentication Token or Backup Code
-            </label>
-            <input
-              type='text'
-              id='token'
-              name='token'
-              placeholder='123456 or backup code'
-              class='w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400'
-              autocomplete='one-time-code'
-              required
-            />
-          </div>
-
-          <button
-            type='submit'
-            class='button'
-          >
-            Verify
-          </button>
-        </form>
-
-        <div class='mt-6 text-center'>
-          <a href='/login' class='text-blue-400 hover:text-blue-300'>
-            Back to Login
-          </a>
-        </div>
-      </div>
+      <TwoFactorVerifyForm
+        userId={data.userId || ''}
+        redirectUrl={data.redirectUrl || '/'}
+        availableMethods={data.availableMethods || []}
+        error={data.error}
+      />
     </main>
   );
 }

@@ -35,6 +35,10 @@ import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.
 import * as $api_notes_save from './routes/api/notes/save.tsx';
 import * as $api_two_factor_disable from './routes/api/two-factor/disable.ts';
 import * as $api_two_factor_enable from './routes/api/two-factor/enable.ts';
+import * as $api_two_factor_passkey_auth_begin from './routes/api/two-factor/passkey-auth-begin.ts';
+import * as $api_two_factor_passkey_auth_verify from './routes/api/two-factor/passkey-auth-verify.ts';
+import * as $api_two_factor_passkey_register_begin from './routes/api/two-factor/passkey-register-begin.ts';
+import * as $api_two_factor_passkey_register_complete from './routes/api/two-factor/passkey-register-complete.ts';
 import * as $api_two_factor_setup from './routes/api/two-factor/setup.ts';
 import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav from './routes/dav.tsx';
@@ -101,6 +105,10 @@ const manifest = {
     './routes/api/notes/save.tsx': $api_notes_save,
     './routes/api/two-factor/disable.ts': $api_two_factor_disable,
     './routes/api/two-factor/enable.ts': $api_two_factor_enable,
+    './routes/api/two-factor/passkey-auth-begin.ts': $api_two_factor_passkey_auth_begin,
+    './routes/api/two-factor/passkey-auth-verify.ts': $api_two_factor_passkey_auth_verify,
+    './routes/api/two-factor/passkey-register-begin.ts': $api_two_factor_passkey_register_begin,
+    './routes/api/two-factor/passkey-register-complete.ts': $api_two_factor_passkey_register_complete,
     './routes/api/two-factor/setup.ts': $api_two_factor_setup,
     './routes/dashboard.tsx': $dashboard,
     './routes/dav.tsx': $dav,

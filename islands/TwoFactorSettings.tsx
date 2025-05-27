@@ -1,5 +1,6 @@
 import { useSignal } from '@preact/signals';
 import { TwoFactorActionResponse, TwoFactorMethodType, TwoFactorSetupResponse } from '/lib/types.ts';
+import { startRegistration } from '@simplewebauthn/browser';
 
 interface TwoFactorMethod {
   type: TwoFactorMethodType;
@@ -14,10 +15,16 @@ interface TwoFactorSettingsProps {
 }
 
 interface TOTPSetupData {
+  type: 'totp';
   secret: string;
   qrCodeUrl: string;
   backupCodes: string[];
   methodId: string;
+}
+
+interface PasskeySetupData {
+  methodId: string;
+  type: 'passkey';
 }
 
 const methodTypeLabels: Record<TwoFactorMethodType, string> = {
@@ -33,7 +40,7 @@ const methodTypeDescriptions: Record<TwoFactorMethodType, string> = {
 };
 
 export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
-  const setupData = useSignal<TOTPSetupData | null>(null);
+  const setupData = useSignal<TOTPSetupData | PasskeySetupData | null>(null);
   const isLoading = useSignal(false);
   const error = useSignal<string | null>(null);
   const success = useSignal<string | null>(null);
@@ -44,6 +51,45 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
 
   const enabledMethods = methods.filter((m) => m.enabled);
   const hasTwoFactorEnabled = enabledMethods.length > 0;
+
+  const setupPasskey = async (methodId: string) => {
+    try {
+      const beginResponse = await fetch('/api/two-factor/passkey-register-begin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ methodId }),
+      });
+
+      const beginData = await beginResponse.json();
+      if (!beginData.success) {
+        throw new Error(beginData.error || 'Failed to begin passkey registration');
+      }
+
+      const registrationResponse = await startRegistration({ optionsJSON: beginData.options });
+
+      const completeResponse = await fetch('/api/two-factor/passkey-register-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          methodId,
+          challenge: beginData.sessionData.challenge,
+          registrationResponse,
+        }),
+      });
+
+      const completeData = await completeResponse.json();
+      if (!completeData.success) {
+        throw new Error(completeData.error || 'Failed to complete passkey registration');
+      }
+
+      setupData.value = {
+        methodId,
+        type: 'passkey',
+      };
+    } catch (err) {
+      throw err;
+    }
+  };
 
   const setupTwoFactor = async (type: TwoFactorMethodType) => {
     isLoading.value = true;
@@ -67,11 +113,14 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
 
       if (type === 'totp') {
         setupData.value = {
+          type: 'totp',
           secret: data.data.secret!,
           qrCodeUrl: data.data.qrCodeUrl!,
           backupCodes: data.data.backupCodes!,
           methodId: data.data.methodId!,
         };
+      } else if (type === 'passkey') {
+        await setupPasskey(data.data.methodId!);
       }
     } catch (err) {
       error.value = (err as Error).message;
@@ -81,7 +130,12 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
   };
 
   const enableTwoFactor = async () => {
-    if (!setupData.value || !verificationToken.value) {
+    if (!setupData.value) {
+      error.value = 'No setup data available';
+      return;
+    }
+
+    if (setupData.value.type !== 'passkey' && !verificationToken.value) {
       error.value = 'Please enter a verification token';
       return;
     }
@@ -95,7 +149,7 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           methodId: setupData.value.methodId,
-          code: verificationToken.value,
+          code: setupData.value.type === 'passkey' ? 'passkey-verified' : verificationToken.value,
         }),
       });
 
@@ -195,35 +249,45 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
           beyond your password.
         </p>
 
-        {!hasTwoFactorEnabled && !setupData.value && (
+        {!setupData.value && (
           <div>
             <div class='mb-6'>
-              <h3 class='text-lg font-semibold mb-4'>Available Authentication Methods</h3>
+              <h3 class='text-lg font-semibold mb-4'>
+                {hasTwoFactorEnabled ? 'Add Additional Authentication Method' : 'Available Authentication Methods'}
+              </h3>
               <div class='space-y-4'>
-                {(['totp'] as TwoFactorMethodType[]).map((type) => (
-                  <div key={type} class='border rounded-lg p-4'>
-                    <div class='flex items-center justify-between'>
-                      <div>
-                        <h4 class='font-medium'>{methodTypeLabels[type]}</h4>
-                        <p class='text-sm text-gray-600'>{methodTypeDescriptions[type]}</p>
+                {(['totp', 'passkey'] as TwoFactorMethodType[])
+                  .filter((type) => !enabledMethods.some((method) => method.type === type))
+                  .map((type) => (
+                    <div key={type} class='border rounded-lg p-4'>
+                      <div class='flex items-center justify-between'>
+                        <div>
+                          <h4 class='font-medium'>{methodTypeLabels[type]}</h4>
+                          <p class='text-sm text-gray-600'>{methodTypeDescriptions[type]}</p>
+                        </div>
+                        <button
+                          type='button'
+                          onClick={() => setupTwoFactor(type)}
+                          disabled={isLoading.value}
+                          class='button-secondary'
+                        >
+                          {isLoading.value ? 'Setting up...' : 'Add'}
+                        </button>
                       </div>
-                      <button
-                        type='button'
-                        onClick={() => setupTwoFactor(type)}
-                        disabled={isLoading.value}
-                        class='button-secondary'
-                      >
-                        {isLoading.value ? 'Setting up...' : 'Setup'}
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
+              {(['totp', 'passkey'] as TwoFactorMethodType[])
+                    .filter((type) => !enabledMethods.some((method) => method.type === type)).length === 0 && (
+                <p class='text-gray-600 text-center py-4'>
+                  All available authentication methods are already enabled.
+                </p>
+              )}
             </div>
           </div>
         )}
 
-        {setupData.value && (
+        {setupData.value && setupData.value.type !== 'passkey' && (
           <div class='mb-6'>
             <h3 class='text-lg font-semibold mb-4'>Setup Authenticator App</h3>
 
@@ -280,6 +344,34 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
                 class='button-secondary'
               >
                 {isLoading.value ? 'Enabling...' : 'Enable 2FA'}
+              </button>
+            </section>
+          </div>
+        )}
+
+        {setupData.value && setupData.value.type === 'passkey' && (
+          <div class='mb-6'>
+            <h3 class='text-lg font-semibold mb-4'>Passkey Setup Complete</h3>
+            <p class='mb-4'>
+              Your passkey has been successfully registered! You can now enable it for two-factor authentication.
+            </p>
+
+            <section class='flex justify-end gap-2 mt-8 mb-4'>
+              <button
+                type='button'
+                onClick={cancelSetup}
+                disabled={isLoading.value}
+                class='button-outline'
+              >
+                Cancel
+              </button>
+              <button
+                type='button'
+                onClick={enableTwoFactor}
+                disabled={isLoading.value}
+                class='button-secondary'
+              >
+                {isLoading.value ? 'Enabling...' : 'Enable Passkey 2FA'}
               </button>
             </section>
           </div>

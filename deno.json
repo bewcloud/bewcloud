@@ -38,6 +38,9 @@
     "$std/": "https://deno.land/std@0.224.0/",
     "chart.js": "https://esm.sh/chart.js@4.4.9/auto",
     "otpauth": "https://esm.sh/otpauth@9.4.0",
-    "qrcode": "https://esm.sh/qrcode@1.5.4"
+    "qrcode": "https://esm.sh/qrcode@1.5.4",
+    "@simplewebauthn/server": "jsr:@simplewebauthn/server@^13.1.1",
+    "@simplewebauthn/server/helpers": "jsr:@simplewebauthn/server@^13.1.1/helpers",
+    "@simplewebauthn/browser": "jsr:@simplewebauthn/browser@^13.1.0"
   }
 }

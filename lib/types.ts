@@ -13,7 +13,7 @@ export interface User {
     is_admin?: boolean;
     dav_hashed_password?: string;
     expenses_currency?: SupportedCurrencySymbol;
-    two_factor_methods?: TwoFactorMethod[];
+    multi_factor_auth_methods?: MultiFactorAuthMethod[];
   };
   created_at: Date;
 }
@@ -157,8 +157,8 @@ export interface Config {
     enableEmailVerification: boolean;
     /** If true, all signups become active for 100 years */
     enableForeverSignup: boolean;
-    /** If true, users can enable two-factor authentication (TOTP, Email, Passkey) */
-    enableTwoFactor: boolean;
+    /** If true, users can enable multi-factor authentication (TOTP or Passkeys) */
+    enableMultiFactor: boolean;
     /** Can be set to allow more than the baseUrl's domain for session cookies */
     allowedCookieDomains: string[];
     /** If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel. */
@@ -182,10 +182,10 @@ export interface Config {
   };
 }
 
-export type TwoFactorMethodType = 'totp' | 'email' | 'passkey';
+export type MultiFactorAuthMethodType = 'totp' | 'passkey';
 
-export interface TwoFactorMethod {
-  type: TwoFactorMethodType;
+export interface MultiFactorAuthMethod {
+  type: MultiFactorAuthMethodType;
   id: string;
   name: string;
   enabled: boolean;
@@ -195,33 +195,13 @@ export interface TwoFactorMethod {
       hashed_secret: string;
       hashed_backup_codes: string[];
     };
-    email?: {
-      email: string;
-    };
     passkey?: {
       credential_id: string;
       public_key: string;
       counter?: number;
       device_type?: string;
       backed_up?: boolean;
-      transports?: string[];
+      transports?: AuthenticatorTransport[];
     };
   };
-}
-
-export interface TwoFactorSetupResponse {
-  success: boolean;
-  error?: string;
-  data?: {
-    methodId?: string;
-    secret?: string;
-    qrCodeUrl?: string;
-    backupCodes?: string[];
-  };
-}
-
-export interface TwoFactorActionResponse {
-  success: boolean;
-  error?: string;
-  message?: string;
 }

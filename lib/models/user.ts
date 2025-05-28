@@ -34,6 +34,25 @@ export class UserModel {
     return user;
   }
 
+  static async getByPasskeyCredentialId(credentialId: string) {
+    // TODO: This probably needs to be separated into two WHERE clauses, one for the type and the other for the credential_id
+    const user = (await db.query<User>(
+      sql`SELECT * FROM "bewcloud_users" WHERE "extra" -> 'multi_factor_auth_methods' @> $1 LIMIT 1`,
+      [
+        JSON.stringify({
+          type: 'passkey',
+          metadata: {
+            passkey: {
+              credential_id: credentialId,
+            },
+          },
+        }),
+      ],
+    ))[0];
+
+    return user;
+  }
+
   static async create(email: User['email'], hashedPassword: User['hashed_password']) {
     const trialDays = await AppConfig.isForeverSignupEnabled() ? 36_525 : 30;
     const now = new Date();

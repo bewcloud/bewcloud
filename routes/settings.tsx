@@ -1,6 +1,6 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
 
-import { currencyMap, FreshContextState, SupportedCurrencySymbol } from '/lib/types.ts';
+import { currencyMap, FreshContextState, SupportedCurrencySymbol, User } from '/lib/types.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { convertFormDataToObject, generateHash, validateEmail } from '/lib/utils/misc.ts';
@@ -21,9 +21,11 @@ interface Data {
   formData: Record<string, any>;
   currency?: SupportedCurrencySymbol;
   isExpensesAppEnabled: boolean;
+  isMultiFactorAuthEnabled: boolean;
   helpEmail: string;
-  isTwoFactorEnabled: boolean;
-  user: any;
+  user: {
+    extra: Pick<User['extra'], 'multi_factor_auth_methods'>;
+  };
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -34,14 +36,14 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
-    const isTwoFactorEnabled = await AppConfig.isTwoFactorEnabled();
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
 
     return await context.render({
       formData: {},
       currency: context.state.user.extra.expenses_currency,
       isExpensesAppEnabled,
       helpEmail,
-      isTwoFactorEnabled,
+      isMultiFactorAuthEnabled,
       user: context.state.user,
     });
   },
@@ -52,7 +54,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
-    const isTwoFactorEnabled = await AppConfig.isTwoFactorEnabled();
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
 
     let action: Action = 'change-email';
     let errorTitle = '';
@@ -196,7 +198,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         currency: user.extra.expenses_currency,
         isExpensesAppEnabled,
         helpEmail,
-        isTwoFactorEnabled,
+        isMultiFactorAuthEnabled,
         user: user,
       });
     } catch (error) {
@@ -210,7 +212,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         currency: user.extra.expenses_currency,
         isExpensesAppEnabled,
         helpEmail,
-        isTwoFactorEnabled,
+        isMultiFactorAuthEnabled,
         user: user,
       });
     }
@@ -226,8 +228,8 @@ export default function SettingsPage({ data }: PageProps<Data, FreshContextState
         notice={data?.notice}
         currency={data?.currency}
         isExpensesAppEnabled={data?.isExpensesAppEnabled}
+        isMultiFactorAuthEnabled={data?.isMultiFactorAuthEnabled}
         helpEmail={data?.helpEmail}
-        isTwoFactorEnabled={data?.isTwoFactorEnabled}
         user={data?.user}
       />
     </main>

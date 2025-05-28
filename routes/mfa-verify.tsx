@@ -1,84 +1,88 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
-import { FreshContextState } from '/lib/types.ts';
-import { getEnabledTwoFactorMethods, hasTwoFactorEnabled, verifyTwoFactorToken } from '/lib/utils/two-factor.ts';
+
+import { FreshContextState, MultiFactorAuthMethodType } from '/lib/types.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { createSessionResponse } from '/lib/auth.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
 import { AppConfig } from '/lib/config.ts';
-import TwoFactorVerifyForm from '/components/TwoFactorVerifyForm.tsx';
+import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
+import {
+  getEnabledMultiFactorAuthMethodsFromUser,
+  isMultiFactorAuthEnabledForUser,
+} from '/lib/utils/multi-factor-auth.ts';
+import MultiFactorAuthVerifyForm from '/components/auth/MultiFactorAuthVerifyForm.tsx';
 
 interface Data {
   error?: {
     title: string;
     message: string;
   };
+  // TODO: Remove this since we can get the user from the cookie
   userId?: string;
   redirectUrl?: string;
-  availableMethods?: string[];
+  availableMethods?: MultiFactorAuthMethodType[];
   hasPasskey?: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
-    if (!(await AppConfig.isTwoFactorEnabled())) {
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
+
+    if (!isMultiFactorAuthEnabled) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('user');
-    const redirectUrl = url.searchParams.get('redirect') || '/';
+    const searchParams = new URL(request.url).searchParams;
+    const redirectUrl = searchParams.get('redirect') || '/';
 
-    if (!userId) {
-      return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
-    }
-
-    const user = await UserModel.getById(userId);
+    const { user } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 
     if (!user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
-    const has2FA = hasTwoFactorEnabled(user);
+    const hasMultiFactorAuthEnabled = isMultiFactorAuthEnabledForUser(user);
 
-    if (!has2FA) {
+    if (!hasMultiFactorAuthEnabled) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
-    const enabledMethods = getEnabledTwoFactorMethods(user);
-    const availableMethods = enabledMethods.map((m) => m.type);
+    const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
+    const availableMethods = enabledMethods.map((method) => method.type);
     const hasPasskey = availableMethods.includes('passkey');
 
     return await context.render({
-      userId,
+      userId: user.id,
       redirectUrl,
       availableMethods,
       hasPasskey,
     });
   },
   async POST(request, context) {
-    if (!(await AppConfig.isTwoFactorEnabled())) {
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
+
+    if (!isMultiFactorAuthEnabled) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('user');
-    const redirectUrl = url.searchParams.get('redirect') || '/';
+    const searchParams = new URL(request.url).searchParams;
+    const redirectUrl = searchParams.get('redirect') || '/';
 
-    if (!userId) {
-      return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
-    }
-
-    const user = await UserModel.getById(userId);
+    const { user } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 
     if (!user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
 
-    const has2FA = hasTwoFactorEnabled(user);
+    const hasMultiFactorAuthEnabled = isMultiFactorAuthEnabledForUser(user);
 
-    if (!has2FA) {
+    if (!hasMultiFactorAuthEnabled) {
       return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
     }
+
+    const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
+    const availableMethods = enabledMethods.map((method) => method.type);
+    const hasPasskey = availableMethods.includes('passkey');
 
     try {
       const formData = await request.formData();
@@ -91,14 +95,12 @@ export const handler: Handlers<Data, FreshContextState> = {
       let isValid = false;
       let updateUser = false;
 
-      const enabledMethods = getEnabledTwoFactorMethods(user);
-
       for (const method of enabledMethods) {
-        const verification = await verifyTwoFactorToken(method, token);
+        const verification = await MultiFactorAuthModel.verifyMultiFactorAuthToken(method, token);
         if (verification.isValid) {
           isValid = true;
 
-          if (verification.remainingCodes && method.metadata.totp) {
+          if (verification.remainingCodes && method.type === 'totp' && method.metadata.totp) {
             method.metadata.totp.hashed_backup_codes = verification.remainingCodes;
             updateUser = true;
           }
@@ -116,28 +118,26 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       return await createSessionResponse(request, user, { urlToRedirectTo: redirectUrl });
     } catch (error) {
-      console.error('Two-factor verification error:', error);
-
-      const enabledMethods = getEnabledTwoFactorMethods(user);
-      const availableMethods = enabledMethods.map((m) => m.type);
+      console.error('Multi-factor authentication verification error:', error);
 
       return await context.render({
         error: {
           title: 'Verification Failed',
           message: (error as Error).message,
         },
-        userId,
+        userId: user.id,
         redirectUrl,
         availableMethods,
+        hasPasskey,
       });
     }
   },
 };
 
-export default function TwoFactorVerifyPage({ data }: PageProps<Data, FreshContextState>) {
+export default function MultiFactorAuthVerifyPage({ data }: PageProps<Data, FreshContextState>) {
   return (
     <main class='flex flex-col items-center justify-center min-h-screen'>
-      <TwoFactorVerifyForm
+      <MultiFactorAuthVerifyForm
         userId={data.userId || ''}
         redirectUrl={data.redirectUrl || '/'}
         availableMethods={data.availableMethods || []}

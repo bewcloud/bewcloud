@@ -7,8 +7,9 @@ import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
-import { hasTwoFactorEnabled } from '/lib/utils/two-factor.ts';
-import PasswordlessPasskeyLogin from '/islands/PasswordlessPasskeyLogin.tsx';
+import { isMultiFactorAuthEnabledForUser } from '/lib/utils/multi-factor-auth.ts';
+import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
+import PasswordlessPasskeyLogin from '/islands/auth/PasswordlessPasskeyLogin.tsx';
 
 interface Data {
   error?: string;
@@ -16,8 +17,8 @@ interface Data {
   email?: string;
   formData?: FormData;
   isEmailVerificationEnabled: boolean;
+  isMultiFactorAuthEnabled: boolean;
   helpEmail: string;
-  isTwoFactorEnabled: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -27,7 +28,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
-    const isTwoFactorEnabled = await AppConfig.isTwoFactorEnabled();
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     const searchParams = new URL(request.url).searchParams;
@@ -47,7 +48,14 @@ export const handler: Handlers<Data, FreshContextState> = {
       }
     }
 
-    return await context.render({ notice, email, formData, isEmailVerificationEnabled, isTwoFactorEnabled, helpEmail });
+    return await context.render({
+      notice,
+      email,
+      formData,
+      isEmailVerificationEnabled,
+      isMultiFactorAuthEnabled,
+      helpEmail,
+    });
   },
   async POST(request, context) {
     if (context.state.user) {
@@ -55,10 +63,15 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+
+    const searchParams = new URL(request.url).searchParams;
 
     const formData = await request.clone().formData();
     const email = getFormDataField(formData, 'email');
+
+    const redirectUrl = searchParams.get('redirect') || '/';
 
     try {
       if (!validateEmail(email)) {
@@ -79,7 +92,9 @@ export const handler: Handlers<Data, FreshContextState> = {
         throw new Error('Email not found or invalid password.');
       }
 
-      if (!(await AppConfig.isEmailVerificationEnabled()) && !user.extra.is_email_verified) {
+      const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+
+      if (!isEmailVerificationEnabled && !user.extra.is_email_verified) {
         user.extra.is_email_verified = true;
 
         await UserModel.update(user);
@@ -103,26 +118,22 @@ export const handler: Handlers<Data, FreshContextState> = {
         }
       }
 
-      if (user.extra.is_email_verified && hasTwoFactorEnabled(user) && (await AppConfig.isTwoFactorEnabled())) {
+      if (user.extra.is_email_verified && isMultiFactorAuthEnabled && isMultiFactorAuthEnabledForUser(user)) {
         const userId = user.id;
-        const redirectUrl = new URL(request.url).searchParams.get('redirect') || '/';
 
-        return new Response('Redirect', {
-          status: 303,
-          headers: { 'Location': `/two-factor-verify?user=${userId}&redirect=${encodeURIComponent(redirectUrl)}` },
-        });
+        return MultiFactorAuthModel.createSessionResponse(request, user, { urlToRedirectTo: redirectUrl });
       }
 
-      return createSessionResponse(request, user, { urlToRedirectTo: `/` });
+      return createSessionResponse(request, user, { urlToRedirectTo: redirectUrl });
     } catch (error) {
       console.error(error);
-      const isTwoFactorEnabled = await AppConfig.isTwoFactorEnabled();
+
       return await context.render({
         error: (error as Error).toString(),
         email,
         formData,
         isEmailVerificationEnabled,
-        isTwoFactorEnabled,
+        isMultiFactorAuthEnabled,
         helpEmail,
       });
     }
@@ -196,10 +207,10 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
           </section>
         </form>
 
-        {data?.isTwoFactorEnabled && (
-          <div class='mb-12 max-w-md mx-auto'>
+        {data?.isMultiFactorAuthEnabled && (
+          <section class='mb-12 max-w-md mx-auto'>
             <PasswordlessPasskeyLogin />
-          </div>
+          </section>
         )}
 
         <h2 class='text-2xl mb-4 text-center'>Need an account?</h2>

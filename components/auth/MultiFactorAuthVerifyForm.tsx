@@ -1,14 +1,15 @@
-import PasskeyAuth from '/islands/PasskeyAuth.tsx';
+import { MultiFactorAuthMethodType } from '/lib/types.ts';
+import PasskeyAuth from '/islands/auth/PasskeyAuth.tsx';
 
-interface TwoFactorVerifyFormProps {
+interface MultiFactorAuthVerifyFormProps {
   userId: string;
   redirectUrl: string;
-  availableMethods: string[];
+  availableMethods: MultiFactorAuthMethodType[];
   error?: { title: string; message: string };
 }
 
-export default function TwoFactorVerifyForm(
-  { userId, redirectUrl, availableMethods, error }: TwoFactorVerifyFormProps,
+export default function MultiFactorAuthVerifyForm(
+  { userId, redirectUrl, availableMethods, error }: MultiFactorAuthVerifyFormProps,
 ) {
   const hasPasskey = availableMethods.includes('passkey');
   const hasTotp = availableMethods.includes('totp');
@@ -17,7 +18,7 @@ export default function TwoFactorVerifyForm(
     <div class='max-w-md w-full space-y-8'>
       <div>
         <h2 class='mt-6 text-center text-3xl font-extrabold text-white'>
-          Two-Factor Authentication
+          Multi-Factor Authentication
         </h2>
         <p class='mt-2 text-center text-sm text-gray-300'>
           Choose your preferred authentication method
@@ -47,7 +48,7 @@ export default function TwoFactorVerifyForm(
         <form
           class='space-y-6'
           method='POST'
-          action={`/two-factor-verify?user=${userId}&redirect=${encodeURIComponent(redirectUrl)}`}
+          action={`/mfa-verify?user=${userId}&redirect=${encodeURIComponent(redirectUrl)}`}
         >
           <div>
             <label for='token' class='block text-sm font-medium mb-2 text-white'>

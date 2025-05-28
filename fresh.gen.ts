@@ -5,6 +5,14 @@
 import * as $_404 from './routes/_404.tsx';
 import * as $_app from './routes/_app.tsx';
 import * as $_middleware from './routes/_middleware.tsx';
+import * as $api_auth_multi_factor_disable from './routes/api/auth/multi-factor/disable.ts';
+import * as $api_auth_multi_factor_enable from './routes/api/auth/multi-factor/enable.ts';
+import * as $api_auth_multi_factor_passkey_begin from './routes/api/auth/multi-factor/passkey/begin.ts';
+import * as $api_auth_multi_factor_passkey_login from './routes/api/auth/multi-factor/passkey/login.ts';
+import * as $api_auth_multi_factor_passkey_register_begin from './routes/api/auth/multi-factor/passkey/register-begin.ts';
+import * as $api_auth_multi_factor_passkey_register_complete from './routes/api/auth/multi-factor/passkey/register-complete.ts';
+import * as $api_auth_multi_factor_passkey_verify from './routes/api/auth/multi-factor/passkey/verify.ts';
+import * as $api_auth_multi_factor_setup from './routes/api/auth/multi-factor/setup.ts';
 import * as $api_dashboard_save_links from './routes/api/dashboard/save-links.tsx';
 import * as $api_dashboard_save_notes from './routes/api/dashboard/save-notes.tsx';
 import * as $api_expenses_add_budget from './routes/api/expenses/add-budget.tsx';
@@ -33,13 +41,6 @@ import * as $api_news_import_feeds from './routes/api/news/import-feeds.tsx';
 import * as $api_news_mark_read from './routes/api/news/mark-read.tsx';
 import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.tsx';
 import * as $api_notes_save from './routes/api/notes/save.tsx';
-import * as $api_two_factor_disable from './routes/api/two-factor/disable.ts';
-import * as $api_two_factor_enable from './routes/api/two-factor/enable.ts';
-import * as $api_two_factor_passkey_auth_begin from './routes/api/two-factor/passkey-auth-begin.ts';
-import * as $api_two_factor_passkey_auth_verify from './routes/api/two-factor/passkey-auth-verify.ts';
-import * as $api_two_factor_passkey_register_begin from './routes/api/two-factor/passkey-register-begin.ts';
-import * as $api_two_factor_passkey_register_complete from './routes/api/two-factor/passkey-register-complete.ts';
-import * as $api_two_factor_setup from './routes/api/two-factor/setup.ts';
 import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav from './routes/dav.tsx';
 import * as $expenses from './routes/expenses.tsx';
@@ -48,6 +49,7 @@ import * as $files_open_fileName_ from './routes/files/open/[fileName].tsx';
 import * as $index from './routes/index.tsx';
 import * as $login from './routes/login.tsx';
 import * as $logout from './routes/logout.tsx';
+import * as $mfa_verify from './routes/mfa-verify.tsx';
 import * as $news from './routes/news.tsx';
 import * as $news_feeds from './routes/news/feeds.tsx';
 import * as $notes from './routes/notes.tsx';
@@ -56,9 +58,10 @@ import * as $photos from './routes/photos.tsx';
 import * as $photos_thumbnail_fileName_ from './routes/photos/thumbnail/[fileName].tsx';
 import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
-import * as $two_factor_verify from './routes/two-factor-verify.tsx';
 import * as $Settings from './islands/Settings.tsx';
-import * as $TwoFactorSettings from './islands/TwoFactorSettings.tsx';
+import * as $auth_MultiFactorAuthSettings from './islands/auth/MultiFactorAuthSettings.tsx';
+import * as $auth_PasskeyAuth from './islands/auth/PasskeyAuth.tsx';
+import * as $auth_PasswordlessPasskeyLogin from './islands/auth/PasswordlessPasskeyLogin.tsx';
 import * as $dashboard_Links from './islands/dashboard/Links.tsx';
 import * as $dashboard_Notes from './islands/dashboard/Notes.tsx';
 import * as $expenses_ExpensesWrapper from './islands/expenses/ExpensesWrapper.tsx';
@@ -75,6 +78,14 @@ const manifest = {
     './routes/_404.tsx': $_404,
     './routes/_app.tsx': $_app,
     './routes/_middleware.tsx': $_middleware,
+    './routes/api/auth/multi-factor/disable.ts': $api_auth_multi_factor_disable,
+    './routes/api/auth/multi-factor/enable.ts': $api_auth_multi_factor_enable,
+    './routes/api/auth/multi-factor/passkey/begin.ts': $api_auth_multi_factor_passkey_begin,
+    './routes/api/auth/multi-factor/passkey/login.ts': $api_auth_multi_factor_passkey_login,
+    './routes/api/auth/multi-factor/passkey/register-begin.ts': $api_auth_multi_factor_passkey_register_begin,
+    './routes/api/auth/multi-factor/passkey/register-complete.ts': $api_auth_multi_factor_passkey_register_complete,
+    './routes/api/auth/multi-factor/passkey/verify.ts': $api_auth_multi_factor_passkey_verify,
+    './routes/api/auth/multi-factor/setup.ts': $api_auth_multi_factor_setup,
     './routes/api/dashboard/save-links.tsx': $api_dashboard_save_links,
     './routes/api/dashboard/save-notes.tsx': $api_dashboard_save_notes,
     './routes/api/expenses/add-budget.tsx': $api_expenses_add_budget,
@@ -103,13 +114,6 @@ const manifest = {
     './routes/api/news/mark-read.tsx': $api_news_mark_read,
     './routes/api/news/refresh-articles.tsx': $api_news_refresh_articles,
     './routes/api/notes/save.tsx': $api_notes_save,
-    './routes/api/two-factor/disable.ts': $api_two_factor_disable,
-    './routes/api/two-factor/enable.ts': $api_two_factor_enable,
-    './routes/api/two-factor/passkey-auth-begin.ts': $api_two_factor_passkey_auth_begin,
-    './routes/api/two-factor/passkey-auth-verify.ts': $api_two_factor_passkey_auth_verify,
-    './routes/api/two-factor/passkey-register-begin.ts': $api_two_factor_passkey_register_begin,
-    './routes/api/two-factor/passkey-register-complete.ts': $api_two_factor_passkey_register_complete,
-    './routes/api/two-factor/setup.ts': $api_two_factor_setup,
     './routes/dashboard.tsx': $dashboard,
     './routes/dav.tsx': $dav,
     './routes/expenses.tsx': $expenses,
@@ -118,6 +122,7 @@ const manifest = {
     './routes/index.tsx': $index,
     './routes/login.tsx': $login,
     './routes/logout.tsx': $logout,
+    './routes/mfa-verify.tsx': $mfa_verify,
     './routes/news.tsx': $news,
     './routes/news/feeds.tsx': $news_feeds,
     './routes/notes.tsx': $notes,
@@ -126,11 +131,12 @@ const manifest = {
     './routes/photos/thumbnail/[fileName].tsx': $photos_thumbnail_fileName_,
     './routes/settings.tsx': $settings,
     './routes/signup.tsx': $signup,
-    './routes/two-factor-verify.tsx': $two_factor_verify,
   },
   islands: {
     './islands/Settings.tsx': $Settings,
-    './islands/TwoFactorSettings.tsx': $TwoFactorSettings,
+    './islands/auth/MultiFactorAuthSettings.tsx': $auth_MultiFactorAuthSettings,
+    './islands/auth/PasskeyAuth.tsx': $auth_PasskeyAuth,
+    './islands/auth/PasswordlessPasskeyLogin.tsx': $auth_PasswordlessPasskeyLogin,
     './islands/dashboard/Links.tsx': $dashboard_Links,
     './islands/dashboard/Notes.tsx': $dashboard_Notes,
     './islands/expenses/ExpensesWrapper.tsx': $expenses_ExpensesWrapper,

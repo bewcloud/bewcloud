@@ -1,17 +1,38 @@
 import { useSignal } from '@preact/signals';
-import { TwoFactorActionResponse, TwoFactorMethodType, TwoFactorSetupResponse } from '/lib/types.ts';
 import { startRegistration } from '@simplewebauthn/browser';
 
-interface TwoFactorMethod {
-  type: TwoFactorMethodType;
+import { MultiFactorAuthMethodType } from '/lib/types.ts';
+import {
+  RequestBody as PasskeyRegisterBeginRequestBody,
+  ResponseBody as PasskeyRegisterBeginResponseBody,
+} from '/routes/api/auth/multi-factor/passkey/register-begin.ts';
+import {
+  RequestBody as PasskeyRegisterCompleteRequestBody,
+  ResponseBody as PasskeyRegisterCompleteResponseBody,
+} from '/routes/api/auth/multi-factor/passkey/register-complete.ts';
+import {
+  RequestBody as MultiFactorAuthSetupRequestBody,
+  ResponseBody as MultiFactorAuthSetupResponseBody,
+} from '/routes/api/auth/multi-factor/setup.ts';
+import {
+  RequestBody as MultiFactorAuthEnableRequestBody,
+  ResponseBody as MultiFactorAuthEnableResponseBody,
+} from '/routes/api/auth/multi-factor/enable.ts';
+import {
+  RequestBody as MultiFactorAuthDisableRequestBody,
+  ResponseBody as MultiFactorAuthDisableResponseBody,
+} from '/routes/api/auth/multi-factor/disable.ts';
+
+interface MultiFactorAuthMethod {
+  type: MultiFactorAuthMethodType;
   id: string;
   name: string;
   enabled: boolean;
   backupCodesCount?: number;
 }
 
-interface TwoFactorSettingsProps {
-  methods: TwoFactorMethod[];
+interface MultiFactorAuthSettingsProps {
+  methods: MultiFactorAuthMethod[];
 }
 
 interface TOTPSetupData {
@@ -27,19 +48,19 @@ interface PasskeySetupData {
   type: 'passkey';
 }
 
-const methodTypeLabels: Record<TwoFactorMethodType, string> = {
+const methodTypeLabels: Record<MultiFactorAuthMethodType, string> = {
   totp: 'Authenticator App',
-  email: 'Email',
   passkey: 'Passkey',
 };
 
-const methodTypeDescriptions: Record<TwoFactorMethodType, string> = {
-  totp: 'Use an authenticator app like Google Authenticator or Authy to generate codes',
-  email: 'Receive verification codes via email',
+const methodTypeDescriptions: Record<MultiFactorAuthMethodType, string> = {
+  totp: 'Use an authenticator app like Aegis Authenticator or Google Authenticator to generate codes',
   passkey: 'Use biometric authentication or security keys',
 };
 
-export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
+const availableMethodTypes = ['totp', 'passkey'] as MultiFactorAuthMethodType[];
+
+export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSettingsProps) {
   const setupData = useSignal<TOTPSetupData | PasskeySetupData | null>(null);
   const isLoading = useSignal(false);
   const error = useSignal<string | null>(null);
@@ -47,68 +68,82 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
   const showDisableForm = useSignal<string | null>(null);
   const verificationToken = useSignal('');
   const disablePassword = useSignal('');
-  const selectedMethodType = useSignal<TwoFactorMethodType>('totp');
 
-  const enabledMethods = methods.filter((m) => m.enabled);
-  const hasTwoFactorEnabled = enabledMethods.length > 0;
+  const enabledMethods = methods.filter((method) => method.enabled);
+  const hasMultiFactorAuthEnabled = enabledMethods.length > 0;
 
   const setupPasskey = async (methodId: string) => {
-    try {
-      const beginResponse = await fetch('/api/two-factor/passkey-register-begin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ methodId }),
-      });
+    const beginRequestBody: PasskeyRegisterBeginRequestBody = {
+      methodId,
+    };
 
-      const beginData = await beginResponse.json();
-      if (!beginData.success) {
-        throw new Error(beginData.error || 'Failed to begin passkey registration');
-      }
+    const beginResponse = await fetch('/api/auth/multi-factor/passkey/register-begin', {
+      method: 'POST',
+      body: JSON.stringify(beginRequestBody),
+    });
 
-      const registrationResponse = await startRegistration({ optionsJSON: beginData.options });
-
-      const completeResponse = await fetch('/api/two-factor/passkey-register-complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          methodId,
-          challenge: beginData.sessionData.challenge,
-          registrationResponse,
-        }),
-      });
-
-      const completeData = await completeResponse.json();
-      if (!completeData.success) {
-        throw new Error(completeData.error || 'Failed to complete passkey registration');
-      }
-
-      setupData.value = {
-        methodId,
-        type: 'passkey',
-      };
-    } catch (err) {
-      throw err;
+    if (!beginResponse.ok) {
+      throw new Error(
+        `Failed to begin passkey registration! ${beginResponse.statusText} ${await beginResponse.text()}`,
+      );
     }
+
+    const beginData = await beginResponse.json() as PasskeyRegisterBeginResponseBody;
+
+    if (!beginData.success) {
+      throw new Error(beginData.error || 'Failed to begin passkey registration');
+    }
+
+    const registrationResponse = await startRegistration({ optionsJSON: beginData.options! });
+
+    const completeRequestBody: PasskeyRegisterCompleteRequestBody = {
+      methodId,
+      challenge: beginData.sessionData!.challenge,
+      registrationResponse,
+    };
+
+    const completeResponse = await fetch('/api/auth/multi-factor/passkey/register-complete', {
+      method: 'POST',
+      body: JSON.stringify(completeRequestBody),
+    });
+
+    if (!completeResponse.ok) {
+      throw new Error(
+        `Failed to complete passkey registration! ${completeResponse.statusText} ${await completeResponse.text()}`,
+      );
+    }
+
+    const completeData = await completeResponse.json() as PasskeyRegisterCompleteResponseBody;
+
+    if (!completeData.success) {
+      throw new Error(completeData.error || 'Failed to complete passkey registration');
+    }
+
+    setupData.value = {
+      methodId,
+      type: 'passkey',
+    };
   };
 
-  const setupTwoFactor = async (type: TwoFactorMethodType) => {
+  const setupMultiFactorAuth = async (type: MultiFactorAuthMethodType) => {
     isLoading.value = true;
     error.value = null;
 
     try {
-      const response = await fetch('/api/two-factor/setup', {
+      const requestBody: MultiFactorAuthSetupRequestBody = {
+        type,
+        name: methodTypeLabels[type],
+      };
+
+      const response = await fetch('/api/auth/multi-factor/setup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type,
-          name: methodTypeLabels[type],
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json() as TwoFactorSetupResponse;
+      const data = await response.json() as MultiFactorAuthSetupResponseBody;
 
       if (!data.success || !data.data) {
-        throw new Error(data.error || 'Failed to setup two-factor authentication');
+        throw new Error(data.error || 'Failed to setup multi-factor authentication');
       }
 
       if (type === 'totp') {
@@ -122,14 +157,14 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
       } else if (type === 'passkey') {
         await setupPasskey(data.data.methodId!);
       }
-    } catch (err) {
-      error.value = (err as Error).message;
+    } catch (setupError) {
+      error.value = (setupError as Error).message;
     } finally {
       isLoading.value = false;
     }
   };
 
-  const enableTwoFactor = async () => {
+  const enableMultiFactorAuth = async () => {
     if (!setupData.value) {
       error.value = 'No setup data available';
       return;
@@ -144,36 +179,37 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
     error.value = null;
 
     try {
-      const response = await fetch('/api/two-factor/enable', {
+      const requestBody: MultiFactorAuthEnableRequestBody = {
+        methodId: setupData.value.methodId,
+        code: setupData.value.type === 'passkey' ? 'passkey-verified' : verificationToken.value,
+      };
+
+      const response = await fetch('/api/auth/multi-factor/enable', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          methodId: setupData.value.methodId,
-          code: setupData.value.type === 'passkey' ? 'passkey-verified' : verificationToken.value,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json() as TwoFactorActionResponse;
+      const data = await response.json() as MultiFactorAuthEnableResponseBody;
 
       if (!data.success) {
-        throw new Error(data.error || 'Failed to enable two-factor authentication');
+        throw new Error(data.error || 'Failed to enable multi-factor authentication');
       }
 
-      success.value = 'Two-factor authentication has been enabled successfully!';
+      success.value = 'Multi-factor authentication has been enabled successfully!';
       setupData.value = null;
       verificationToken.value = '';
 
       setTimeout(() => {
         window.location.reload();
       }, 2000);
-    } catch (err) {
-      error.value = (err as Error).message;
+    } catch (enableError) {
+      error.value = (enableError as Error).message;
     } finally {
       isLoading.value = false;
     }
   };
 
-  const disableTwoFactor = async (methodId?: string, disableAll = false) => {
+  const disableMultiFactorAuth = async (methodId?: string, disableAll = false) => {
     if (!disablePassword.value) {
       error.value = 'Please enter your password';
       return;
@@ -183,31 +219,32 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
     error.value = null;
 
     try {
-      const response = await fetch('/api/two-factor/disable', {
+      const requestBody: MultiFactorAuthDisableRequestBody = {
+        methodId,
+        password: disablePassword.value,
+        disableAll,
+      };
+
+      const response = await fetch('/api/auth/multi-factor/disable', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          methodId,
-          password: disablePassword.value,
-          disableAll,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json() as TwoFactorActionResponse;
+      const data = await response.json() as MultiFactorAuthDisableResponseBody;
 
       if (!data.success) {
-        throw new Error(data.error || 'Failed to disable two-factor authentication');
+        throw new Error(data.error || 'Failed to disable multi-factor authentication');
       }
 
-      success.value = data.message || 'Two-factor authentication has been disabled successfully!';
+      success.value = 'Multi-factor authentication has been disabled successfully!';
       showDisableForm.value = null;
       disablePassword.value = '';
 
       setTimeout(() => {
         window.location.reload();
       }, 2000);
-    } catch (err) {
-      error.value = (err as Error).message;
+    } catch (disableError) {
+      error.value = (disableError as Error).message;
     } finally {
       isLoading.value = false;
     }
@@ -228,7 +265,7 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
   return (
     <div class='mb-16'>
       <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>
-        Two-Factor Authentication (2FA)
+        Multi-Factor Authentication (MFA)
       </h2>
 
       <div class='px-4 max-w-screen-md mx-auto lg:min-w-96'>
@@ -245,18 +282,20 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
         )}
 
         <p class='mb-6 text-gray-600'>
-          Two-factor authentication adds an extra layer of security to your account by requiring additional verification
-          beyond your password.
+          Multi-factor authentication adds an extra layer of security to your account by requiring additional
+          verification beyond your password.
         </p>
 
         {!setupData.value && (
           <div>
             <div class='mb-6'>
               <h3 class='text-lg font-semibold mb-4'>
-                {hasTwoFactorEnabled ? 'Add Additional Authentication Method' : 'Available Authentication Methods'}
+                {hasMultiFactorAuthEnabled
+                  ? 'Add Additional Authentication Method'
+                  : 'Available Authentication Methods'}
               </h3>
               <div class='space-y-4'>
-                {(['totp', 'passkey'] as TwoFactorMethodType[])
+                {availableMethodTypes
                   .filter((type) => !enabledMethods.some((method) => method.type === type))
                   .map((type) => (
                     <div key={type} class='border rounded-lg p-4'>
@@ -267,7 +306,7 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
                         </div>
                         <button
                           type='button'
-                          onClick={() => setupTwoFactor(type)}
+                          onClick={() => setupMultiFactorAuth(type)}
                           disabled={isLoading.value}
                           class='button-secondary'
                         >
@@ -277,7 +316,7 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
                     </div>
                   ))}
               </div>
-              {(['totp', 'passkey'] as TwoFactorMethodType[])
+              {availableMethodTypes
                     .filter((type) => !enabledMethods.some((method) => method.type === type)).length === 0 && (
                 <p class='text-gray-600 text-center py-4'>
                   All available authentication methods are already enabled.
@@ -321,7 +360,7 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
               <input
                 type='text'
                 value={verificationToken.value}
-                onInput={(e) => verificationToken.value = (e.target as HTMLInputElement).value}
+                onInput={(event) => verificationToken.value = (event.target as HTMLInputElement).value}
                 placeholder='123456'
                 class='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
                 maxLength={6}
@@ -333,17 +372,17 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
                 type='button'
                 onClick={cancelSetup}
                 disabled={isLoading.value}
-                class='button-outline'
+                class='button-secondary'
               >
                 Cancel
               </button>
               <button
                 type='button'
-                onClick={enableTwoFactor}
+                onClick={enableMultiFactorAuth}
                 disabled={isLoading.value || !verificationToken.value}
-                class='button-secondary'
+                class='button'
               >
-                {isLoading.value ? 'Enabling...' : 'Enable 2FA'}
+                {isLoading.value ? 'Enabling...' : 'Enable MFA'}
               </button>
             </section>
           </div>
@@ -353,7 +392,7 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
           <div class='mb-6'>
             <h3 class='text-lg font-semibold mb-4'>Passkey Setup Complete</h3>
             <p class='mb-4'>
-              Your passkey has been successfully registered! You can now enable it for two-factor authentication.
+              Your passkey has been successfully registered! You can now enable it for multi-factor authentication.
             </p>
 
             <section class='flex justify-end gap-2 mt-8 mb-4'>
@@ -361,23 +400,23 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
                 type='button'
                 onClick={cancelSetup}
                 disabled={isLoading.value}
-                class='button-outline'
+                class='button-secondary'
               >
                 Cancel
               </button>
               <button
                 type='button'
-                onClick={enableTwoFactor}
+                onClick={enableMultiFactorAuth}
                 disabled={isLoading.value}
-                class='button-secondary'
+                class='button'
               >
-                {isLoading.value ? 'Enabling...' : 'Enable Passkey 2FA'}
+                {isLoading.value ? 'Enabling...' : 'Enable Passkey MFA'}
               </button>
             </section>
           </div>
         )}
 
-        {hasTwoFactorEnabled && !showDisableForm.value && (
+        {hasMultiFactorAuthEnabled && !showDisableForm.value && (
           <div>
             <div class='mb-6'>
               <h3 class='text-lg font-semibold mb-4'>Active Authentication Methods</h3>
@@ -416,7 +455,7 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
                 onClick={() => showDisableForm.value = 'all'}
                 class='button-danger'
               >
-                Disable All 2FA
+                Disable All MFA
               </button>
             </section>
           </div>
@@ -426,12 +465,12 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
           <div class='mb-6'>
             <h3 class='text-lg font-semibold mb-4'>
               {showDisableForm.value === 'all'
-                ? 'Disable All Two-Factor Authentication'
+                ? 'Disable All Multi-Factor Authentication'
                 : 'Disable Authentication Method'}
             </h3>
             <p class='mb-4'>
               {showDisableForm.value === 'all'
-                ? 'This will disable all two-factor authentication methods and make your account less secure.'
+                ? 'This will disable all multi-factor authentication methods and make your account less secure.'
                 : 'This will disable this authentication method.'} Please enter your password to confirm.
             </p>
 
@@ -440,7 +479,7 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
               <input
                 type='password'
                 value={disablePassword.value}
-                onInput={(e) => disablePassword.value = (e.target as HTMLInputElement).value}
+                onInput={(event) => disablePassword.value = (event.target as HTMLInputElement).value}
                 placeholder='Enter your password'
                 class='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
               />
@@ -451,14 +490,14 @@ export default function TwoFactorSettings({ methods }: TwoFactorSettingsProps) {
                 type='button'
                 onClick={cancelDisable}
                 disabled={isLoading.value}
-                class='button-outline'
+                class='button-secondary'
               >
                 Cancel
               </button>
               <button
                 type='button'
                 onClick={() =>
-                  disableTwoFactor(
+                  disableMultiFactorAuth(
                     showDisableForm.value === 'all' ? undefined : showDisableForm.value || undefined,
                     showDisableForm.value === 'all',
                   )}

@@ -1,8 +1,8 @@
-import { FormField, generateFieldHtml, getFormDataField } from '../lib/form-utils.tsx';
-import { convertObjectToFormData } from '../lib/utils/misc.ts';
-import { currencyMap, SupportedCurrencySymbol, TwoFactorMethod } from '../lib/types.ts';
-import { getTwoFactorMethods } from '../lib/utils/two-factor-client.ts';
-import TwoFactorSettings from './TwoFactorSettings.tsx';
+import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
+import { convertObjectToFormData } from '/lib/utils/misc.ts';
+import { currencyMap, SupportedCurrencySymbol, User } from '/lib/types.ts';
+import MultiFactorAuthSettings from '/islands/auth/MultiFactorAuthSettings.tsx';
+import { getEnabledMultiFactorAuthMethodsFromUser } from '/lib/utils/multi-factor-auth.ts';
 
 interface SettingsProps {
   formData: Record<string, any>;
@@ -16,12 +16,10 @@ interface SettingsProps {
   };
   currency?: SupportedCurrencySymbol;
   isExpensesAppEnabled: boolean;
+  isMultiFactorAuthEnabled: boolean;
   helpEmail: string;
-  isTwoFactorEnabled: boolean;
   user: {
-    extra: {
-      two_factor_methods?: TwoFactorMethod[];
-    };
+    extra: Pick<User['extra'], 'multi_factor_auth_methods'>;
   };
 }
 
@@ -135,14 +133,14 @@ export default function Settings(
     notice,
     currency,
     isExpensesAppEnabled,
+    isMultiFactorAuthEnabled,
     helpEmail,
-    isTwoFactorEnabled,
     user,
   }: SettingsProps,
 ) {
   const formData = convertObjectToFormData(formDataObject);
 
-  const twoFactorMethods = getTwoFactorMethods(user);
+  const multiFactorAuthMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
 
   return (
     <>
@@ -230,9 +228,9 @@ export default function Settings(
           </section>
         </form>
 
-        {isTwoFactorEnabled && (
-          <TwoFactorSettings
-            methods={twoFactorMethods.map((method) => ({
+        {isMultiFactorAuthEnabled && (
+          <MultiFactorAuthSettings
+            methods={multiFactorAuthMethods.map((method) => ({
               type: method.type,
               id: method.id,
               name: method.name,

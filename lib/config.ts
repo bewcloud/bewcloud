@@ -11,7 +11,7 @@ export class AppConfig {
         allowSignups: false,
         enableEmailVerification: false,
         enableForeverSignup: true,
-        enableTwoFactor: false,
+        enableMultiFactor: false,
         allowedCookieDomains: [],
         skipCookieDomainSecurity: false,
       },
@@ -45,7 +45,6 @@ export class AppConfig {
     const filesRootPath = Deno.env.get('CONFIG_FILES_ROOT_PATH') ?? defaultConfig.files.rootPath;
     const enableEmailVerification = (Deno.env.get('CONFIG_ENABLE_EMAILS') ?? 'false') === 'true';
     const enableForeverSignup = (Deno.env.get('CONFIG_ENABLE_FOREVER_SIGNUP') ?? 'true') === 'true';
-    const enableTwoFactor = (Deno.env.get('CONFIG_ENABLE_TWO_FACTOR') ?? 'false') === 'true';
     const allowedCookieDomains = (Deno.env.get('CONFIG_ALLOWED_COOKIE_DOMAINS') || '').split(',').filter(
       Boolean,
     ) as string[];
@@ -62,7 +61,6 @@ export class AppConfig {
         allowSignups,
         enableEmailVerification,
         enableForeverSignup,
-        enableTwoFactor,
         allowedCookieDomains,
         skipCookieDomainSecurity,
       },
@@ -196,10 +194,10 @@ export class AppConfig {
     return this.config.auth.enableForeverSignup;
   }
 
-  static async isTwoFactorEnabled(): Promise<boolean> {
+  static async isMultiFactorAuthEnabled(): Promise<boolean> {
     await this.loadConfig();
 
-    return this.config.auth.enableTwoFactor;
+    return this.config.auth.enableMultiFactor;
   }
 
   static async getFilesRootPath(): Promise<string> {

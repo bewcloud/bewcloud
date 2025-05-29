@@ -5,6 +5,13 @@
 import * as $_404 from './routes/_404.tsx';
 import * as $_app from './routes/_app.tsx';
 import * as $_middleware from './routes/_middleware.tsx';
+import * as $api_auth_multi_factor_disable from './routes/api/auth/multi-factor/disable.ts';
+import * as $api_auth_multi_factor_enable from './routes/api/auth/multi-factor/enable.ts';
+import * as $api_auth_multi_factor_passkey_begin from './routes/api/auth/multi-factor/passkey/begin.ts';
+import * as $api_auth_multi_factor_passkey_setup_begin from './routes/api/auth/multi-factor/passkey/setup-begin.ts';
+import * as $api_auth_multi_factor_passkey_setup_complete from './routes/api/auth/multi-factor/passkey/setup-complete.ts';
+import * as $api_auth_multi_factor_passkey_verify from './routes/api/auth/multi-factor/passkey/verify.ts';
+import * as $api_auth_multi_factor_totp_setup from './routes/api/auth/multi-factor/totp/setup.ts';
 import * as $api_dashboard_save_links from './routes/api/dashboard/save-links.tsx';
 import * as $api_dashboard_save_notes from './routes/api/dashboard/save-notes.tsx';
 import * as $api_expenses_add_budget from './routes/api/expenses/add-budget.tsx';
@@ -41,6 +48,7 @@ import * as $files_open_fileName_ from './routes/files/open/[fileName].tsx';
 import * as $index from './routes/index.tsx';
 import * as $login from './routes/login.tsx';
 import * as $logout from './routes/logout.tsx';
+import * as $mfa_verify from './routes/mfa-verify.tsx';
 import * as $news from './routes/news.tsx';
 import * as $news_feeds from './routes/news/feeds.tsx';
 import * as $notes from './routes/notes.tsx';
@@ -50,6 +58,8 @@ import * as $photos_thumbnail_fileName_ from './routes/photos/thumbnail/[fileNam
 import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
+import * as $auth_MultiFactorAuthSettings from './islands/auth/MultiFactorAuthSettings.tsx';
+import * as $auth_PasswordlessPasskeyLogin from './islands/auth/PasswordlessPasskeyLogin.tsx';
 import * as $dashboard_Links from './islands/dashboard/Links.tsx';
 import * as $dashboard_Notes from './islands/dashboard/Notes.tsx';
 import * as $expenses_ExpensesWrapper from './islands/expenses/ExpensesWrapper.tsx';
@@ -66,6 +76,13 @@ const manifest = {
     './routes/_404.tsx': $_404,
     './routes/_app.tsx': $_app,
     './routes/_middleware.tsx': $_middleware,
+    './routes/api/auth/multi-factor/disable.ts': $api_auth_multi_factor_disable,
+    './routes/api/auth/multi-factor/enable.ts': $api_auth_multi_factor_enable,
+    './routes/api/auth/multi-factor/passkey/begin.ts': $api_auth_multi_factor_passkey_begin,
+    './routes/api/auth/multi-factor/passkey/setup-begin.ts': $api_auth_multi_factor_passkey_setup_begin,
+    './routes/api/auth/multi-factor/passkey/setup-complete.ts': $api_auth_multi_factor_passkey_setup_complete,
+    './routes/api/auth/multi-factor/passkey/verify.ts': $api_auth_multi_factor_passkey_verify,
+    './routes/api/auth/multi-factor/totp/setup.ts': $api_auth_multi_factor_totp_setup,
     './routes/api/dashboard/save-links.tsx': $api_dashboard_save_links,
     './routes/api/dashboard/save-notes.tsx': $api_dashboard_save_notes,
     './routes/api/expenses/add-budget.tsx': $api_expenses_add_budget,
@@ -102,6 +119,7 @@ const manifest = {
     './routes/index.tsx': $index,
     './routes/login.tsx': $login,
     './routes/logout.tsx': $logout,
+    './routes/mfa-verify.tsx': $mfa_verify,
     './routes/news.tsx': $news,
     './routes/news/feeds.tsx': $news_feeds,
     './routes/notes.tsx': $notes,
@@ -113,6 +131,8 @@ const manifest = {
   },
   islands: {
     './islands/Settings.tsx': $Settings,
+    './islands/auth/MultiFactorAuthSettings.tsx': $auth_MultiFactorAuthSettings,
+    './islands/auth/PasswordlessPasskeyLogin.tsx': $auth_PasswordlessPasskeyLogin,
     './islands/dashboard/Links.tsx': $dashboard_Links,
     './islands/dashboard/Notes.tsx': $dashboard_Notes,
     './islands/expenses/ExpensesWrapper.tsx': $expenses_ExpensesWrapper,

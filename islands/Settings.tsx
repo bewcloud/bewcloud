@@ -1,6 +1,8 @@
-import { convertObjectToFormData } from '/lib/utils/misc.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
-import { currencyMap, SupportedCurrencySymbol } from '/lib/types.ts';
+import { convertObjectToFormData } from '/lib/utils/misc.ts';
+import { currencyMap, SupportedCurrencySymbol, User } from '/lib/types.ts';
+import MultiFactorAuthSettings from '/islands/auth/MultiFactorAuthSettings.tsx';
+import { getEnabledMultiFactorAuthMethodsFromUser } from '/lib/utils/multi-factor-auth.ts';
 
 interface SettingsProps {
   formData: Record<string, any>;
@@ -14,7 +16,11 @@ interface SettingsProps {
   };
   currency?: SupportedCurrencySymbol;
   isExpensesAppEnabled: boolean;
+  isMultiFactorAuthEnabled: boolean;
   helpEmail: string;
+  user: {
+    extra: Pick<User['extra'], 'multi_factor_auth_methods'>;
+  };
 }
 
 export type Action =
@@ -121,11 +127,20 @@ function formFields(action: Action, formData: FormData, currency?: SupportedCurr
 }
 
 export default function Settings(
-  { formData: formDataObject, error, notice, currency, isExpensesAppEnabled, helpEmail }: SettingsProps,
+  {
+    formData: formDataObject,
+    error,
+    notice,
+    currency,
+    isExpensesAppEnabled,
+    isMultiFactorAuthEnabled,
+    helpEmail,
+    user,
+  }: SettingsProps,
 ) {
   const formData = convertObjectToFormData(formDataObject);
 
-  const action = getFormDataField(formData, 'action') as Action;
+  const multiFactorAuthMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
 
   return (
     <>
@@ -151,7 +166,7 @@ export default function Settings(
 
         <form method='POST' class='mb-12'>
           {formFields(
-            action === 'change-email' && notice?.message.includes('verify') ? 'verify-change-email' : 'change-email',
+            'change-email',
             formData,
           ).map((field) => generateFieldHtml(field, formData))}
           <section class='flex justify-end mt-8 mb-4'>
@@ -192,6 +207,20 @@ export default function Settings(
                 </section>
               </form>
             </>
+          )
+          : null}
+
+        {isMultiFactorAuthEnabled
+          ? (
+            <MultiFactorAuthSettings
+              methods={multiFactorAuthMethods.map((method) => ({
+                type: method.type,
+                id: method.id,
+                name: method.name,
+                enabled: method.enabled,
+                backupCodesCount: method.metadata.totp?.hashed_backup_codes?.length,
+              }))}
+            />
           )
           : null}
 

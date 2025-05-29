@@ -69,7 +69,9 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       const user = await UserModel.create(email, hashedPassword);
 
-      if (await AppConfig.isEmailVerificationEnabled()) {
+      const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+
+      if (isEmailVerificationEnabled) {
         const verificationCode = await VerificationCodeModel.create(user, user.email, 'email');
 
         await sendVerifyEmailEmail(user.email, verificationCode);

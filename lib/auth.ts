@@ -8,8 +8,10 @@ import { User, UserSession } from './types.ts';
 import { UserModel, UserSessionModel, validateUserAndSession } from './models/user.ts';
 import { AppConfig } from './config.ts';
 
-const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
+export const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
 export const PASSWORD_SALT = Deno.env.get('PASSWORD_SALT') || '';
+export const MFA_KEY = Deno.env.get('MFA_KEY') || '';
+export const MFA_SALT = Deno.env.get('MFA_SALT') || '';
 export const COOKIE_NAME = 'bewcloud-app-v1';
 
 export interface JwtData {
@@ -25,10 +27,10 @@ const textToData = (text: string) => new TextEncoder().encode(text);
 
 export const dataToText = (data: Uint8Array) => new TextDecoder().decode(data);
 
-const generateKey = async (key: string) =>
+export const generateKey = async (key: string): Promise<CryptoKey> =>
   await crypto.subtle.importKey('raw', textToData(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 
-async function signAuthJwt(key: CryptoKey, data: JwtData) {
+async function signAuthJwt(key: CryptoKey, data: JwtData): Promise<string> {
   const payload = encodeBase64Url(textToData(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))) + '.' +
     encodeBase64Url(textToData(JSON.stringify(data) || ''));
   const signature = encodeBase64Url(
@@ -37,7 +39,7 @@ async function signAuthJwt(key: CryptoKey, data: JwtData) {
   return `${payload}.${signature}`;
 }
 
-async function verifyAuthJwt(key: CryptoKey, jwt: string) {
+export async function verifyAuthJwt(key: CryptoKey, jwt: string): Promise<JwtData> {
   const jwtParts = jwt.split('.');
   if (jwtParts.length !== 3) {
     throw new Error('Malformed JWT');
@@ -51,7 +53,7 @@ async function verifyAuthJwt(key: CryptoKey, jwt: string) {
   throw new Error('Invalid JWT');
 }
 
-async function resolveCookieDomain(request: Request) {
+export async function resolveCookieDomain(request: Request) {
   const config = await AppConfig.getConfig();
   const baseUrl = config.auth.baseUrl;
 
@@ -65,7 +67,9 @@ async function resolveCookieDomain(request: Request) {
   return '';
 }
 
-export async function getDataFromRequest(request: Request) {
+export async function getDataFromRequest(
+  request: Request,
+): Promise<{ user: User; session: UserSession | undefined; tokenData?: JwtData['data'] } | null> {
   const cookies = getCookies(request.headers);
   const authorizationHeader = request.headers.get('authorization');
 
@@ -119,7 +123,9 @@ async function getDataFromAuthorizationHeader(authorizationHeader: string) {
   return null;
 }
 
-async function getDataFromCookie(cookieValue: string) {
+async function getDataFromCookie(
+  cookieValue: string,
+): Promise<{ user: User; session: UserSession | undefined; tokenData?: JwtData['data'] } | null> {
   if (!cookieValue) {
     return null;
   }
@@ -139,7 +145,7 @@ async function getDataFromCookie(cookieValue: string) {
   return null;
 }
 
-export async function generateToken(tokenData: JwtData['data']) {
+export async function generateToken(tokenData: JwtData['data']): Promise<string> {
   const key = await generateKey(JWT_SECRET);
 
   const token = await signAuthJwt(key, { data: tokenData });

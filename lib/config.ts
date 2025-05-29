@@ -11,6 +11,7 @@ export class AppConfig {
         allowSignups: false,
         enableEmailVerification: false,
         enableForeverSignup: true,
+        enableMultiFactor: false,
         allowedCookieDomains: [],
         skipCookieDomainSecurity: false,
       },
@@ -191,6 +192,12 @@ export class AppConfig {
     await this.loadConfig();
 
     return this.config.auth.enableForeverSignup;
+  }
+
+  static async isMultiFactorAuthEnabled(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.auth.enableMultiFactor;
   }
 
   static async getFilesRootPath(): Promise<string> {

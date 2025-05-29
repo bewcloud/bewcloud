@@ -13,6 +13,7 @@ export interface User {
     is_admin?: boolean;
     dav_hashed_password?: string;
     expenses_currency?: SupportedCurrencySymbol;
+    multi_factor_auth_methods?: MultiFactorAuthMethod[];
   };
   created_at: Date;
 }
@@ -156,6 +157,8 @@ export interface Config {
     enableEmailVerification: boolean;
     /** If true, all signups become active for 100 years */
     enableForeverSignup: boolean;
+    /** If true, users can enable multi-factor authentication (TOTP or Passkeys) */
+    enableMultiFactor: boolean;
     /** Can be set to allow more than the baseUrl's domain for session cookies */
     allowedCookieDomains: string[];
     /** If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel. */
@@ -176,5 +179,29 @@ export interface Config {
     description: string;
     /** The email address to contact for help. Empty will disable/hide the "need help" sections. */
     helpEmail: string;
+  };
+}
+
+export type MultiFactorAuthMethodType = 'totp' | 'passkey';
+
+export interface MultiFactorAuthMethod {
+  type: MultiFactorAuthMethodType;
+  id: string;
+  name: string;
+  enabled: boolean;
+  created_at: Date;
+  metadata: {
+    totp?: {
+      hashed_secret: string;
+      hashed_backup_codes: string[];
+    };
+    passkey?: {
+      credential_id: string;
+      public_key: string;
+      counter?: number;
+      device_type?: string;
+      backed_up?: boolean;
+      transports?: AuthenticatorTransport[];
+    };
   };
 }

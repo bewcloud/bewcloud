@@ -7,6 +7,9 @@ import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
+import { isMultiFactorAuthEnabledForUser } from '/lib/utils/multi-factor-auth.ts';
+import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
+import PasswordlessPasskeyLogin from '/islands/auth/PasswordlessPasskeyLogin.tsx';
 
 interface Data {
   error?: string;
@@ -14,6 +17,7 @@ interface Data {
   email?: string;
   formData?: FormData;
   isEmailVerificationEnabled: boolean;
+  isMultiFactorAuthEnabled: boolean;
   helpEmail: string;
 }
 
@@ -24,6 +28,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled() && await UserModel.isThereAnAdmin();
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     const searchParams = new URL(request.url).searchParams;
@@ -43,7 +48,14 @@ export const handler: Handlers<Data, FreshContextState> = {
       }
     }
 
-    return await context.render({ notice, email, formData, isEmailVerificationEnabled, helpEmail });
+    return await context.render({
+      notice,
+      email,
+      formData,
+      isEmailVerificationEnabled,
+      isMultiFactorAuthEnabled,
+      helpEmail,
+    });
   },
   async POST(request, context) {
     if (context.state.user) {
@@ -51,10 +63,15 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled() && await UserModel.isThereAnAdmin();
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+
+    const searchParams = new URL(request.url).searchParams;
 
     const formData = await request.clone().formData();
     const email = getFormDataField(formData, 'email');
+
+    const redirectUrl = searchParams.get('redirect') || '/';
 
     try {
       if (!validateEmail(email)) {
@@ -75,7 +92,9 @@ export const handler: Handlers<Data, FreshContextState> = {
         throw new Error('Email not found or invalid password.');
       }
 
-      if (!(await AppConfig.isEmailVerificationEnabled()) && !user.extra.is_email_verified) {
+      const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+
+      if (!isEmailVerificationEnabled && !user.extra.is_email_verified) {
         user.extra.is_email_verified = true;
 
         await UserModel.update(user);
@@ -99,14 +118,20 @@ export const handler: Handlers<Data, FreshContextState> = {
         }
       }
 
-      return createSessionResponse(request, user, { urlToRedirectTo: `/` });
+      if (user.extra.is_email_verified && isMultiFactorAuthEnabled && isMultiFactorAuthEnabledForUser(user)) {
+        return MultiFactorAuthModel.createSessionResponse(request, user, { urlToRedirectTo: redirectUrl });
+      }
+
+      return createSessionResponse(request, user, { urlToRedirectTo: redirectUrl });
     } catch (error) {
       console.error(error);
+
       return await context.render({
         error: (error as Error).toString(),
         email,
         formData,
         isEmailVerificationEnabled,
+        isMultiFactorAuthEnabled,
         helpEmail,
       });
     }
@@ -170,7 +195,7 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
           )
           : null}
 
-        <form method='POST' class='mb-12'>
+        <form method='POST' class='mb-4'>
           {formFields(
             data?.email,
             data?.notice?.includes('verify your email') && data?.isEmailVerificationEnabled,
@@ -178,6 +203,18 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
           <section class='flex justify-center mt-8 mb-4'>
             <button class='button' type='submit'>Login</button>
           </section>
+
+          {data?.isMultiFactorAuthEnabled
+            ? (
+              <section class='mb-12 max-w-sm mx-auto'>
+                <section class='text-center'>
+                  <p class='text-gray-400 text-sm mb-3'>or</p>
+                </section>
+
+                <PasswordlessPasskeyLogin />
+              </section>
+            )
+            : null}
         </form>
 
         <h2 class='text-2xl mb-4 text-center'>Need an account?</h2>

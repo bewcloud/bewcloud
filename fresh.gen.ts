@@ -8,11 +8,10 @@ import * as $_middleware from './routes/_middleware.tsx';
 import * as $api_auth_multi_factor_disable from './routes/api/auth/multi-factor/disable.ts';
 import * as $api_auth_multi_factor_enable from './routes/api/auth/multi-factor/enable.ts';
 import * as $api_auth_multi_factor_passkey_begin from './routes/api/auth/multi-factor/passkey/begin.ts';
-import * as $api_auth_multi_factor_passkey_login from './routes/api/auth/multi-factor/passkey/login.ts';
-import * as $api_auth_multi_factor_passkey_register_begin from './routes/api/auth/multi-factor/passkey/register-begin.ts';
-import * as $api_auth_multi_factor_passkey_register_complete from './routes/api/auth/multi-factor/passkey/register-complete.ts';
+import * as $api_auth_multi_factor_passkey_setup_begin from './routes/api/auth/multi-factor/passkey/setup-begin.ts';
+import * as $api_auth_multi_factor_passkey_setup_complete from './routes/api/auth/multi-factor/passkey/setup-complete.ts';
 import * as $api_auth_multi_factor_passkey_verify from './routes/api/auth/multi-factor/passkey/verify.ts';
-import * as $api_auth_multi_factor_setup from './routes/api/auth/multi-factor/setup.ts';
+import * as $api_auth_multi_factor_totp_setup from './routes/api/auth/multi-factor/totp/setup.ts';
 import * as $api_dashboard_save_links from './routes/api/dashboard/save-links.tsx';
 import * as $api_dashboard_save_notes from './routes/api/dashboard/save-notes.tsx';
 import * as $api_expenses_add_budget from './routes/api/expenses/add-budget.tsx';
@@ -60,7 +59,6 @@ import * as $settings from './routes/settings.tsx';
 import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
 import * as $auth_MultiFactorAuthSettings from './islands/auth/MultiFactorAuthSettings.tsx';
-import * as $auth_PasskeyAuth from './islands/auth/PasskeyAuth.tsx';
 import * as $auth_PasswordlessPasskeyLogin from './islands/auth/PasswordlessPasskeyLogin.tsx';
 import * as $dashboard_Links from './islands/dashboard/Links.tsx';
 import * as $dashboard_Notes from './islands/dashboard/Notes.tsx';
@@ -81,11 +79,10 @@ const manifest = {
     './routes/api/auth/multi-factor/disable.ts': $api_auth_multi_factor_disable,
     './routes/api/auth/multi-factor/enable.ts': $api_auth_multi_factor_enable,
     './routes/api/auth/multi-factor/passkey/begin.ts': $api_auth_multi_factor_passkey_begin,
-    './routes/api/auth/multi-factor/passkey/login.ts': $api_auth_multi_factor_passkey_login,
-    './routes/api/auth/multi-factor/passkey/register-begin.ts': $api_auth_multi_factor_passkey_register_begin,
-    './routes/api/auth/multi-factor/passkey/register-complete.ts': $api_auth_multi_factor_passkey_register_complete,
+    './routes/api/auth/multi-factor/passkey/setup-begin.ts': $api_auth_multi_factor_passkey_setup_begin,
+    './routes/api/auth/multi-factor/passkey/setup-complete.ts': $api_auth_multi_factor_passkey_setup_complete,
     './routes/api/auth/multi-factor/passkey/verify.ts': $api_auth_multi_factor_passkey_verify,
-    './routes/api/auth/multi-factor/setup.ts': $api_auth_multi_factor_setup,
+    './routes/api/auth/multi-factor/totp/setup.ts': $api_auth_multi_factor_totp_setup,
     './routes/api/dashboard/save-links.tsx': $api_dashboard_save_links,
     './routes/api/dashboard/save-notes.tsx': $api_dashboard_save_notes,
     './routes/api/expenses/add-budget.tsx': $api_expenses_add_budget,
@@ -135,7 +132,6 @@ const manifest = {
   islands: {
     './islands/Settings.tsx': $Settings,
     './islands/auth/MultiFactorAuthSettings.tsx': $auth_MultiFactorAuthSettings,
-    './islands/auth/PasskeyAuth.tsx': $auth_PasskeyAuth,
     './islands/auth/PasswordlessPasskeyLogin.tsx': $auth_PasswordlessPasskeyLogin,
     './islands/dashboard/Links.tsx': $dashboard_Links,
     './islands/dashboard/Notes.tsx': $dashboard_Notes,

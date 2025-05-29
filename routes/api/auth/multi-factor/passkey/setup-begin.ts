@@ -4,10 +4,9 @@ import { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/server';
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
 import { PasskeyModel } from '/lib/models/multi-factor-auth/passkey.ts';
+import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
 
-export interface RequestBody {
-  methodId: string;
-}
+export interface RequestBody {}
 
 export interface ResponseBody {
   success: boolean;
@@ -39,17 +38,7 @@ export const handler: Handlers<unknown, FreshContextState> = {
 
     const { user } = context.state;
 
-    const body = await request.clone().json() as RequestBody;
-    const { methodId } = body;
-
-    if (!methodId) {
-      const responseBody: ResponseBody = {
-        success: false,
-        error: 'Method ID is required',
-      };
-
-      return new Response(JSON.stringify(responseBody), { status: 400 });
-    }
+    const methodId = MultiFactorAuthModel.generateMethodId();
 
     const config = await AppConfig.getConfig();
     const existingCredentials = PasskeyModel.getCredentialsFromUser(user);

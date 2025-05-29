@@ -9,6 +9,7 @@ import {
   getMultiFactorAuthMethodsFromUser,
 } from '/lib/utils/multi-factor-auth.ts';
 import { AppConfig } from '/lib/config.ts';
+import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
 
 export interface RequestBody {
   methodId?: string;
@@ -105,8 +106,7 @@ export const handler: Handlers<unknown, FreshContextState> = {
       return new Response(JSON.stringify(responseBody), { status: 400 });
     }
 
-    const updatedMethods = methods.filter((method) => method.id !== methodId);
-    user.extra.multi_factor_auth_methods = updatedMethods;
+    MultiFactorAuthModel.disableMethodFromUser(user, methodId);
 
     await UserModel.update(user);
 

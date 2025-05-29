@@ -1,14 +1,12 @@
 import { Handlers } from 'fresh/server.ts';
 
-import { FreshContextState, MultiFactorAuthMethodType } from '/lib/types.ts';
+import { FreshContextState } from '/lib/types.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
 import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
+import { TOTPModel } from '/lib/models/multi-factor-auth/totp.ts';
 
-export interface RequestBody {
-  type: MultiFactorAuthMethodType;
-  name: string;
-}
+export interface RequestBody {}
 
 export interface ResponseBody {
   success: boolean;
@@ -40,30 +38,10 @@ export const handler: Handlers<unknown, FreshContextState> = {
 
     const { user } = context.state;
 
-    const body = await request.clone().json() as RequestBody;
-    const { type, name } = body;
-
-    if (!type || !name) {
-      const responseBody: ResponseBody = {
-        success: false,
-        error: 'Type and name are required',
-      };
-
-      return new Response(JSON.stringify(responseBody), { status: 400 });
-    }
-
-    if (type !== 'totp' && type !== 'passkey') {
-      const responseBody: ResponseBody = {
-        success: false,
-        error: `${type} authentication is not supported`,
-      };
-
-      return new Response(JSON.stringify(responseBody), { status: 400 });
-    }
-
     const config = await AppConfig.getConfig();
     const issuer = new URL(config.auth.baseUrl).hostname;
-    const setup = await MultiFactorAuthModel.createMethod(type, name, issuer, user.email);
+    const methodId = MultiFactorAuthModel.generateMethodId();
+    const setup = await TOTPModel.createMethod(methodId, 'Authenticator App', issuer, user.email);
 
     if (!user.extra.multi_factor_auth_methods) {
       user.extra.multi_factor_auth_methods = [];

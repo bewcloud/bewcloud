@@ -9,7 +9,7 @@ import { AppConfig } from '/lib/config.ts';
 
 export interface RequestBody {
   methodId: string;
-  code: string;
+  code: string | 'passkey-verified';
 }
 
 export interface ResponseBody {

@@ -40,7 +40,10 @@ const RP_ID = (baseUrl: string) => {
   }
 };
 
-const SUPPORTED_ALGORITHM_IDS = [-7, -257]; // TODO: Figure out what are these
+/**
+ * Excludes Ed25519 as per https://simplewebauthn.dev/docs/packages/server#domexception-notsupportederror-unrecognized-name
+ */
+const SUPPORTED_ALGORITHM_IDS = [-7, -257];
 
 export class PasskeyModel {
   static async generateRegistrationOptions(

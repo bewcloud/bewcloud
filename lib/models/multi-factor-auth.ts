@@ -1,8 +1,7 @@
 import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
 
-import { MultiFactorAuthMethod, MultiFactorAuthMethodType, User } from '/lib/types.ts';
+import { MultiFactorAuthMethod, User } from '/lib/types.ts';
 import { getMultiFactorAuthMethodByIdFromUser } from '/lib/utils/multi-factor-auth.ts';
-import { TOTPModel } from '/lib/models/multi-factor-auth/totp.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
   generateKey,
@@ -36,66 +35,6 @@ export class MultiFactorAuthModel {
       .join('');
   }
 
-  static async createMethod(
-    type: MultiFactorAuthMethodType,
-    name: string,
-    issuer: string,
-    accountName: string,
-  ): Promise<MultiFactorAuthSetup> {
-    const methodId = this.generateMethodId();
-
-    switch (type) {
-      case 'totp': {
-        return await TOTPModel.createMethod(methodId, name, issuer, accountName);
-      }
-
-      case 'passkey': {
-        // TODO: Is this correct? Or should we use the PasskeyModel.createMethod?
-        const method: MultiFactorAuthMethod = {
-          type: 'passkey',
-          id: methodId,
-          name,
-          enabled: false,
-          created_at: new Date(),
-          metadata: {
-            passkey: {
-              credential_id: '',
-              public_key: '',
-              counter: 0,
-              device_type: 'unknown',
-              backed_up: false,
-              transports: [],
-            },
-          },
-        };
-
-        return { method };
-      }
-
-      default:
-        throw new Error(`Unsupported MFA method: ${type}`);
-    }
-  }
-
-  static async verifyMultiFactorAuthToken(
-    method: MultiFactorAuthMethod,
-    token: string,
-  ): Promise<{ isValid: boolean; remainingCodes?: string[] }> {
-    switch (method.type) {
-      case 'totp': {
-        return await TOTPModel.verifyMethodToken(method.metadata, token);
-      }
-
-      case 'passkey': {
-        // TODO: Is this correct? Or should we use the PasskeyModel.verifyMethodToken from here instead of directly?
-        return { isValid: true };
-      }
-
-      default:
-        return { isValid: false };
-    }
-  }
-
   static enableMethodForUser(
     user: { extra: Pick<User['extra'], 'multi_factor_auth_methods'> },
     methodId: string,
@@ -113,20 +52,6 @@ export class MultiFactorAuthModel {
     const method = getMultiFactorAuthMethodByIdFromUser(user, methodId);
     if (method) {
       method.enabled = false;
-    }
-  }
-
-  static removeMethodFromUser(
-    user: { extra: Pick<User['extra'], 'multi_factor_auth_methods'> },
-    methodId: string,
-  ): void {
-    if (!user.extra.multi_factor_auth_methods) {
-      return;
-    }
-
-    const index = user.extra.multi_factor_auth_methods.findIndex((method) => method.id === methodId);
-    if (index !== -1) {
-      user.extra.multi_factor_auth_methods.splice(index, 1);
     }
   }
 

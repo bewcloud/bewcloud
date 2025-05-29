@@ -28,7 +28,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
-    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled() && await UserModel.isThereAnAdmin();
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     const searchParams = new URL(request.url).searchParams;
@@ -63,7 +63,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
-    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
+    const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled() && await UserModel.isThereAnAdmin();
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
 
     const searchParams = new URL(request.url).searchParams;
@@ -119,8 +119,6 @@ export const handler: Handlers<Data, FreshContextState> = {
       }
 
       if (user.extra.is_email_verified && isMultiFactorAuthEnabled && isMultiFactorAuthEnabledForUser(user)) {
-        const userId = user.id;
-
         return MultiFactorAuthModel.createSessionResponse(request, user, { urlToRedirectTo: redirectUrl });
       }
 
@@ -205,13 +203,19 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
           <section class='flex justify-center mt-8 mb-4'>
             <button class='button' type='submit'>Login</button>
           </section>
-        </form>
 
-        {data?.isMultiFactorAuthEnabled && (
-          <section class='mb-12 max-w-md mx-auto'>
-            <PasswordlessPasskeyLogin />
-          </section>
-        )}
+          {data?.isMultiFactorAuthEnabled
+            ? (
+              <section class='mb-12 max-w-sm mx-auto'>
+                <section class='text-center'>
+                  <p class='text-gray-400 text-sm mb-3'>or</p>
+                </section>
+
+                <PasswordlessPasskeyLogin />
+              </section>
+            )
+            : null}
+        </form>
 
         <h2 class='text-2xl mb-4 text-center'>Need an account?</h2>
         <p class='text-center mt-2 mb-6'>

@@ -4,7 +4,6 @@ import { RegistrationResponseJSON } from '@simplewebauthn/server';
 
 import { FreshContextState } from '/lib/types.ts';
 import { PasskeyModel } from '/lib/models/multi-factor-auth/passkey.ts';
-import { getMultiFactorAuthMethodByIdFromUser } from '/lib/utils/multi-factor-auth.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
 
@@ -50,16 +49,6 @@ export const handler: Handlers<unknown, FreshContextState> = {
       return new Response(JSON.stringify(responseBody), { status: 400 });
     }
 
-    const method = getMultiFactorAuthMethodByIdFromUser(user, methodId);
-    if (!method || method.type !== 'passkey' || !method.metadata.passkey) {
-      const responseBody: ResponseBody = {
-        success: false,
-        error: 'Invalid passkey method',
-      };
-
-      return new Response(JSON.stringify(responseBody), { status: 400 });
-    }
-
     const config = await AppConfig.getConfig();
     const expectedOrigin = config.auth.baseUrl;
     const expectedRPID = new URL(config.auth.baseUrl).hostname;
@@ -84,15 +73,23 @@ export const handler: Handlers<unknown, FreshContextState> = {
     const credentialID = registrationInfo.credential.id;
     const credentialPublicKey = isoBase64URL.fromBuffer(registrationInfo.credential.publicKey);
 
-    const passkeyMetadata = method.metadata.passkey;
+    const method = PasskeyModel.createMethod(
+      methodId,
+      'Passkey',
+      credentialID,
+      credentialPublicKey,
+      registrationInfo.credential.counter,
+      registrationInfo.credentialDeviceType,
+      registrationInfo.credentialBackedUp,
+      // @ts-expect-error SimpleWebAuthn supports a few more transports, and that's OK
+      registrationResponse.response?.transports || [],
+    );
 
-    passkeyMetadata.credential_id = credentialID;
-    passkeyMetadata.public_key = credentialPublicKey;
-    passkeyMetadata.counter = registrationInfo.credential.counter;
-    passkeyMetadata.device_type = registrationInfo.credentialDeviceType;
-    passkeyMetadata.backed_up = registrationInfo.credentialBackedUp;
-    // @ts-expect-error SimpleWebAuthn supports a few more transports, and that's OK
-    passkeyMetadata.transports = registrationResponse.response?.transports || [];
+    if (!user.extra.multi_factor_auth_methods) {
+      user.extra.multi_factor_auth_methods = [];
+    }
+
+    user.extra.multi_factor_auth_methods.push(method);
 
     await UserModel.update(user);
 

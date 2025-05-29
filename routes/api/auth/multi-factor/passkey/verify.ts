@@ -8,7 +8,7 @@ import { AppConfig } from '/lib/config.ts';
 import { createSessionResponse } from '/lib/auth.ts';
 
 export interface RequestBody {
-  userId: string;
+  email: string;
   challenge: string;
   authenticationResponse: AuthenticationResponseJSON;
   redirectUrl?: string;
@@ -19,7 +19,6 @@ export interface ResponseBody {
   error?: string;
 }
 
-// TODO: Is this a duplicate of login.ts, basically?
 export const handler: Handlers<unknown, FreshContextState> = {
   async POST(request) {
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
@@ -34,18 +33,18 @@ export const handler: Handlers<unknown, FreshContextState> = {
     }
 
     const body = await request.clone().json() as RequestBody;
-    const { userId, challenge, authenticationResponse, redirectUrl } = body;
+    const { email, challenge, authenticationResponse, redirectUrl } = body;
 
-    if (!userId || !challenge || !authenticationResponse) {
+    if (!email || !challenge || !authenticationResponse) {
       const responseBody: ResponseBody = {
         success: false,
-        error: 'User ID, challenge, and authentication response are required',
+        error: 'Email, challenge, and authentication response are required',
       };
 
       return new Response(JSON.stringify(responseBody), { status: 400 });
     }
 
-    const user = await UserModel.getById(userId);
+    const user = await UserModel.getByEmail(email);
     if (!user) {
       const responseBody: ResponseBody = {
         success: false,
@@ -62,7 +61,7 @@ export const handler: Handlers<unknown, FreshContextState> = {
     const userCredentials = PasskeyModel.getCredentialsFromUser(user);
     const credentialID = authenticationResponse.id;
 
-    const credential = userCredentials.find((cred) => cred.credentialID === credentialID);
+    const credential = userCredentials.find((credential) => credential.credentialID === credentialID);
     if (!credential) {
       const responseBody: ResponseBody = {
         success: false,

@@ -10,6 +10,7 @@ import {
   getEnabledMultiFactorAuthMethodsFromUser,
   isMultiFactorAuthEnabledForUser,
 } from '/lib/utils/multi-factor-auth.ts';
+import { TOTPModel } from '/lib/models/multi-factor-auth/totp.ts';
 import MultiFactorAuthVerifyForm from '/components/auth/MultiFactorAuthVerifyForm.tsx';
 
 interface Data {
@@ -17,8 +18,7 @@ interface Data {
     title: string;
     message: string;
   };
-  // TODO: Remove this since we can get the user from the cookie
-  userId?: string;
+  email?: string;
   redirectUrl?: string;
   availableMethods?: MultiFactorAuthMethodType[];
   hasPasskey?: boolean;
@@ -52,7 +52,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const hasPasskey = availableMethods.includes('passkey');
 
     return await context.render({
-      userId: user.id,
+      email: user.email,
       redirectUrl,
       availableMethods,
       hasPasskey,
@@ -95,8 +95,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       let isValid = false;
       let updateUser = false;
 
+      // Passkey verification is handled in a separate process
       for (const method of enabledMethods) {
-        const verification = await MultiFactorAuthModel.verifyMultiFactorAuthToken(method, token);
+        const verification = await TOTPModel.verifyMethodToken(method.metadata, token);
         if (verification.isValid) {
           isValid = true;
 
@@ -125,7 +126,7 @@ export const handler: Handlers<Data, FreshContextState> = {
           title: 'Verification Failed',
           message: (error as Error).message,
         },
-        userId: user.id,
+        email: user.email,
         redirectUrl,
         availableMethods,
         hasPasskey,
@@ -136,13 +137,15 @@ export const handler: Handlers<Data, FreshContextState> = {
 
 export default function MultiFactorAuthVerifyPage({ data }: PageProps<Data, FreshContextState>) {
   return (
-    <main class='flex flex-col items-center justify-center min-h-screen'>
-      <MultiFactorAuthVerifyForm
-        userId={data.userId || ''}
-        redirectUrl={data.redirectUrl || '/'}
-        availableMethods={data.availableMethods || []}
-        error={data.error}
-      />
+    <main>
+      <section class='max-w-screen-md mx-auto flex flex-col items-center justify-center'>
+        <MultiFactorAuthVerifyForm
+          email={data.email || ''}
+          redirectUrl={data.redirectUrl || '/'}
+          availableMethods={data.availableMethods || []}
+          error={data.error}
+        />
+      </section>
     </main>
   );
 }

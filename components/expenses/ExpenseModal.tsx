@@ -160,23 +160,25 @@ export default function ExpenseModal(
               }}
               placeholder='Lunch'
             />
-            {showSuggestions.value && suggestions.value.length > 0 && (
-              <ul class='absolute z-50 w-full bg-slate-700 rounded-md mt-1 max-h-40 overflow-y-auto ring-1 ring-slate-800 shadow-lg'>
-                {suggestions.value.map((suggestion) => (
-                  <li
-                    key={suggestion}
-                    class='px-4 py-2 hover:bg-slate-600 cursor-pointer'
-                    onClick={() => {
-                      newExpenseDescription.value = suggestion;
-                      showSuggestions.value = false;
-                      suggestions.value = [];
-                    }}
-                  >
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            )}
+            {showSuggestions.value && suggestions.value.length > 0
+              ? (
+                <ul class='absolute z-50 w-full bg-slate-700 rounded-md mt-1 max-h-40 overflow-y-auto ring-1 ring-slate-800 shadow-lg'>
+                  {suggestions.value.map((suggestion) => (
+                    <li
+                      key={suggestion}
+                      class='px-4 py-2 hover:bg-slate-600 cursor-pointer'
+                      onClick={() => {
+                        newExpenseDescription.value = suggestion;
+                        showSuggestions.value = false;
+                        suggestions.value = [];
+                      }}
+                    >
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              )
+              : null}
           </fieldset>
 
           <fieldset class='block mb-2'>

@@ -7,8 +7,7 @@ import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
 
 export interface RequestBody {
-  userId?: string;
-  email?: string;
+  email: string;
 }
 
 export interface ResponseBody {
@@ -16,7 +15,6 @@ export interface ResponseBody {
   error?: string;
   options?: PublicKeyCredentialCreationOptionsJSON;
   sessionData?: {
-    userId: string;
     challenge: string;
     methodId: string;
   };
@@ -36,18 +34,18 @@ export const handler: Handlers<unknown, FreshContextState> = {
     }
 
     const body = await request.clone().json() as RequestBody;
-    const { userId, email } = body;
+    const { email } = body;
 
-    if (!userId && !email) {
+    if (!email) {
       const responseBody: ResponseBody = {
         success: false,
-        error: 'User ID or email is required',
+        error: 'Email is required',
       };
 
       return new Response(JSON.stringify(responseBody), { status: 400 });
     }
 
-    const user = userId ? await UserModel.getById(userId) : await UserModel.getByEmail(email!);
+    const user = await UserModel.getByEmail(email);
 
     if (!user) {
       const responseBody: ResponseBody = {
@@ -79,7 +77,6 @@ export const handler: Handlers<unknown, FreshContextState> = {
       success: true,
       options,
       sessionData: {
-        userId: user.id,
         challenge: options.challenge,
         methodId: options.challenge,
       },

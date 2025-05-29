@@ -2,16 +2,23 @@ import { useSignal } from '@preact/signals';
 import { startAuthentication } from '@simplewebauthn/browser';
 
 import {
-  RequestBody as PasskeyLoginRequestBody,
-  ResponseBody as PasskeyLoginResponseBody,
-} from '/routes/api/auth/multi-factor/passkey/login.ts';
+  RequestBody as PasskeyBeginRequestBody,
+  ResponseBody as PasskeyBeginResponseBody,
+} from '/routes/api/auth/multi-factor/passkey/begin.ts';
+
+import {
+  RequestBody as PasskeyVerifyRequestBody,
+  ResponseBody as PasskeyVerifyResponseBody,
+} from '/routes/api/auth/multi-factor/passkey/verify.ts';
 
 interface PasswordlessPasskeyLoginProps {
+  email?: string;
   redirectUrl?: string;
 }
 
-export default function PasswordlessPasskeyLogin({ redirectUrl }: PasswordlessPasskeyLoginProps) {
+export default function PasswordlessPasskeyLogin({ email: providedEmail, redirectUrl }: PasswordlessPasskeyLoginProps) {
   const isLoading = useSignal(false);
+  const email = useSignal<string | null>(providedEmail || null);
   const error = useSignal<string | null>(null);
 
   const handlePasswordlessLogin = async () => {
@@ -19,15 +26,23 @@ export default function PasswordlessPasskeyLogin({ redirectUrl }: PasswordlessPa
       return;
     }
 
+    if (!email.value) {
+      const promptEmail = prompt('Please enter your email');
+      if (!promptEmail) {
+        throw new Error('Email is required to login with Passkey');
+      }
+      email.value = promptEmail;
+    }
+
     isLoading.value = true;
     error.value = null;
 
     try {
-      const beginRequestBody: PasskeyLoginRequestBody = {
-        stage: 'begin',
+      const beginRequestBody: PasskeyBeginRequestBody = {
+        email: email.value,
       };
 
-      const beginResponse = await fetch('/api/auth/multi-factor/passkey/login', {
+      const beginResponse = await fetch('/api/auth/multi-factor/passkey/begin', {
         method: 'POST',
         body: JSON.stringify(beginRequestBody),
       });
@@ -38,7 +53,7 @@ export default function PasswordlessPasskeyLogin({ redirectUrl }: PasswordlessPa
         );
       }
 
-      const beginData = await beginResponse.json() as PasskeyLoginResponseBody;
+      const beginData = await beginResponse.json() as PasskeyBeginResponseBody;
 
       if (!beginData.success) {
         throw new Error(beginData.error || 'Failed to begin passwordless login');
@@ -48,14 +63,14 @@ export default function PasswordlessPasskeyLogin({ redirectUrl }: PasswordlessPa
         optionsJSON: beginData.options!,
       });
 
-      const verifyRequestBody: PasskeyLoginRequestBody = {
-        stage: 'verify',
-        challenge: beginData.options!.challenge,
+      const verifyRequestBody: PasskeyVerifyRequestBody = {
+        email: email.value,
+        challenge: beginData.sessionData!.challenge,
         authenticationResponse,
         redirectUrl: redirectUrl || '/',
       };
 
-      const verifyResponse = await fetch('/api/auth/multi-factor/passkey/login', {
+      const verifyResponse = await fetch('/api/auth/multi-factor/passkey/verify', {
         method: 'POST',
         body: JSON.stringify(verifyRequestBody),
       });
@@ -65,7 +80,7 @@ export default function PasswordlessPasskeyLogin({ redirectUrl }: PasswordlessPa
         return;
       }
 
-      const verifyData = await verifyResponse.json() as PasskeyLoginResponseBody;
+      const verifyData = await verifyResponse.json() as PasskeyVerifyResponseBody;
       throw new Error(
         verifyData.error || `Authentication failed! ${verifyResponse.statusText} ${await verifyResponse.text()}`,
       );
@@ -78,32 +93,24 @@ export default function PasswordlessPasskeyLogin({ redirectUrl }: PasswordlessPa
   };
 
   return (
-    <div class='space-y-4'>
-      <div class='text-center'>
-        <p class='text-gray-400 text-sm mb-3'>or</p>
-      </div>
+    <section class='space-y-4'>
+      <section class='flex justify-center mt-2 mb-4'>
+        <button
+          type='button'
+          onClick={handlePasswordlessLogin}
+          class='button-secondary'
+        >
+          {isLoading.value ? 'Authenticating...' : 'Login with Passkey'}
+        </button>
+      </section>
 
-      <button
-        type='button'
-        onClick={handlePasswordlessLogin}
-        disabled={isLoading.value}
-        class='w-full button disabled:bg-sky-300 disabled:hover:bg-sky-300 flex items-center justify-center'
-      >
-        {isLoading.value ? 'Authenticating...' : 'Login with Passkey'}
-      </button>
-
-      {error.value && (
-        <div class='bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded relative'>
-          <strong class='font-bold'>Passkey Login Error:</strong>
-          <span class='block sm:inline'>{error.value}</span>
-        </div>
-      )}
-
-      <div class='text-center'>
-        <p class='text-gray-500 text-xs'>
-          Passwordless login is available when MFA is enabled
-        </p>
-      </div>
-    </div>
+      {error.value
+        ? (
+          <section class='notification-error'>
+            <p>{error.value}</p>
+          </section>
+        )
+        : null}
+    </section>
   );
 }

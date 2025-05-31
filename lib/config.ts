@@ -1,5 +1,5 @@
 import { UserModel } from './models/user.ts';
-import { Config, OptionalApp } from './types.ts';
+import { Config, OptionalApp, S3Config } from './types.ts';
 
 export class AppConfig {
   private static config: Config;
@@ -206,5 +206,35 @@ export class AppConfig {
     const filesRootPath = `${Deno.cwd()}/${this.config.files.rootPath}`;
 
     return filesRootPath;
+  }
+
+  static async getS3Config(): Promise<S3Config | undefined> {
+    await this.loadConfig();
+    // Ensure Deno namespace is available
+    if (typeof Deno === 'undefined' || typeof Deno.env === 'undefined') {
+      console.error('Deno environment is not available. S3 config cannot be loaded.');
+      return undefined;
+    }
+
+    const bucket = Deno.env.get('S3_BUCKET');
+    const region = Deno.env.get('S3_REGION');
+    const accessKeyID = Deno.env.get('S3_ACCESS_KEY_ID');
+    const secretAccessKey = Deno.env.get('S3_SECRET_ACCESS_KEY');
+    const endpoint = Deno.env.get('S3_ENDPOINT'); // Optional
+
+    if (!bucket || !region || !accessKeyID || !secretAccessKey) {
+      console.warn(
+        'S3 environment variables (S3_BUCKET, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY) are not fully set. S3 functionality may be disabled or limited.',
+      );
+      return undefined;
+    }
+
+    return {
+      bucket,
+      region,
+      accessKeyID,
+      secretAccessKey,
+      endpoint,
+    };
   }
 }

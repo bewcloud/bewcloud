@@ -41,6 +41,10 @@
     "qrcode": "https://esm.sh/qrcode@1.5.4",
     "@simplewebauthn/server": "jsr:@simplewebauthn/server@13.1.1",
     "@simplewebauthn/server/helpers": "jsr:@simplewebauthn/server@13.1.1/helpers",
-    "@simplewebauthn/browser": "jsr:@simplewebauthn/browser@13.1.0"
+    "@simplewebauthn/browser": "jsr:@simplewebauthn/browser@13.1.0",
+    "@aws-sdk/client-s3": "npm:@aws-sdk/client-s3@^3",
+    "aws-sdk-client-mock": "npm:aws-sdk-client-mock@^3.0.0",
+    "aws-sdk-client-mock-jest": "npm:aws-sdk-client-mock-jest@^3.0.0",
+    "sinon": "npm:sinon@^15.0.0"
   }
 }

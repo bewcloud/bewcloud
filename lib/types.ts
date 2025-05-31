@@ -182,6 +182,14 @@ export interface Config {
   };
 }
 
+export interface S3Config {
+  bucket: string;
+  region: string;
+  accessKeyID: string;
+  secretAccessKey: string;
+  endpoint?: string; // Optional endpoint for S3 compatible services
+}
+
 export type MultiFactorAuthMethodType = 'totp' | 'passkey';
 
 export interface MultiFactorAuthMethod {

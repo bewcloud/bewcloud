@@ -10,6 +10,7 @@ services:
         required: true
     volumes:
       - ./data-files:/app/data-files
+      # - ./bewcloud.config.ts:/app/bewcloud.config.ts # uncomment if you need to override the default config
 
   postgresql:
     image: postgres:15

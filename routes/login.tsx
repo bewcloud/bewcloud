@@ -9,6 +9,7 @@ import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
 import { isMultiFactorAuthEnabledForUser } from '/lib/utils/multi-factor-auth.ts';
 import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
+import { OidcModel } from '/lib/models/oidc.ts';
 import PasswordlessPasskeyLogin from '/islands/auth/PasswordlessPasskeyLogin.tsx';
 
 interface Data {
@@ -18,6 +19,8 @@ interface Data {
   formData?: FormData;
   isEmailVerificationEnabled: boolean;
   isMultiFactorAuthEnabled: boolean;
+  isSingleSignOnEnabled: boolean;
+  singleSignOnUrl?: string;
   helpEmail: string;
 }
 
@@ -29,7 +32,13 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled() && await UserModel.isThereAnAdmin();
-    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+    const isSingleSignOnEnabled = await AppConfig.isSingleSignOnEnabled();
+    const config = await AppConfig.getConfig();
+    const helpEmail = config.visuals.helpEmail;
+
+    const singleSignOnUrl = isSingleSignOnEnabled
+      ? (await OidcModel.getSignInUrl({ requestPermissions: config.auth.singleSignOnScopes }))
+      : undefined;
 
     const searchParams = new URL(request.url).searchParams;
 
@@ -54,7 +63,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       formData,
       isEmailVerificationEnabled,
       isMultiFactorAuthEnabled,
+      isSingleSignOnEnabled,
       helpEmail,
+      singleSignOnUrl,
     });
   },
   async POST(request, context) {
@@ -64,7 +75,13 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled() && await UserModel.isThereAnAdmin();
-    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+    const isSingleSignOnEnabled = await AppConfig.isSingleSignOnEnabled();
+    const config = await AppConfig.getConfig();
+    const helpEmail = config.visuals.helpEmail;
+
+    const singleSignOnUrl = isSingleSignOnEnabled
+      ? (await OidcModel.getSignInUrl({ requestPermissions: config.auth.singleSignOnScopes }))
+      : undefined;
 
     const searchParams = new URL(request.url).searchParams;
 
@@ -132,7 +149,9 @@ export const handler: Handlers<Data, FreshContextState> = {
         formData,
         isEmailVerificationEnabled,
         isMultiFactorAuthEnabled,
+        isSingleSignOnEnabled,
         helpEmail,
+        singleSignOnUrl,
       });
     }
   },
@@ -212,6 +231,27 @@ export default function Login({ data }: PageProps<Data, FreshContextState>) {
                 </section>
 
                 <PasswordlessPasskeyLogin />
+              </section>
+            )
+            : null}
+
+          {data?.isSingleSignOnEnabled && data?.singleSignOnUrl
+            ? (
+              <section class='mb-12 max-w-sm mx-auto'>
+                <section class='text-center'>
+                  <p class='text-gray-400 text-sm mb-3'>or</p>
+                </section>
+
+                <section class='space-y-4'>
+                  <section class='flex justify-center mt-2 mb-4'>
+                    <a
+                      href={data?.singleSignOnUrl}
+                      class='button-secondary'
+                    >
+                      Login with SSO
+                    </a>
+                  </section>
+                </section>
               </section>
             )
             : null}

@@ -53,6 +53,7 @@ import * as $news from './routes/news.tsx';
 import * as $news_feeds from './routes/news/feeds.tsx';
 import * as $notes from './routes/notes.tsx';
 import * as $notes_open_fileName_ from './routes/notes/open/[fileName].tsx';
+import * as $oidc_callback from './routes/oidc/callback.tsx';
 import * as $photos from './routes/photos.tsx';
 import * as $photos_thumbnail_fileName_ from './routes/photos/thumbnail/[fileName].tsx';
 import * as $settings from './routes/settings.tsx';
@@ -124,6 +125,7 @@ const manifest = {
     './routes/news/feeds.tsx': $news_feeds,
     './routes/notes.tsx': $notes,
     './routes/notes/open/[fileName].tsx': $notes_open_fileName_,
+    './routes/oidc/callback.tsx': $oidc_callback,
     './routes/photos.tsx': $photos,
     './routes/photos/thumbnail/[fileName].tsx': $photos_thumbnail_fileName_,
     './routes/settings.tsx': $settings,

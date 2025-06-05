@@ -58,6 +58,17 @@ export function generateRandomCode(length = 6) {
   return codeDigits.join('');
 }
 
+/** This generates a random string, including unicode characters. */
+export function generateRandomString(length = 10) {
+  const array = new Uint8Array(length * 2);
+  crypto.getRandomValues(array);
+
+  return Array.from(array)
+    .map((byte) => String.fromCharCode(byte))
+    .join('')
+    .slice(0, length);
+}
+
 export async function generateHash(value: string, algorithm: AlgorithmIdentifier) {
   const hashedValueData = await crypto.subtle.digest(
     algorithm,

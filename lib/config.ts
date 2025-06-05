@@ -14,6 +14,10 @@ export class AppConfig {
         enableMultiFactor: false,
         allowedCookieDomains: [],
         skipCookieDomainSecurity: false,
+        enableSingleSignOn: false,
+        singleSignOnUrl: '',
+        singleSignOnEmailAttribute: 'email',
+        singleSignOnScopes: ['openid', 'email'],
       },
       files: {
         rootPath: 'data-files',
@@ -198,6 +202,12 @@ export class AppConfig {
     await this.loadConfig();
 
     return this.config.auth.enableMultiFactor;
+  }
+
+  static async isSingleSignOnEnabled(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.auth.enableSingleSignOn;
   }
 
   static async getFilesRootPath(): Promise<string> {

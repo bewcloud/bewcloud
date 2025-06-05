@@ -7,6 +7,7 @@ import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
 import { AppConfig } from '/lib/config.ts';
 import { FreshContextState } from '/lib/types.ts';
+import { OidcModel } from '/lib/models/oidc.ts';
 
 interface Data {
   error?: string;
@@ -14,6 +15,9 @@ interface Data {
   email?: string;
   formData?: FormData;
   helpEmail: string;
+  isEmailVerificationEnabled: boolean;
+  isSingleSignOnEnabled: boolean;
+  singleSignOnUrl?: string;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -22,7 +26,14 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
 
-    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+    const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+    const isSingleSignOnEnabled = await AppConfig.isSingleSignOnEnabled();
+    const config = await AppConfig.getConfig();
+    const helpEmail = config.visuals.helpEmail;
+
+    const singleSignOnUrl = isSingleSignOnEnabled
+      ? (await OidcModel.getSignInUrl({ requestPermissions: config.auth.singleSignOnScopes }))
+      : undefined;
 
     const searchParams = new URL(request.url).searchParams;
 
@@ -32,14 +43,27 @@ export const handler: Handlers<Data, FreshContextState> = {
       notice = `Your account and all its data has been deleted.`;
     }
 
-    return await context.render({ notice, helpEmail });
+    return await context.render({
+      notice,
+      helpEmail,
+      isEmailVerificationEnabled,
+      isSingleSignOnEnabled,
+      singleSignOnUrl,
+    });
   },
   async POST(request, context) {
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
 
-    const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
+    const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
+    const isSingleSignOnEnabled = await AppConfig.isSingleSignOnEnabled();
+    const config = await AppConfig.getConfig();
+    const helpEmail = config.visuals.helpEmail;
+
+    const singleSignOnUrl = isSingleSignOnEnabled
+      ? (await OidcModel.getSignInUrl({ requestPermissions: config.auth.singleSignOnScopes }))
+      : undefined;
 
     const formData = await request.clone().formData();
     const email = getFormDataField(formData, 'email');
@@ -69,8 +93,6 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       const user = await UserModel.create(email, hashedPassword);
 
-      const isEmailVerificationEnabled = await AppConfig.isEmailVerificationEnabled();
-
       if (isEmailVerificationEnabled) {
         const verificationCode = await VerificationCodeModel.create(user, user.email, 'email');
 
@@ -83,20 +105,30 @@ export const handler: Handlers<Data, FreshContextState> = {
       });
     } catch (error) {
       console.error(error);
-      return await context.render({ error: (error as Error).toString(), email, formData, helpEmail });
+      return await context.render({
+        error: (error as Error).toString(),
+        email,
+        formData,
+        helpEmail,
+        isEmailVerificationEnabled,
+        isSingleSignOnEnabled,
+        singleSignOnUrl,
+      });
     }
   },
 };
 
-function formFields(email?: string) {
+function formFields(data?: Data) {
   const fields: FormField[] = [
     {
       name: 'email',
       label: 'Email',
-      description: `The email that will be used to login. A code will be sent to it.`,
+      description: data?.isEmailVerificationEnabled
+        ? `The email that will be used to login. A code will be sent to it.`
+        : `The email that will be used to login.`,
       type: 'email',
       placeholder: 'jane.doe@example.com',
-      value: email || '',
+      value: data?.email || '',
       required: true,
     },
     {
@@ -136,12 +168,35 @@ export default function Signup({ data }: PageProps<Data, FreshContextState>) {
           )
           : null}
 
-        <form method='POST' class='mb-12'>
-          {formFields(data?.email).map((field) => generateFieldHtml(field, data?.formData || new FormData()))}
-          <section class='flex justify-center mt-8 mb-4'>
+        <form method='POST' class={data?.isSingleSignOnEnabled && data?.singleSignOnUrl ? 'mb-4 pb-0' : 'mb-12'}>
+          {formFields(data).map((field) => generateFieldHtml(field, data?.formData || new FormData()))}
+          <section
+            class={`flex justify-center mt-8 ${data?.isSingleSignOnEnabled && data?.singleSignOnUrl ? 'mb-0' : 'mb-4'}`}
+          >
             <button class='button' type='submit'>Signup</button>
           </section>
         </form>
+
+        {data?.isSingleSignOnEnabled && data?.singleSignOnUrl
+          ? (
+            <section class='mb-12 max-w-sm mx-auto'>
+              <section class='text-center'>
+                <p class='text-gray-400 text-sm mb-3'>or</p>
+              </section>
+
+              <section class='space-y-4'>
+                <section class='flex justify-center mt-2 mb-4'>
+                  <a
+                    href={data?.singleSignOnUrl}
+                    class='button-secondary'
+                  >
+                    Signup with SSO
+                  </a>
+                </section>
+              </section>
+            </section>
+          )
+          : null}
 
         <h2 class='text-2xl mb-4 text-center'>Already have an account?</h2>
         <p class='text-center mt-2 mb-6'>

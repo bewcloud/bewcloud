@@ -163,6 +163,14 @@ export interface Config {
     allowedCookieDomains: string[];
     /** If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel. */
     skipCookieDomainSecurity: boolean;
+    /** If true, single sign-on will be enabled */
+    enableSingleSignOn: boolean;
+    /** The Discovery URL (AKA Issuer) of the identity/single sign-on provider */
+    singleSignOnUrl: string;
+    /** The attribute to prefer as email of the identity/single sign-on provider */
+    singleSignOnEmailAttribute: string;
+    /** The scopes to request from the identity/single sign-on provider */
+    singleSignOnScopes: string[];
   };
   files: {
     /** The root-relative root path for files, i.e. "data-files" */

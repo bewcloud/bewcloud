@@ -33,6 +33,16 @@ Alternatively, check the [Development section below](#development).
 > [!NOTE]
 > `1993:1993` above comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
 
+## Sponsors
+
+These are the amazing entities or individuals who are sponsoring this project for this current month. If you'd like to show up here, [check the GitHub Sponsors page](https://github.com/sponsors/bewcloud) or [make a donation](https://donate.stripe.com/bIYeWBbw00Ape5iaFi) above $50 ($100 to show up on the website)!
+
+<section style="display: flex; justify-content: center; align-items: center; margin: 2rem auto; gap: 1.5rem; flex-wrap: wrap;">
+  <a href="https://nlnet.nl/project/bewCloud/" target="_blank" rel="noopener noreferrer" title="NLnet Foundation">
+    <img src="https://nlnet.nl/logo/banner.svg" alt="NLnet Foundation" style="max-width: 16rem; border-radius: 0.375rem; width: 100%;" />
+  </a>
+</section>
+
 ## Development
 
 ### Requirements

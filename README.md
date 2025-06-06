@@ -37,11 +37,11 @@ Alternatively, check the [Development section below](#development).
 
 These are the amazing entities or individuals who are sponsoring this project for this current month. If you'd like to show up here, [check the GitHub Sponsors page](https://github.com/sponsors/bewcloud) or [make a donation](https://donate.stripe.com/bIYeWBbw00Ape5iaFi) above $50 ($100 to show up on the website)!
 
-<section style="display: flex; justify-content: center; align-items: center; margin: 2rem auto; gap: 1.5rem; flex-wrap: wrap;">
-  <a href="https://nlnet.nl/project/bewCloud/" target="_blank" rel="noopener noreferrer" title="NLnet Foundation">
-    <img src="https://nlnet.nl/logo/banner.svg" alt="NLnet Foundation" style="max-width: 16rem; border-radius: 0.375rem; width: 100%;" />
+<center>
+  <a href="https://nlnet.nl/project/bewCloud/" title="NLnet Foundation">
+    <img src="https://nlnet.nl/logo/banner.svg" alt="NLnet Foundation" width="256" />
   </a>
-</section>
+</center>
 
 ## Development
 

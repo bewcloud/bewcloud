@@ -137,6 +137,7 @@ export class OidcModel {
 
     const config = await AppConfig.getConfig();
 
+    const baseUrl = config.auth.baseUrl;
     const oidcBaseUrl = config.auth.singleSignOnUrl;
     const emailAttribute = config.auth.singleSignOnEmailAttribute;
     const oidcOptions = oidcBaseUrl.startsWith('http://')
@@ -153,7 +154,7 @@ export class OidcModel {
 
     const tokens = await openIdClient.authorizationCodeGrant(
       oidcConfig,
-      new URL(request.url),
+      new URL(`${baseUrl}?${urlSearchParams.toString()}`),
       {
         pkceCodeVerifier: expectedCodeVerifier,
         expectedState,

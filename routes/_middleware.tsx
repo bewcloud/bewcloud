@@ -5,7 +5,9 @@ import { getDataFromRequest } from '/lib/auth.ts';
 
 export const handler = [
   async function handleCors(request: Request, context: FreshContext<FreshContextState>) {
-    if (request.method == 'OPTIONS') {
+    const path = new URL(request.url).pathname;
+
+    if (request.method == 'OPTIONS' && path !== '/dav' && !path.startsWith('/dav/')) {
       const response = new Response(null, {
         status: 204,
       });

@@ -21,15 +21,15 @@ interface OidcJwtIdToken extends Record<string, string | undefined> {
   sub?: string;
 }
 
+const redirectUrlPath = '/oidc/callback';
+
 export class OidcModel {
   static async getSignInUrl(
     {
       requestPermissions,
-      redirectUrlPath = '/oidc/callback',
       extraState = {},
     }: {
       requestPermissions: string[];
-      redirectUrlPath?: string;
       extraState?: OidcExtraState;
     },
   ): Promise<string> {
@@ -154,7 +154,7 @@ export class OidcModel {
 
     const tokens = await openIdClient.authorizationCodeGrant(
       oidcConfig,
-      new URL(`${baseUrl}?${urlSearchParams.toString()}`),
+      new URL(`${baseUrl}${redirectUrlPath}?${urlSearchParams.toString()}`),
       {
         pkceCodeVerifier: expectedCodeVerifier,
         expectedState,

@@ -5,7 +5,7 @@ import { PASSWORD_SALT } from '/lib/auth.ts';
 import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
 import { convertFormDataToObject, generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
-import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
+import { EmailModel } from '/lib/models/email.ts';
 import { AppConfig } from '/lib/config.ts';
 import Settings, { Action, actionWords } from '/islands/Settings.tsx';
 
@@ -93,7 +93,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         if (action === 'change-email' && (await AppConfig.isEmailVerificationEnabled())) {
           const verificationCode = await VerificationCodeModel.create(user, email, 'email');
 
-          await sendVerifyEmailEmail(email, verificationCode);
+          await EmailModel.sendVerificationEmail(email, verificationCode);
 
           successTitle = 'Verify your email!';
           successMessage = 'You have received a code in your new email. Use it to verify it here.';

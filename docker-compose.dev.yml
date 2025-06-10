@@ -1,6 +1,6 @@
 services:
   postgresql:
-    image: postgres:15
+    image: postgres:17
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=fake

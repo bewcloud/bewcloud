@@ -40,4 +40,4 @@ spec:
     - name: db
       engine: PG
       production: false
-      version: '15'
+      version: '17'

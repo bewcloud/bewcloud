@@ -4,7 +4,7 @@ import { generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { createSessionResponse, PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
 import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
-import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
+import { EmailModel } from '/lib/models/email.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
 import { isMultiFactorAuthEnabledForUser } from '/lib/utils/multi-factor-auth.ts';
@@ -123,7 +123,7 @@ export const handler: Handlers<Data, FreshContextState> = {
         if (!code) {
           const verificationCode = await VerificationCodeModel.create(user, user.email, 'email');
 
-          await sendVerifyEmailEmail(user.email, verificationCode);
+          await EmailModel.sendVerificationEmail(user.email, verificationCode);
 
           throw new Error('Email not verified. New code sent to verify your email.');
         } else {

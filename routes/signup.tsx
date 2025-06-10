@@ -4,7 +4,7 @@ import { generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/lib/form-utils.tsx';
 import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
-import { sendVerifyEmailEmail } from '/lib/providers/brevo.ts';
+import { EmailModel } from '/lib/models/email.ts';
 import { AppConfig } from '/lib/config.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { OidcModel } from '/lib/models/oidc.ts';
@@ -96,7 +96,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       if (isEmailVerificationEnabled) {
         const verificationCode = await VerificationCodeModel.create(user, user.email, 'email');
 
-        await sendVerifyEmailEmail(user.email, verificationCode);
+        await EmailModel.sendVerificationEmail(user.email, verificationCode);
       }
 
       return new Response('Signup successful', {

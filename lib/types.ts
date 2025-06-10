@@ -153,7 +153,7 @@ export interface Config {
     baseUrl: string;
     /** If true, anyone can sign up for an account. Note that it's always possible to sign up for the first user, and they will be an admin */
     allowSignups: boolean;
-    /** If true, email verification will be required for signups (using Brevo) */
+    /** If true, email verification will be required for signups (using SMTP settings below) */
     enableEmailVerification: boolean;
     /** If true, all signups become active for 100 years */
     enableForeverSignup: boolean;
@@ -187,6 +187,14 @@ export interface Config {
     description: string;
     /** The email address to contact for help. Empty will disable/hide the "need help" sections. */
     helpEmail: string;
+  };
+  email: {
+    /** The email address to send emails from */
+    from: string;
+    /** The SMTP host to send emails from */
+    host: string;
+    /** The SMTP port to send emails from */
+    port: number;
   };
 }
 

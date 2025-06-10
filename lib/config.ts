@@ -30,57 +30,10 @@ export class AppConfig {
         description: '',
         helpEmail: 'help@bewcloud.com',
       },
-    };
-  }
-
-  /** This allows for backwards-compatibility with the old config format, which was in the .env file. */
-  private static async getLegacyConfigFromEnv(): Promise<Config> {
-    const defaultConfig = this.getDefaultConfig();
-
-    if (typeof Deno === 'undefined') {
-      return defaultConfig;
-    }
-
-    await import('std/dotenv/load.ts');
-
-    const baseUrl = Deno.env.get('BASE_URL') ?? defaultConfig.auth.baseUrl;
-    const allowSignups = Deno.env.get('CONFIG_ALLOW_SIGNUPS') === 'true';
-    const enabledApps = (Deno.env.get('CONFIG_ENABLED_APPS') ?? '').split(',') as OptionalApp[];
-    const filesRootPath = Deno.env.get('CONFIG_FILES_ROOT_PATH') ?? defaultConfig.files.rootPath;
-    const enableEmailVerification = (Deno.env.get('CONFIG_ENABLE_EMAILS') ?? 'false') === 'true';
-    const enableForeverSignup = (Deno.env.get('CONFIG_ENABLE_FOREVER_SIGNUP') ?? 'true') === 'true';
-    const allowedCookieDomains = (Deno.env.get('CONFIG_ALLOWED_COOKIE_DOMAINS') || '').split(',').filter(
-      Boolean,
-    ) as string[];
-    const skipCookieDomainSecurity = Deno.env.get('CONFIG_SKIP_COOKIE_DOMAIN_SECURITY') === 'true';
-    const title = Deno.env.get('CUSTOM_TITLE') ?? defaultConfig.visuals.title;
-    const description = Deno.env.get('CUSTOM_DESCRIPTION') ?? defaultConfig.visuals.description;
-    const helpEmail = Deno.env.get('HELP_EMAIL') ?? defaultConfig.visuals.helpEmail;
-
-    return {
-      ...defaultConfig,
-      auth: {
-        ...defaultConfig.auth,
-        baseUrl,
-        allowSignups,
-        enableEmailVerification,
-        enableForeverSignup,
-        allowedCookieDomains,
-        skipCookieDomainSecurity,
-      },
-      files: {
-        ...defaultConfig.files,
-        rootPath: filesRootPath,
-      },
-      core: {
-        ...defaultConfig.core,
-        enabledApps,
-      },
-      visuals: {
-        ...defaultConfig.visuals,
-        title,
-        description,
-        helpEmail,
+      email: {
+        from: 'help@bewcloud.com',
+        host: 'localhost',
+        port: 465,
       },
     };
   }
@@ -90,18 +43,7 @@ export class AppConfig {
       return;
     }
 
-    let initialConfig = this.getDefaultConfig();
-
-    if (
-      typeof Deno.env.get('BASE_URL') === 'string' || typeof Deno.env.get('CONFIG_ALLOW_SIGNUPS') === 'string' ||
-      typeof Deno.env.get('CONFIG_ENABLED_APPS') === 'string'
-    ) {
-      console.warn(
-        '\nDEPRECATION WARNING: .env file has config variables. This will be used but is deprecated. Please use the bewcloud.config.ts file instead.',
-      );
-
-      initialConfig = await this.getLegacyConfigFromEnv();
-    }
+    const initialConfig = this.getDefaultConfig();
 
     const config: Config = {
       ...initialConfig,
@@ -128,13 +70,17 @@ export class AppConfig {
           ...config.visuals,
           ...configFromFile.visuals,
         },
+        email: {
+          ...config.email,
+          ...configFromFile.email,
+        },
       };
 
       console.info('\nConfig loaded from bewcloud.config.ts', JSON.stringify(this.config, null, 2), '\n');
 
       return;
     } catch (error) {
-      console.error('Error loading config from bewcloud.config.ts. Using default and legacy config instead.', error);
+      console.error('Error loading config from bewcloud.config.ts. Using default config instead.', error);
     }
 
     this.config = config;
@@ -216,5 +162,11 @@ export class AppConfig {
     const filesRootPath = `${Deno.cwd()}/${this.config.files.rootPath}`;
 
     return filesRootPath;
+  }
+
+  static async getEmailConfig(): Promise<Config['email']> {
+    await this.loadConfig();
+
+    return this.config.email;
   }
 }

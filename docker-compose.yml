@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:main # alternatively, you can use a specific version/tag, for greater stability
+    image: ghcr.io/bewcloud/bewcloud:v2.0.0
     restart: always
     ports:
       - 127.0.0.1:8000:8000
@@ -13,12 +13,12 @@ services:
       # - ./bewcloud.config.ts:/app/bewcloud.config.ts # uncomment if you need to override the default config
 
   postgresql:
-    image: postgres:15
+    image: postgres:17
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=fake
       - POSTGRES_DB=bewcloud
-    restart: on-failure
+    restart: always
     volumes:
       - bewcloud-db:/var/lib/postgresql/data
     ports:

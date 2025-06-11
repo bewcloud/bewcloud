@@ -157,7 +157,7 @@ export interface Config {
     enableEmailVerification: boolean;
     /** If true, all signups become active for 100 years */
     enableForeverSignup: boolean;
-    /** If true, users can enable multi-factor authentication (TOTP or Passkeys) */
+    /** If true, users can enable multi-factor authentication (TOTP, Passkeys, or Email if the SMTP settings below are set) */
     enableMultiFactor: boolean;
     /** Can be set to allow more than the baseUrl's domain for session cookies */
     allowedCookieDomains: string[];
@@ -198,7 +198,7 @@ export interface Config {
   };
 }
 
-export type MultiFactorAuthMethodType = 'totp' | 'passkey';
+export type MultiFactorAuthMethodType = 'totp' | 'passkey' | 'email';
 
 export interface MultiFactorAuthMethod {
   type: MultiFactorAuthMethodType;

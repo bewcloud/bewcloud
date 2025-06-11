@@ -13,6 +13,7 @@ export default function MultiFactorAuthVerifyForm(
 ) {
   const hasPasskey = availableMethods.includes('passkey');
   const hasTotp = availableMethods.includes('totp');
+  const hasEmail = availableMethods.includes('email');
 
   return (
     <section class='max-w-md w-full mb-12'>
@@ -30,6 +31,48 @@ export default function MultiFactorAuthVerifyForm(
           <section class='bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded relative mb-4'>
             <strong class='font-bold'>{error.title}:</strong>
             <span class='block sm:inline'>{error.message}</span>
+          </section>
+        )
+        : null}
+
+      {hasEmail
+        ? (
+          <form
+            class='mb-6'
+            method='POST'
+            action={`/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`}
+          >
+            <fieldset class='block mb-4'>
+              <label class='text-slate-300 block pb-1' for='token'>
+                Email Verification Code
+              </label>
+              <input
+                type='text'
+                id='code'
+                name='code'
+                placeholder='123456'
+                class='mt-1 input-field'
+                autocomplete='off'
+                required
+              />
+            </fieldset>
+
+            <section class='flex justify-center mt-8 mb-4'>
+              <button
+                type='submit'
+                class='button'
+              >
+                Verify Code
+              </button>
+            </section>
+          </form>
+        )
+        : null}
+
+      {hasEmail && hasTotp
+        ? (
+          <section class='text-center -mt-10 mb-6 block'>
+            <p class='text-gray-400 text-sm'>or</p>
           </section>
         )
         : null}
@@ -68,7 +111,7 @@ export default function MultiFactorAuthVerifyForm(
         )
         : null}
 
-      {hasTotp && hasPasskey
+      {(hasEmail || hasTotp) && hasPasskey
         ? (
           <section class='text-center -mt-10 mb-6 block'>
             <p class='text-gray-400 text-sm'>or</p>

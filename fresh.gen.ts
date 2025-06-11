@@ -6,6 +6,7 @@ import * as $_404 from './routes/_404.tsx';
 import * as $_app from './routes/_app.tsx';
 import * as $_middleware from './routes/_middleware.tsx';
 import * as $api_auth_multi_factor_disable from './routes/api/auth/multi-factor/disable.ts';
+import * as $api_auth_multi_factor_email_setup from './routes/api/auth/multi-factor/email/setup.ts';
 import * as $api_auth_multi_factor_enable from './routes/api/auth/multi-factor/enable.ts';
 import * as $api_auth_multi_factor_passkey_begin from './routes/api/auth/multi-factor/passkey/begin.ts';
 import * as $api_auth_multi_factor_passkey_setup_begin from './routes/api/auth/multi-factor/passkey/setup-begin.ts';
@@ -78,6 +79,7 @@ const manifest = {
     './routes/_app.tsx': $_app,
     './routes/_middleware.tsx': $_middleware,
     './routes/api/auth/multi-factor/disable.ts': $api_auth_multi_factor_disable,
+    './routes/api/auth/multi-factor/email/setup.ts': $api_auth_multi_factor_email_setup,
     './routes/api/auth/multi-factor/enable.ts': $api_auth_multi_factor_enable,
     './routes/api/auth/multi-factor/passkey/begin.ts': $api_auth_multi_factor_passkey_begin,
     './routes/api/auth/multi-factor/passkey/setup-begin.ts': $api_auth_multi_factor_passkey_setup_begin,

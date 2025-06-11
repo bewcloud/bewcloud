@@ -11,6 +11,7 @@ import {
   isMultiFactorAuthEnabledForUser,
 } from '/lib/utils/multi-factor-auth.ts';
 import { TOTPModel } from '/lib/models/multi-factor-auth/totp.ts';
+import { EmailModel } from '/lib/models/multi-factor-auth/email.ts';
 import MultiFactorAuthVerifyForm from '/components/auth/MultiFactorAuthVerifyForm.tsx';
 
 interface Data {
@@ -21,7 +22,6 @@ interface Data {
   email?: string;
   redirectUrl?: string;
   availableMethods?: MultiFactorAuthMethodType[];
-  hasPasskey?: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -49,13 +49,11 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
     const availableMethods = enabledMethods.map((method) => method.type);
-    const hasPasskey = availableMethods.includes('passkey');
 
     return await context.render({
       email: user.email,
       redirectUrl,
       availableMethods,
-      hasPasskey,
     });
   },
   async POST(request, context) {
@@ -82,35 +80,49 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
     const availableMethods = enabledMethods.map((method) => method.type);
-    const hasPasskey = availableMethods.includes('passkey');
 
     try {
       const formData = await request.formData();
+      const code = getFormDataField(formData, 'code');
       const token = getFormDataField(formData, 'token');
 
-      if (!token) {
-        throw new Error('Authentication token is required');
+      if (!code && !token) {
+        throw new Error('Authentication code/token is required');
       }
 
       let isValid = false;
       let updateUser = false;
 
-      // Passkey verification is handled in a separate process
       for (const method of enabledMethods) {
-        const verification = await TOTPModel.verifyMethodToken(method.metadata, token);
-        if (verification.isValid) {
-          isValid = true;
+        // Passkey verification is handled in a separate process
+        if (method.type === 'passkey') {
+          continue;
+        }
 
-          if (verification.remainingCodes && method.type === 'totp' && method.metadata.totp) {
-            method.metadata.totp.hashed_backup_codes = verification.remainingCodes;
-            updateUser = true;
+        if (method.type === 'totp') {
+          const verification = await TOTPModel.verifyMethodToken(method.metadata, token);
+          if (verification.isValid) {
+            isValid = true;
+
+            if (verification.remainingCodes && method.type === 'totp' && method.metadata.totp) {
+              method.metadata.totp.hashed_backup_codes = verification.remainingCodes;
+              updateUser = true;
+            }
+            break;
           }
-          break;
+        }
+
+        if (method.type === 'email') {
+          const verification = await EmailModel.verifyCode(method.id, code, user);
+          if (verification) {
+            isValid = true;
+            break;
+          }
         }
       }
 
       if (!isValid) {
-        throw new Error('Invalid authentication token or backup code');
+        throw new Error('Invalid authentication code/token or backup code');
       }
 
       if (updateUser) {
@@ -129,7 +141,6 @@ export const handler: Handlers<Data, FreshContextState> = {
         email: user.email,
         redirectUrl,
         availableMethods,
-        hasPasskey,
       });
     }
   },

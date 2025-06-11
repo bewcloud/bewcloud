@@ -15,6 +15,10 @@ import {
   ResponseBody as TOTPSetupResponseBody,
 } from '/routes/api/auth/multi-factor/totp/setup.ts';
 import {
+  RequestBody as EmailSetupRequestBody,
+  ResponseBody as EmailSetupResponseBody,
+} from '/routes/api/auth/multi-factor/email/setup.ts';
+import {
   RequestBody as MultiFactorAuthEnableRequestBody,
   ResponseBody as MultiFactorAuthEnableResponseBody,
 } from '/routes/api/auth/multi-factor/enable.ts';
@@ -48,20 +52,27 @@ interface PasskeySetupData {
   type: 'passkey';
 }
 
+interface EmailSetupData {
+  methodId: string;
+  type: 'email';
+}
+
 const methodTypeLabels: Record<MultiFactorAuthMethodType, string> = {
   totp: 'Authenticator App',
   passkey: 'Passkey',
+  email: 'Email',
 };
 
 const methodTypeDescriptions: Record<MultiFactorAuthMethodType, string> = {
-  totp: 'Use an authenticator app like Aegis Authenticator or Google Authenticator to generate codes',
-  passkey: 'Use biometric authentication or security keys',
+  totp: 'Use an authenticator app like Aegis Authenticator or Google Authenticator to generate codes.',
+  passkey: 'Use biometric authentication or security keys.',
+  email: 'Receive codes in your email.',
 };
 
-const availableMethodTypes = ['totp', 'passkey'] as MultiFactorAuthMethodType[];
+const availableMethodTypes = ['totp', 'passkey', 'email'] as MultiFactorAuthMethodType[];
 
 export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSettingsProps) {
-  const setupData = useSignal<TOTPSetupData | PasskeySetupData | null>(null);
+  const setupData = useSignal<TOTPSetupData | PasskeySetupData | EmailSetupData | null>(null);
   const isLoading = useSignal(false);
   const error = useSignal<string | null>(null);
   const success = useSignal<string | null>(null);
@@ -146,6 +157,26 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
     };
   };
 
+  const setupEmail = async () => {
+    const requestBody: EmailSetupRequestBody = {};
+
+    const response = await fetch('/api/auth/multi-factor/email/setup', {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+    });
+
+    const data = await response.json() as EmailSetupResponseBody;
+
+    if (!data.success || !data.data) {
+      throw new Error(data.error || 'Failed to setup email multi-factor authentication');
+    }
+
+    setupData.value = {
+      type: 'email',
+      methodId: data.data.methodId!,
+    };
+  };
+
   const setupMultiFactorAuth = async (type: MultiFactorAuthMethodType) => {
     isLoading.value = true;
     error.value = null;
@@ -155,6 +186,8 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
         await setupTOTP();
       } else if (type === 'passkey') {
         await setupPasskey();
+      } else if (type === 'email') {
+        await setupEmail();
       }
     } catch (setupError) {
       error.value = (setupError as Error).message;
@@ -170,7 +203,7 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
     }
 
     if (setupData.value.type !== 'passkey' && !verificationToken.value) {
-      error.value = 'Please enter a verification token';
+      error.value = 'Please enter a verification code/token';
       return;
     }
 
@@ -324,7 +357,7 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
           )
           : null}
 
-        {setupData.value && setupData.value.type !== 'passkey'
+        {setupData.value && setupData.value.type === 'totp'
           ? (
             <section class='mb-6'>
               <h3 class='text-lg font-semibold mb-4'>Setup Authenticator App</h3>
@@ -415,6 +448,47 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
                   class='button'
                 >
                   {isLoading.value ? 'Enabling...' : 'Enable Passkey MFA'}
+                </button>
+              </section>
+            </section>
+          )
+          : null}
+
+        {setupData.value && setupData.value.type === 'email'
+          ? (
+            <section class='mb-6'>
+              <h3 class='text-lg font-semibold mb-4'>Setup Email</h3>
+
+              <fieldset class='block mb-6'>
+                <label class='text-slate-300 block pb-1'>
+                  Enter the 6-digit code you received in your email:
+                </label>
+                <input
+                  type='text'
+                  value={verificationToken.value}
+                  onInput={(event) => verificationToken.value = (event.target as HTMLInputElement).value}
+                  placeholder='123456'
+                  class='mt-1 input-field'
+                  maxLength={6}
+                />
+              </fieldset>
+
+              <section class='flex justify-end gap-2 mt-8 mb-4'>
+                <button
+                  type='button'
+                  onClick={cancelSetup}
+                  disabled={isLoading.value}
+                  class='button-secondary'
+                >
+                  Cancel
+                </button>
+                <button
+                  type='button'
+                  onClick={enableMultiFactorAuth}
+                  disabled={isLoading.value || !verificationToken.value}
+                  class='button'
+                >
+                  {isLoading.value ? 'Enabling...' : 'Enable Email MFA'}
                 </button>
               </section>
             </section>

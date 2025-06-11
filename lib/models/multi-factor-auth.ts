@@ -1,7 +1,10 @@
 import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
 
 import { MultiFactorAuthMethod, User } from '/lib/types.ts';
-import { getMultiFactorAuthMethodByIdFromUser } from '/lib/utils/multi-factor-auth.ts';
+import {
+  getEnabledMultiFactorAuthMethodsFromUser,
+  getMultiFactorAuthMethodByIdFromUser,
+} from '/lib/utils/multi-factor-auth.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
   generateKey,
@@ -14,6 +17,7 @@ import {
 import { isRunningLocally } from '/lib/utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 import { UserModel } from './user.ts';
+import { EmailModel } from './multi-factor-auth/email.ts';
 
 const COOKIE_NAME = `${AUTH_COOKIE_NAME}-mfa`;
 const MFA_SESSION_ID = 'mfa';
@@ -69,6 +73,18 @@ export class MultiFactorAuthModel {
         'Content-Type': 'text/html; charset=utf-8',
       },
     });
+
+    try {
+      const enabledMultiFactorAuthMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
+
+      const emailMethod = enabledMultiFactorAuthMethods.find((method) => method.type === 'email');
+
+      if (emailMethod) {
+        await EmailModel.createAndSendCode(emailMethod.id, user);
+      }
+    } catch (error) {
+      console.error(error);
+    }
 
     const responseWithCookie = await this.createSessionCookie(request, user, response);
 

@@ -4,10 +4,7 @@ import { FreshContextState } from '/lib/types.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
 import { generateHash } from '/lib/utils/misc.ts';
 import { UserModel } from '/lib/models/user.ts';
-import {
-  getMultiFactorAuthMethodByIdFromUser,
-  getMultiFactorAuthMethodsFromUser,
-} from '/lib/utils/multi-factor-auth.ts';
+import { getMultiFactorAuthMethodByIdFromUser } from '/lib/utils/multi-factor-auth.ts';
 import { AppConfig } from '/lib/config.ts';
 import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
 
@@ -85,7 +82,6 @@ export const handler: Handlers<unknown, FreshContextState> = {
       return new Response(JSON.stringify(responseBody), { status: 400 });
     }
 
-    const methods = getMultiFactorAuthMethodsFromUser(user);
     const method = getMultiFactorAuthMethodByIdFromUser(user, methodId);
 
     if (!method) {

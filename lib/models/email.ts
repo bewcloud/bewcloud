@@ -1,4 +1,3 @@
-// deno-fmt-ignore-file
 import nodemailer from 'nodemailer';
 import 'std/dotenv/load.ts';
 
@@ -25,7 +24,7 @@ export class EmailModel {
         pass: SMTP_PASSWORD,
       },
     };
-    
+
     const transporter = nodemailer.createTransport(transporterConfig);
 
     const mailOptions = {
@@ -45,28 +44,9 @@ export class EmailModel {
     }
   }
 
-  static async sendVerificationEmail(
-    email: string,
-    verificationCode: string,
-  ) {
-    const emailTitle = 'Verify your email in bewCloud';
-
-    const textBody = `
-${emailTitle}
-------------------------
-
-You or someone who knows your email is trying to verify it in bewCloud.
-
-Here's the verification code:
-
-**${verificationCode}**
-===============================
-
-This code will expire in 30 minutes.
-    `;
-
-    /** Based off of https://github.com/ActiveCampaign/postmark-templates/tree/main/templates-inlined/basic/password-reset */
-    const htmlBody = `
+  /** Based off of https://github.com/ActiveCampaign/postmark-templates/tree/main/templates-inlined/basic/password-reset */
+  private static getHtmlBody(title: string, htmlBody: string) {
+    return `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -75,7 +55,7 @@ This code will expire in 30 minutes.
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="color-scheme" content="light dark" />
     <meta name="supported-color-schemes" content="light dark" />
-    <title>${escapeHtml(emailTitle)}</title>
+    <title>${escapeHtml(title)}</title>
     <style type="text/css" rel="stylesheet" media="all">
     /* Base ------------------------------ */
     
@@ -506,7 +486,7 @@ This code will expire in 30 minutes.
   <![endif]-->
   </head>
   <body>
-    <span class="preheader">Use this link to reset your password. The link is only valid for 24 hours.</span>
+    <span class="preheader">${escapeHtml(title)}</span>
     <table class="email-wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
       <tr>
         <td align="center">
@@ -524,23 +504,7 @@ This code will expire in 30 minutes.
                   <tr>
                     <td class="content-cell">
                       <div class="f-fallback">
-                        <h1>${escapeHtml(emailTitle)}</h1>
-                        <p>You or someone who knows your email is trying to verify it in bewCloud.</p>
-                        <p>Here's the verification code:</p>
-                        <table class="body-action" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
-                          <tr>
-                            <td align="center">
-                              <table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation">
-                                <tr>
-                                  <td align="center">
-                                    <span class="f-fallback button button--green">${escapeHtml(verificationCode)}</span>
-                                  </td>
-                                </tr>
-                              </table>
-                            </td>
-                          </tr>
-                        </table>
-                        <p>This code will expire in 30 minutes.</p>
+                        ${htmlBody}
                       </div>
                     </td>
                   </tr>
@@ -554,7 +518,97 @@ This code will expire in 30 minutes.
   </body>
 </html>
     `;
-  
+  }
+
+  static async sendVerificationEmail(
+    email: string,
+    verificationCode: string,
+  ) {
+    const emailTitle = 'Verify your email in bewCloud';
+
+    const textBody = `
+${emailTitle}
+------------------------
+
+You or someone who knows your email is trying to verify it in bewCloud.
+
+Here's the verification code:
+
+**${verificationCode}**
+===============================
+
+This code will expire in 30 minutes.
+    `;
+
+    const htmlBody = this.getHtmlBody(
+      emailTitle,
+      `
+      <h1>${escapeHtml(emailTitle)}</h1>
+      <p>You or someone who knows your email is trying to verify it in bewCloud.</p>
+      <p>Here's the verification code:</p>
+      <table class="body-action" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td align="center">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation">
+              <tr>
+                <td align="center">
+                  <span class="f-fallback button button--green">${escapeHtml(verificationCode)}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p>This code will expire in 30 minutes.</p>
+    `,
+    );
+
+    await this.send(email, emailTitle, htmlBody, textBody);
+  }
+
+  static async sendLoginVerificationEmail(
+    email: string,
+    verificationCode: string,
+  ) {
+    const emailTitle = 'Verify your login in bewCloud';
+
+    const textBody = `
+${emailTitle}
+------------------------
+
+You or someone who knows your email and password is trying to login to bewCloud.
+
+Here's the verification code:
+
+**${verificationCode}**
+===============================
+
+This code will expire in 30 minutes.
+    `;
+
+    const htmlBody = this.getHtmlBody(
+      emailTitle,
+      `
+      <h1>${escapeHtml(emailTitle)}</h1>
+      <p>You or someone who knows your email and password is trying to login to bewCloud.</p>
+      <p>Here's the verification code:</p>
+      <table class="body-action" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td align="center">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation">
+              <tr>
+                <td align="center">
+                  <span class="f-fallback button button--green">${escapeHtml(verificationCode)}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p>This code will expire in 30 minutes.</p>
+    `,
+    );
+
     await this.send(email, emailTitle, htmlBody, textBody);
   }
 }

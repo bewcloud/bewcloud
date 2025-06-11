@@ -3,6 +3,7 @@ import { Handlers } from 'fresh/server.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
 import { TOTPModel } from '/lib/models/multi-factor-auth/totp.ts';
+import { EmailModel } from '/lib/models/multi-factor-auth/email.ts';
 import { getMultiFactorAuthMethodByIdFromUser } from '/lib/utils/multi-factor-auth.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -114,6 +115,25 @@ export const handler: Handlers<unknown, FreshContextState> = {
         };
 
         return new Response(JSON.stringify(responseBody), { status: 400 });
+      }
+    } else if (method.type === 'email') {
+      try {
+        const isValid = await EmailModel.verifyCode(method.id, code, user);
+        if (!isValid) {
+          const responseBody: ResponseBody = {
+            success: false,
+            error: 'Invalid verification code',
+          };
+
+          return new Response(JSON.stringify(responseBody), { status: 400 });
+        }
+      } catch {
+        const responseBody: ResponseBody = {
+          success: false,
+          error: 'Failed to verify email verification code',
+        };
+
+        return new Response(JSON.stringify(responseBody), { status: 500 });
       }
     }
 

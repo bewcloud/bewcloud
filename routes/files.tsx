@@ -10,6 +10,7 @@ interface Data {
   userFiles: DirectoryFile[];
   currentPath: string;
   baseUrl: string;
+  isFileSharingAllowed: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -38,7 +39,15 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const userFiles = await FileModel.list(context.state.user.id, currentPath);
 
-    return await context.render({ userDirectories, userFiles, currentPath, baseUrl });
+    const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
+
+    return await context.render({
+      userDirectories,
+      userFiles,
+      currentPath,
+      baseUrl,
+      isFileSharingAllowed: isPublicFileSharingAllowed,
+    });
   },
 };
 
@@ -50,6 +59,7 @@ export default function FilesPage({ data }: PageProps<Data, FreshContextState>) 
         initialFiles={data.userFiles}
         initialPath={data.currentPath}
         baseUrl={data.baseUrl}
+        isFileSharingAllowed={data.isFileSharingAllowed}
       />
     </main>
   );

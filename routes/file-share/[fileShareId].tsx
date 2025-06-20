@@ -125,6 +125,7 @@ export default function FilesPage({ data }: PageProps<Data, FreshContextState>) 
         initialFiles={data.shareFiles}
         initialPath={data.currentPath}
         baseUrl={data.baseUrl}
+        isFileSharingAllowed
         fileShareId={data.fileShareId}
       />
     </main>

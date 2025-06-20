@@ -47,11 +47,12 @@ interface MainFilesProps {
   initialFiles: DirectoryFile[];
   initialPath: string;
   baseUrl: string;
+  isFileSharingAllowed: boolean;
   fileShareId?: string;
 }
 
 export default function MainFiles(
-  { initialDirectories, initialFiles, initialPath, baseUrl, fileShareId }: MainFilesProps,
+  { initialDirectories, initialFiles, initialPath, baseUrl, isFileSharingAllowed, fileShareId }: MainFilesProps,
 ) {
   const isAdding = useSignal<boolean>(false);
   const isUploading = useSignal<boolean>(false);
@@ -774,8 +775,8 @@ export default function MainFiles(
           onClickOpenMoveFile={onClickOpenMoveFile}
           onClickDeleteDirectory={onClickDeleteDirectory}
           onClickDeleteFile={onClickDeleteFile}
-          onClickCreateShare={onClickCreateShare}
-          onClickOpenManageShare={onClickOpenManageShare}
+          onClickCreateShare={isFileSharingAllowed ? onClickCreateShare : undefined}
+          onClickOpenManageShare={isFileSharingAllowed ? onClickOpenManageShare : undefined}
           fileShareId={fileShareId}
         />
 
@@ -860,7 +861,7 @@ export default function MainFiles(
         )
         : null}
 
-      {!fileShareId
+      {!fileShareId && isFileSharingAllowed
         ? (
           <CreateShareModal
             isOpen={createShareModal.value?.isOpen || false}
@@ -872,7 +873,7 @@ export default function MainFiles(
         )
         : null}
 
-      {!fileShareId
+      {!fileShareId && isFileSharingAllowed
         ? (
           <ManageShareModal
             baseUrl={baseUrl}

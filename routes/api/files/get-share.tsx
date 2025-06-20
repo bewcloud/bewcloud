@@ -2,6 +2,7 @@ import { Handlers } from 'fresh/server.ts';
 
 import { FileShare, FreshContextState } from '/lib/types.ts';
 import { FileShareModel } from '/lib/models/files.ts';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {}
 
@@ -18,6 +19,12 @@ export const handler: Handlers<Data, FreshContextState> = {
   async POST(request, context) {
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
+    }
+
+    const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
+
+    if (!isPublicFileSharingAllowed) {
+      return new Response('Forbidden', { status: 403 });
     }
 
     const requestBody = await request.clone().json() as RequestBody;

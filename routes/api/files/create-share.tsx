@@ -4,6 +4,7 @@ import { Directory, DirectoryFile, FileShare, FreshContextState } from '/lib/typ
 import { DirectoryModel, FileModel, FileShareModel, getPathInfo } from '/lib/models/files.ts';
 import { generateHash } from '/lib/utils/misc.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {}
 
@@ -24,6 +25,12 @@ export const handler: Handlers<Data, FreshContextState> = {
   async POST(request, context) {
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
+    }
+
+    const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
+
+    if (!isPublicFileSharingAllowed) {
+      return new Response('Forbidden', { status: 403 });
     }
 
     const requestBody = await request.clone().json() as RequestBody;

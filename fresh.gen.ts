@@ -25,15 +25,19 @@ import * as $api_expenses_import_expenses from './routes/api/expenses/import-exp
 import * as $api_expenses_update_budget from './routes/api/expenses/update-budget.tsx';
 import * as $api_expenses_update_expense from './routes/api/expenses/update-expense.tsx';
 import * as $api_files_create_directory from './routes/api/files/create-directory.tsx';
+import * as $api_files_create_share from './routes/api/files/create-share.tsx';
 import * as $api_files_delete_directory from './routes/api/files/delete-directory.tsx';
+import * as $api_files_delete_share from './routes/api/files/delete-share.tsx';
 import * as $api_files_delete from './routes/api/files/delete.tsx';
 import * as $api_files_get_directories from './routes/api/files/get-directories.tsx';
+import * as $api_files_get_share from './routes/api/files/get-share.tsx';
 import * as $api_files_get from './routes/api/files/get.tsx';
 import * as $api_files_move_directory from './routes/api/files/move-directory.tsx';
 import * as $api_files_move from './routes/api/files/move.tsx';
 import * as $api_files_rename_directory from './routes/api/files/rename-directory.tsx';
 import * as $api_files_rename from './routes/api/files/rename.tsx';
 import * as $api_files_search from './routes/api/files/search.tsx';
+import * as $api_files_update_share from './routes/api/files/update-share.tsx';
 import * as $api_files_upload from './routes/api/files/upload.tsx';
 import * as $api_news_add_feed from './routes/api/news/add-feed.tsx';
 import * as $api_news_delete_feed from './routes/api/news/delete-feed.tsx';
@@ -44,6 +48,9 @@ import * as $api_notes_save from './routes/api/notes/save.tsx';
 import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav from './routes/dav.tsx';
 import * as $expenses from './routes/expenses.tsx';
+import * as $file_share_fileShareId_ from './routes/file-share/[fileShareId].tsx';
+import * as $file_share_fileShareId_open_fileName_ from './routes/file-share/[fileShareId]/open/[fileName].tsx';
+import * as $file_share_fileShareId_verify from './routes/file-share/[fileShareId]/verify.tsx';
 import * as $files from './routes/files.tsx';
 import * as $files_open_fileName_ from './routes/files/open/[fileName].tsx';
 import * as $index from './routes/index.tsx';
@@ -98,15 +105,19 @@ const manifest = {
     './routes/api/expenses/update-budget.tsx': $api_expenses_update_budget,
     './routes/api/expenses/update-expense.tsx': $api_expenses_update_expense,
     './routes/api/files/create-directory.tsx': $api_files_create_directory,
+    './routes/api/files/create-share.tsx': $api_files_create_share,
     './routes/api/files/delete-directory.tsx': $api_files_delete_directory,
+    './routes/api/files/delete-share.tsx': $api_files_delete_share,
     './routes/api/files/delete.tsx': $api_files_delete,
     './routes/api/files/get-directories.tsx': $api_files_get_directories,
+    './routes/api/files/get-share.tsx': $api_files_get_share,
     './routes/api/files/get.tsx': $api_files_get,
     './routes/api/files/move-directory.tsx': $api_files_move_directory,
     './routes/api/files/move.tsx': $api_files_move,
     './routes/api/files/rename-directory.tsx': $api_files_rename_directory,
     './routes/api/files/rename.tsx': $api_files_rename,
     './routes/api/files/search.tsx': $api_files_search,
+    './routes/api/files/update-share.tsx': $api_files_update_share,
     './routes/api/files/upload.tsx': $api_files_upload,
     './routes/api/news/add-feed.tsx': $api_news_add_feed,
     './routes/api/news/delete-feed.tsx': $api_news_delete_feed,
@@ -117,6 +128,9 @@ const manifest = {
     './routes/dashboard.tsx': $dashboard,
     './routes/dav.tsx': $dav,
     './routes/expenses.tsx': $expenses,
+    './routes/file-share/[fileShareId].tsx': $file_share_fileShareId_,
+    './routes/file-share/[fileShareId]/open/[fileName].tsx': $file_share_fileShareId_open_fileName_,
+    './routes/file-share/[fileShareId]/verify.tsx': $file_share_fileShareId_verify,
     './routes/files.tsx': $files,
     './routes/files/open/[fileName].tsx': $files_open_fileName_,
     './routes/index.tsx': $index,

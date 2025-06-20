@@ -93,6 +93,7 @@ export interface Directory {
   directory_name: string;
   has_write_access: boolean;
   size_in_bytes: number;
+  file_share_id: string | null;
   updated_at: Date;
   created_at: Date;
 }
@@ -103,6 +104,7 @@ export interface DirectoryFile {
   file_name: string;
   has_write_access: boolean;
   size_in_bytes: number;
+  file_share_id: string | null;
   updated_at: Date;
   created_at: Date;
 }
@@ -175,6 +177,8 @@ export interface Config {
   files: {
     /** The root-relative root path for files, i.e. "data-files" */
     rootPath: string;
+    /** If true, public file sharing will be allowed (still requires a user to enable sharing for a given file or directory) */
+    allowPublicSharing: boolean;
   };
   core: {
     /** dashboard and files cannot be disabled */
@@ -220,4 +224,14 @@ export interface MultiFactorAuthMethod {
       transports?: AuthenticatorTransport[];
     };
   };
+}
+
+export interface FileShare {
+  id: string;
+  user_id: string;
+  file_path: string;
+  extra: {
+    hashed_password?: string;
+  };
+  created_at: Date;
 }

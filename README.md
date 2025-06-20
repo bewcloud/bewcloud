@@ -14,12 +14,19 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/bewcloud/bewcloud)
 
+[![Buy managed cloud (1 year)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20year)-51a4fb?style=for-the-badge)](https://buy.stripe.com/eVa01HgQk0Ap0eseVz)
+
+[![Buy managed cloud (1 month)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20month)-51a4fb?style=for-the-badge)](https://buy.stripe.com/fZu8wOb5RfIydj56FA1gs0J)
+
 Or on your own machine:
 
 Download/copy [`docker-compose.yml`](/docker-compose.yml), [`.env.sample`](/.env.sample) as `.env`, and [`bewcloud.config.sample.ts`](/bewcloud.config.sample.ts) as `bewcloud.config.ts`.
 
+> [!NOTE]
+> `1993:1993` below comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
+
 ```sh
-$ mkdir data-files #  local directory for storing user-uploaded files
+$ mkdir data-files # local directory for storing user-uploaded files
 $ sudo chown -R 1993:1993 data-files # solves permission-related issues in the container with uploading files
 $ docker compose up -d # makes the app available at http://localhost:8000
 $ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any data updates)
@@ -29,9 +36,6 @@ Alternatively, check the [Development section below](#development).
 
 > [!IMPORTANT]
 > Even with signups disabled (`config.auth.allowSignups=false`), the first signup will work and become an admin.
-
-> [!NOTE]
-> `1993:1993` above comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
 
 ## Sponsors
 
@@ -91,9 +95,9 @@ Just push to the `main` branch.
 
 My focus was to get me to replace Nextcloud for me and my family ASAP, and it turns out it's not easy to do it all in a single, installable _thing_, so I focused on the Files UI, sync, and sharing, since [Radicale](https://radicale.org/v3.html) solved my other issues better than my own solution (and it's already _very_ efficient).
 
-## How does file sharing work?
+## How does private file sharing work?
 
-[Check this PR for advanced sharing with internal and external users, with read and write access that was being done and almost working](https://github.com/bewcloud/bewcloud/pull/4). I ditched all that complexity for simply using [symlinks](https://en.wikipedia.org/wiki/Symbolic_link), as it served my use case (I have multiple data backups and trust the people I provide accounts to, with the symlinks).
+Public file sharing is now possible since [v2.2.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.2.0). [Check this PR for advanced sharing with internal and external users, with read and write access that was being done and almost working](https://github.com/bewcloud/bewcloud/pull/4). I ditched all that complexity for simply using [symlinks](https://en.wikipedia.org/wiki/Symbolic_link) for internal sharing, as it served my use case (I have multiple data backups and trust the people I provide accounts to, with the symlinks).
 
 You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-to-share> /<absolute-path-to-data-files>/<user-id-to-share-with>/` to create a shared directory between two users, and the same directory can have different names, now.
 

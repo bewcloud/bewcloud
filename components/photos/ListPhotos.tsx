@@ -30,7 +30,9 @@ export default function ListPhotos(
               return (
                 <article class='hover:opacity-70'>
                   <a
-                    href={`/files/open/${file.file_name}?path=${file.parent_path}`}
+                    href={`/files/open/${encodeURIComponent(file.file_name)}?path=${
+                      encodeURIComponent(file.parent_path)
+                    }`}
                     class='flex items-center'
                     target='_blank'
                     rel='noopener noreferrer'
@@ -39,7 +41,9 @@ export default function ListPhotos(
                       ? (
                         <video class='h-auto max-w-full rounded-md' title={file.file_name}>
                           <source
-                            src={`/files/open/${file.file_name}?path=${file.parent_path}`}
+                            src={`/files/open/${encodeURIComponent(file.file_name)}?path=${
+                              encodeURIComponent(file.parent_path)
+                            }`}
                             type={`video/${extensionName}`}
                           />
                         </video>
@@ -48,7 +52,9 @@ export default function ListPhotos(
                     {isImage
                       ? (
                         <img
-                          src={`/photos/thumbnail/${file.file_name}?path=${file.parent_path}`}
+                          src={`/photos/thumbnail/${encodeURIComponent(file.file_name)}?path=${
+                            encodeURIComponent(file.parent_path)
+                          }`}
                           class='h-auto max-w-full rounded-md'
                           alt={file.file_name}
                           title={file.file_name}

@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:v2.1.0
+    image: ghcr.io/bewcloud/bewcloud:v2.2.0
     restart: always
     ports:
       - 127.0.0.1:8000:8000
@@ -10,7 +10,7 @@ services:
         required: true
     volumes:
       - ./data-files:/app/data-files
-      # - ./bewcloud.config.ts:/app/bewcloud.config.ts # uncomment if you need to override the default config
+      - ./bewcloud.config.ts:/app/bewcloud.config.ts
 
   postgresql:
     image: postgres:17

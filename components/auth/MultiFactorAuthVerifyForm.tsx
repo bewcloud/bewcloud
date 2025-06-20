@@ -28,9 +28,9 @@ export default function MultiFactorAuthVerifyForm(
 
       {error
         ? (
-          <section class='bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded relative mb-4'>
-            <strong class='font-bold'>{error.title}:</strong>
-            <span class='block sm:inline'>{error.message}</span>
+          <section class='notification-error'>
+            <h3>{error.title}</h3>
+            <p>{error.message}</p>
           </section>
         )
         : null}

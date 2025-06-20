@@ -1,10 +1,25 @@
 import { join } from 'std/path/join.ts';
 import { resolve } from 'std/path/resolve.ts';
 import { lookup } from 'mrmime';
+import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
 
 import { AppConfig } from '/lib/config.ts';
-import { Directory, DirectoryFile } from '/lib/types.ts';
+import { Directory, DirectoryFile, FileShare } from '/lib/types.ts';
 import { sortDirectoriesByName, sortEntriesByName, sortFilesByName, TRASH_PATH } from '/lib/utils/files.ts';
+import Database, { sql } from '/lib/interfaces/database.ts';
+import {
+  COOKIE_NAME as AUTH_COOKIE_NAME,
+  generateKey,
+  generateToken,
+  JWT_SECRET,
+  resolveCookieDomain,
+  verifyAuthJwt,
+} from '/lib/auth.ts';
+import { isRunningLocally } from '/lib/utils/misc.ts';
+
+const COOKIE_NAME = `${AUTH_COOKIE_NAME}-file-share`;
+
+const db = new Database();
 
 export class DirectoryModel {
   static async list(userId: string, path: string): Promise<Directory[]> {
@@ -18,6 +33,10 @@ export class DirectoryModel {
       entry.isDirectory || entry.isSymlink
     );
 
+    const fileShares = (await AppConfig.isPublicFileSharingAllowed())
+      ? await FileShareModel.getByParentFilePath(userId, path)
+      : [];
+
     for (const entry of directoryEntries) {
       const stat = await Deno.stat(join(rootPath, entry.name));
 
@@ -27,6 +46,7 @@ export class DirectoryModel {
         directory_name: entry.name,
         has_write_access: true,
         size_in_bytes: stat.size,
+        file_share_id: fileShares.find((fileShare) => fileShare.file_path === `${join(path, entry.name)}/`)?.id || null,
         updated_at: stat.mtime || new Date(),
         created_at: stat.birthtime || new Date(),
       };
@@ -110,6 +130,10 @@ export class DirectoryModel {
       const matchingDirectories = output.split('\n').map((directoryPath) => directoryPath.trim()).filter(Boolean);
 
       for (const relativeDirectoryPath of matchingDirectories) {
+        const fileShares = (await AppConfig.isPublicFileSharingAllowed())
+          ? await FileShareModel.getByParentFilePath(userId, relativeDirectoryPath)
+          : [];
+
         const stat = await Deno.stat(join(rootPath, relativeDirectoryPath));
         let parentPath = `/${relativeDirectoryPath.replace('./', '/').split('/').slice(0, -1).join('')}/`;
         const directoryName = relativeDirectoryPath.split('/').pop()!;
@@ -124,6 +148,9 @@ export class DirectoryModel {
           directory_name: directoryName,
           has_write_access: true,
           size_in_bytes: stat.size,
+          file_share_id: fileShares.find((fileShare) =>
+            fileShare.file_path === `${join(relativeDirectoryPath, directoryName)}/`
+          )?.id || null,
           updated_at: stat.mtime || new Date(),
           created_at: stat.birthtime || new Date(),
         };
@@ -150,6 +177,10 @@ export class FileModel {
 
     const fileEntries = (await getPathEntries(userId, path)).filter((entry) => entry.isFile);
 
+    const fileShares = (await AppConfig.isPublicFileSharingAllowed())
+      ? await FileShareModel.getByParentFilePath(userId, path)
+      : [];
+
     for (const entry of fileEntries) {
       const stat = await Deno.stat(join(rootPath, entry.name));
 
@@ -159,6 +190,7 @@ export class FileModel {
         file_name: entry.name,
         has_write_access: true,
         size_in_bytes: stat.size,
+        file_share_id: fileShares.find((fileShare) => fileShare.file_path === join(path, entry.name))?.id || null,
         updated_at: stat.mtime || new Date(),
         created_at: stat.birthtime || new Date(),
       };
@@ -315,6 +347,10 @@ export class FileModel {
       const matchingFiles = output.split('\n').map((filePath) => filePath.trim()).filter(Boolean);
 
       for (const relativeFilePath of matchingFiles) {
+        const fileShares = (await AppConfig.isPublicFileSharingAllowed())
+          ? await FileShareModel.getByParentFilePath(userId, relativeFilePath)
+          : [];
+
         const stat = await Deno.stat(join(rootPath, relativeFilePath));
         let parentPath = `/${relativeFilePath.replace('./', '/').split('/').slice(0, -1).join('')}/`;
         const fileName = relativeFilePath.split('/').pop()!;
@@ -329,6 +365,8 @@ export class FileModel {
           file_name: fileName,
           has_write_access: true,
           size_in_bytes: stat.size,
+          file_share_id: fileShares.find((fileShare) => fileShare.file_path === join(relativeFilePath, fileName))?.id ||
+            null,
           updated_at: stat.mtime || new Date(),
           created_at: stat.birthtime || new Date(),
         };
@@ -384,6 +422,10 @@ export class FileModel {
       const matchingFiles = output.split('\n').map((filePath) => filePath.trim()).filter(Boolean);
 
       for (const relativeFilePath of matchingFiles) {
+        const fileShares = (await AppConfig.isPublicFileSharingAllowed())
+          ? await FileShareModel.getByParentFilePath(userId, relativeFilePath)
+          : [];
+
         const stat = await Deno.stat(join(rootPath, relativeFilePath));
         let parentPath = `/${relativeFilePath.replace('./', '/').split('/').slice(0, -1).join('')}/`;
         const fileName = relativeFilePath.split('/').pop()!;
@@ -398,6 +440,8 @@ export class FileModel {
           file_name: fileName,
           has_write_access: true,
           size_in_bytes: stat.size,
+          file_share_id: fileShares.find((fileShare) => fileShare.file_path === join(relativeFilePath, fileName))?.id ||
+            null,
           updated_at: stat.mtime || new Date(),
           created_at: stat.birthtime || new Date(),
         };
@@ -411,6 +455,133 @@ export class FileModel {
     }
 
     return { success: false, files };
+  }
+}
+
+export interface FileShareJwtData {
+  data: {
+    file_share_id: string;
+    hashed_password: string;
+  };
+}
+
+export class FileShareModel {
+  static async getById(id: string): Promise<FileShare | null> {
+    const fileShare = (await db.query<FileShare>(sql`SELECT * FROM "bewcloud_file_shares" WHERE "id" = $1 LIMIT 1`, [
+      id,
+    ]))[0];
+
+    return fileShare;
+  }
+
+  static async getByParentFilePath(userId: string, parentFilePath: string): Promise<FileShare[]> {
+    const fileShares = await db.query<FileShare>(
+      sql`SELECT * FROM "bewcloud_file_shares" WHERE "user_id" = $1 AND "file_path" LIKE $2`,
+      [userId, `${parentFilePath}%`],
+    );
+
+    return fileShares;
+  }
+
+  static async create(fileShare: Omit<FileShare, 'id' | 'created_at'>): Promise<FileShare> {
+    const newFileShare = (await db.query<FileShare>(
+      sql`INSERT INTO "bewcloud_file_shares" (
+        "user_id",
+        "file_path",
+        "extra"
+      ) VALUES ($1, $2, $3)
+      RETURNING *`,
+      [
+        fileShare.user_id,
+        fileShare.file_path,
+        JSON.stringify(fileShare.extra),
+      ],
+    ))[0];
+
+    return newFileShare;
+  }
+
+  static async update(fileShare: FileShare): Promise<void> {
+    await db.query(
+      sql`UPDATE "bewcloud_file_shares" SET "extra" = $2 WHERE "id" = $1`,
+      [fileShare.id, JSON.stringify(fileShare.extra)],
+    );
+  }
+
+  static async delete(fileShareId: string): Promise<void> {
+    await db.query(
+      sql`DELETE FROM "bewcloud_file_shares" WHERE "id" = $1`,
+      [fileShareId],
+    );
+  }
+
+  static async createSessionCookie(
+    request: Request,
+    response: Response,
+    fileShareId: string,
+    hashedPassword: string,
+  ) {
+    const token = await generateToken<FileShareJwtData['data']>({
+      file_share_id: fileShareId,
+      hashed_password: hashedPassword,
+    });
+
+    const cookie: Cookie = {
+      name: COOKIE_NAME,
+      value: token,
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
+      path: `/file-share/${fileShareId}`,
+      secure: isRunningLocally(request) ? false : true,
+      httpOnly: true,
+      sameSite: 'Lax',
+      domain: await resolveCookieDomain(request),
+    };
+
+    if (await AppConfig.isCookieDomainSecurityDisabled()) {
+      delete cookie.domain;
+    }
+
+    setCookie(response.headers, cookie);
+
+    return response;
+  }
+
+  static async getDataFromRequest(request: Request): Promise<{ fileShareId: string; hashedPassword: string } | null> {
+    const cookies = getCookies(request.headers);
+
+    if (cookies[COOKIE_NAME]) {
+      const result = await this.getDataFromCookie(cookies[COOKIE_NAME]);
+
+      if (result) {
+        return result;
+      }
+    }
+
+    return null;
+  }
+
+  private static async getDataFromCookie(
+    cookieValue: string,
+  ): Promise<{ fileShareId: string; hashedPassword: string } | null> {
+    if (!cookieValue) {
+      return null;
+    }
+
+    const key = await generateKey(JWT_SECRET);
+
+    try {
+      const token = await verifyAuthJwt<FileShareJwtData>(key, cookieValue);
+
+      if (!token.data.file_share_id || !token.data.hashed_password) {
+        throw new Error('Not Found');
+      }
+
+      return { fileShareId: token.data.file_share_id, hashedPassword: token.data.hashed_password };
+    } catch (error) {
+      console.error(error);
+    }
+
+    return null;
   }
 }
 
@@ -429,6 +600,34 @@ export async function ensureUserPathIsValidAndSecurelyAccessible(userId: string,
   const resolvedFullPath = `${resolve(fullPath)}/`;
 
   if (!resolvedFullPath.startsWith(userRootPath)) {
+    throw new Error('Invalid file path');
+  }
+}
+
+/**
+ * Ensures the file share path is valid and securely accessible (meaning it's not trying to access files outside of the file share's root directory).
+ * Does not check if the path exists.
+ *
+ * @param userId - The user ID
+ * @param fileSharePath - The file share path
+ * @param path - The relative path (user-provided) to check
+ */
+export async function ensureFileSharePathIsValidAndSecurelyAccessible(
+  userId: string,
+  fileSharePath: string,
+  path: string,
+): Promise<void> {
+  await ensureUserPathIsValidAndSecurelyAccessible(userId, fileSharePath);
+
+  const userRootPath = join(await AppConfig.getFilesRootPath(), userId, '/');
+
+  const fileShareRootPath = join(userRootPath, fileSharePath);
+
+  const fullPath = join(fileShareRootPath, path);
+
+  const resolvedFullPath = `${resolve(fullPath)}/`;
+
+  if (!resolvedFullPath.startsWith(fileShareRootPath)) {
     throw new Error('Invalid file path');
   }
 }
@@ -534,5 +733,18 @@ export async function searchFilesAndDirectories(
     success,
     directories,
     files,
+  };
+}
+
+export async function getPathInfo(userId: string, path: string): Promise<{ isDirectory: boolean; isFile: boolean }> {
+  await ensureUserPathIsValidAndSecurelyAccessible(userId, path);
+
+  const rootPath = join(await AppConfig.getFilesRootPath(), userId);
+
+  const stat = await Deno.stat(join(rootPath, path));
+
+  return {
+    isDirectory: stat.isDirectory,
+    isFile: stat.isFile,
   };
 }

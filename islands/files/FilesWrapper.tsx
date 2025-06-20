@@ -6,11 +6,13 @@ interface FilesWrapperProps {
   initialFiles: DirectoryFile[];
   initialPath: string;
   baseUrl: string;
+  isFileSharingAllowed: boolean;
+  fileShareId?: string;
 }
 
 // This wrapper is necessary because islands need to be the first frontend component, but they don't support functions as props, so the more complex logic needs to live in the component itself
 export default function FilesWrapper(
-  { initialDirectories, initialFiles, initialPath, baseUrl }: FilesWrapperProps,
+  { initialDirectories, initialFiles, initialPath, baseUrl, isFileSharingAllowed, fileShareId }: FilesWrapperProps,
 ) {
   return (
     <MainFiles
@@ -18,6 +20,8 @@ export default function FilesWrapper(
       initialFiles={initialFiles}
       initialPath={initialPath}
       baseUrl={baseUrl}
+      isFileSharingAllowed={isFileSharingAllowed}
+      fileShareId={fileShareId}
     />
   );
 }

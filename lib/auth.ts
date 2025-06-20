@@ -30,7 +30,7 @@ export const dataToText = (data: Uint8Array) => new TextDecoder().decode(data);
 export const generateKey = async (key: string): Promise<CryptoKey> =>
   await crypto.subtle.importKey('raw', textToData(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 
-async function signAuthJwt(key: CryptoKey, data: JwtData): Promise<string> {
+async function signAuthJwt<T = JwtData>(key: CryptoKey, data: T): Promise<string> {
   const payload = encodeBase64Url(textToData(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))) + '.' +
     encodeBase64Url(textToData(JSON.stringify(data) || ''));
   const signature = encodeBase64Url(
@@ -39,7 +39,7 @@ async function signAuthJwt(key: CryptoKey, data: JwtData): Promise<string> {
   return `${payload}.${signature}`;
 }
 
-export async function verifyAuthJwt(key: CryptoKey, jwt: string): Promise<JwtData> {
+export async function verifyAuthJwt<T = JwtData>(key: CryptoKey, jwt: string): Promise<T> {
   const jwtParts = jwt.split('.');
   if (jwtParts.length !== 3) {
     throw new Error('Malformed JWT');
@@ -47,7 +47,7 @@ export async function verifyAuthJwt(key: CryptoKey, jwt: string): Promise<JwtDat
 
   const data = textToData(jwtParts[0] + '.' + jwtParts[1]);
   if (await crypto.subtle.verify({ name: 'HMAC' }, key, decodeBase64Url(jwtParts[2]), data) === true) {
-    return JSON.parse(dataToText(decodeBase64Url(jwtParts[1]))) as JwtData;
+    return JSON.parse(dataToText(decodeBase64Url(jwtParts[1]))) as T;
   }
 
   throw new Error('Invalid JWT');
@@ -145,10 +145,10 @@ async function getDataFromCookie(
   return null;
 }
 
-export async function generateToken(tokenData: JwtData['data']): Promise<string> {
+export async function generateToken<T = JwtData>(tokenData: T): Promise<string> {
   const key = await generateKey(JWT_SECRET);
 
-  const token = await signAuthJwt(key, { data: tokenData });
+  const token = await signAuthJwt<{ data: T }>(key, { data: tokenData });
 
   return token;
 }
@@ -228,34 +228,6 @@ export async function createSessionCookie(
     name: COOKIE_NAME,
     value: token,
     expires: newSession.expires_at,
-    path: '/',
-    secure: isRunningLocally(request) ? false : true,
-    httpOnly: true,
-    sameSite: 'Lax',
-    domain: await resolveCookieDomain(request),
-  };
-
-  if (await AppConfig.isCookieDomainSecurityDisabled()) {
-    delete cookie.domain;
-  }
-
-  setCookie(response.headers, cookie);
-
-  return response;
-}
-
-export async function updateSessionCookie(
-  response: Response,
-  request: Request,
-  userSession: UserSession,
-  newSessionData: JwtData['data'],
-) {
-  const token = await generateToken(newSessionData);
-
-  const cookie: Cookie = {
-    name: COOKIE_NAME,
-    value: token,
-    expires: userSession.expires_at,
     path: '/',
     secure: isRunningLocally(request) ? false : true,
     httpOnly: true,

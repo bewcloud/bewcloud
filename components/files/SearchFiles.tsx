@@ -116,7 +116,9 @@ export default function SearchFiles({}: SearchFilesProps) {
                   {matchingDirectories.value.map((directory) => (
                     <li class='mb-1'>
                       <a
-                        href={`/files?path=${directory.parent_path}${directory.directory_name}`}
+                        href={`/files?path=${encodeURIComponent(directory.parent_path)}${
+                          encodeURIComponent(directory.directory_name)
+                        }`}
                         class={`block px-2 py-2 hover:no-underline hover:opacity-60 bg-slate-700 cursor-pointer font-normal`}
                         target='_blank'
                         rel='noopener noreferrer'
@@ -136,7 +138,9 @@ export default function SearchFiles({}: SearchFilesProps) {
                   {matchingFiles.value.map((file) => (
                     <li class='mb-1'>
                       <a
-                        href={`/files/open/${file.file_name}?path=${file.parent_path}`}
+                        href={`/files/open/${encodeURIComponent(file.file_name)}?path=${
+                          encodeURIComponent(file.parent_path)
+                        }`}
                         class={`block px-2 py-2 hover:no-underline hover:opacity-60 bg-slate-700 cursor-pointer font-normal`}
                         target='_blank'
                         rel='noopener noreferrer'

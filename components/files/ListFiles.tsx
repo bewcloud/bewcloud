@@ -1,3 +1,5 @@
+import { join } from 'std/path/join.ts';
+
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { humanFileSize, TRASH_PATH } from '/lib/utils/files.ts';
 
@@ -14,8 +16,11 @@ interface ListFilesProps {
   onClickOpenMoveFile?: (parentPath: string, name: string) => void;
   onClickDeleteDirectory?: (parentPath: string, name: string) => Promise<void>;
   onClickDeleteFile?: (parentPath: string, name: string) => Promise<void>;
+  onClickCreateShare?: (filePath: string) => void;
+  onClickOpenManageShare?: (fileShareId: string) => void;
   isShowingNotes?: boolean;
   isShowingPhotos?: boolean;
+  fileShareId?: string;
 }
 
 export default function ListFiles(
@@ -32,8 +37,11 @@ export default function ListFiles(
     onClickOpenMoveFile,
     onClickDeleteDirectory,
     onClickDeleteFile,
+    onClickCreateShare,
+    onClickOpenManageShare,
     isShowingNotes,
     isShowingPhotos,
+    fileShareId,
   }: ListFilesProps,
 ) {
   const dateFormat = new Intl.DateTimeFormat('en-GB', {
@@ -45,7 +53,7 @@ export default function ListFiles(
     minute: '2-digit',
   });
 
-  let routePath = 'files';
+  let routePath = fileShareId ? `file-share/${fileShareId}` : 'files';
   let itemSingleLabel = 'file';
   let itemPluralLabel = 'files';
 
@@ -81,7 +89,8 @@ export default function ListFiles(
         <thead>
           <tr class='border-b border-slate-600'>
             {(directories.length === 0 && files.length === 0) ||
-                (typeof onClickChooseFile === 'undefined' && typeof onClickChooseDirectory === 'undefined')
+                (typeof onClickChooseFile === 'undefined' && typeof onClickChooseDirectory === 'undefined') ||
+                fileShareId
               ? null
               : (
                 <th scope='col' class='pl-6 pr-2 font-medium text-white w-3'>
@@ -98,7 +107,9 @@ export default function ListFiles(
             {isShowingNotes || isShowingPhotos
               ? null
               : <th scope='col' class='px-6 py-4 font-medium text-white w-32'>Size</th>}
-            {isShowingPhotos ? null : <th scope='col' class='px-6 py-4 font-medium text-white w-20'></th>}
+            {isShowingPhotos || fileShareId
+              ? null
+              : <th scope='col' class='px-6 py-4 font-medium text-white w-24'></th>}
           </tr>
         </thead>
         <tbody class='divide-y divide-slate-600 border-t border-slate-600'>
@@ -107,7 +118,7 @@ export default function ListFiles(
 
             return (
               <tr class='bg-slate-700 hover:bg-slate-600 group'>
-                {typeof onClickChooseDirectory === 'undefined' ? null : (
+                {typeof onClickChooseDirectory === 'undefined' || fileShareId ? null : (
                   <td class='gap-3 pl-6 pr-2 py-4'>
                     {fullPath === TRASH_PATH ? null : (
                       <input
@@ -124,7 +135,7 @@ export default function ListFiles(
                 )}
                 <td class='flex gap-3 px-6 py-4'>
                   <a
-                    href={`/${routePath}?path=${fullPath}`}
+                    href={`/${routePath}?path=${encodeURIComponent(fullPath)}`}
                     class='flex items-center font-normal text-white'
                   >
                     <img
@@ -146,13 +157,13 @@ export default function ListFiles(
                     -
                   </td>
                 )}
-                {isShowingPhotos ? null : (
+                {isShowingPhotos || fileShareId ? null : (
                   <td class='px-6 py-4'>
                     {(fullPath === TRASH_PATH || typeof onClickOpenRenameDirectory === 'undefined' ||
                         typeof onClickOpenMoveDirectory === 'undefined')
                       ? null
                       : (
-                        <section class='flex items-center justify-end w-20'>
+                        <section class='flex items-center justify-end w-24'>
                           <span
                             class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
                             onClick={() => onClickOpenRenameDirectory(directory.parent_path, directory.directory_name)}
@@ -168,7 +179,8 @@ export default function ListFiles(
                           </span>
                           <span
                             class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
-                            onClick={() => onClickOpenMoveDirectory(directory.parent_path, directory.directory_name)}
+                            onClick={() =>
+                              onClickOpenMoveDirectory(directory.parent_path, directory.directory_name)}
                           >
                             <img
                               src='/images/move.svg'
@@ -181,7 +193,7 @@ export default function ListFiles(
                           </span>
                           {typeof onClickDeleteDirectory === 'undefined' ? null : (
                             <span
-                              class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100'
+                              class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
                               onClick={() => onClickDeleteDirectory(directory.parent_path, directory.directory_name)}
                             >
                               <img
@@ -194,6 +206,36 @@ export default function ListFiles(
                               />
                             </span>
                           )}
+                          {typeof onClickCreateShare === 'undefined' || directory.file_share_id ? null : (
+                            <span
+                              class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                              onClick={() => onClickCreateShare(join(directory.parent_path, directory.directory_name))}
+                            >
+                              <img
+                                src='/images/share.svg'
+                                class='white drop-shadow-md'
+                                width={18}
+                                height={18}
+                                alt='Create public share link'
+                                title='Create public share link'
+                              />
+                            </span>
+                          )}
+                          {typeof onClickOpenManageShare === 'undefined' || !directory.file_share_id ? null : (
+                            <span
+                              class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                              onClick={() => onClickOpenManageShare(directory.file_share_id!)}
+                            >
+                              <img
+                                src='/images/share.svg'
+                                class='white drop-shadow-md'
+                                width={18}
+                                height={18}
+                                alt='Manage public share link'
+                                title='Manage public share link'
+                              />
+                            </span>
+                          )}
                         </section>
                       )}
                   </td>
@@ -203,7 +245,7 @@ export default function ListFiles(
           })}
           {files.map((file) => (
             <tr class='bg-slate-700 hover:bg-slate-600 group'>
-              {typeof onClickChooseFile === 'undefined' ? null : (
+              {typeof onClickChooseFile === 'undefined' || fileShareId ? null : (
                 <td class='gap-3 pl-6 pr-2 py-4'>
                   <input
                     class='w-3 h-3 cursor-pointer text-[#51A4FB] bg-slate-100 border-slate-300 rounded dark:bg-slate-700 dark:border-slate-600'
@@ -219,7 +261,9 @@ export default function ListFiles(
               )}
               <td class='flex gap-3 px-6 py-4'>
                 <a
-                  href={`/${routePath}/open/${file.file_name}?path=${file.parent_path}`}
+                  href={`/${routePath}/open/${encodeURIComponent(file.file_name)}?path=${
+                    encodeURIComponent(file.parent_path)
+                  }`}
                   class='flex items-center font-normal text-white'
                   target='_blank'
                   rel='noopener noreferrer'
@@ -243,9 +287,9 @@ export default function ListFiles(
                   {humanFileSize(file.size_in_bytes)}
                 </td>
               )}
-              {isShowingPhotos ? null : (
+              {isShowingPhotos || fileShareId ? null : (
                 <td class='px-6 py-4'>
-                  <section class='flex items-center justify-end w-20'>
+                  <section class='flex items-center justify-end w-24'>
                     {typeof onClickOpenRenameFile === 'undefined' ? null : (
                       <span
                         class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
@@ -278,7 +322,7 @@ export default function ListFiles(
                     )}
                     {typeof onClickDeleteFile === 'undefined' ? null : (
                       <span
-                        class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100'
+                        class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
                         onClick={() => onClickDeleteFile(file.parent_path, file.file_name)}
                       >
                         <img
@@ -288,6 +332,36 @@ export default function ListFiles(
                           height={20}
                           alt={`Delete ${itemSingleLabel}`}
                           title={`Delete ${itemSingleLabel}`}
+                        />
+                      </span>
+                    )}
+                    {typeof onClickCreateShare === 'undefined' || file.file_share_id ? null : (
+                      <span
+                        class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                        onClick={() => onClickCreateShare(join(file.parent_path, file.file_name))}
+                      >
+                        <img
+                          src='/images/share.svg'
+                          class='white drop-shadow-md'
+                          width={18}
+                          height={18}
+                          alt='Create public share link'
+                          title='Create public share link'
+                        />
+                      </span>
+                    )}
+                    {typeof onClickOpenManageShare === 'undefined' || !file.file_share_id ? null : (
+                      <span
+                        class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                        onClick={() => onClickOpenManageShare(file.file_share_id!)}
+                      >
+                        <img
+                          src='/images/share.svg'
+                          class='white drop-shadow-md'
+                          width={18}
+                          height={18}
+                          alt='Manage public share link'
+                          title='Manage public share link'
                         />
                       </span>
                     )}

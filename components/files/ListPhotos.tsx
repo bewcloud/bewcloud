@@ -58,7 +58,7 @@ export default function ListFiles(
               <tr class='bg-slate-700 hover:bg-slate-600 group'>
                 <td class='flex gap-3 px-6 py-4'>
                   <a
-                    href={`/${routePath}?path=${fullPath}`}
+                    href={`/${routePath}?path=${encodeURIComponent(fullPath)}`}
                     class='flex items-center font-normal text-white'
                   >
                     <img
@@ -135,7 +135,9 @@ export default function ListFiles(
             <tr class='bg-slate-700 hover:bg-slate-600 group'>
               <td class='flex gap-3 px-6 py-4'>
                 <a
-                  href={`/${routePath}/open/${file.file_name}?path=${file.parent_path}`}
+                  href={`/${routePath}/open/${encodeURIComponent(file.file_name)}?path=${
+                    encodeURIComponent(file.parent_path)
+                  }`}
                   class='flex items-center font-normal text-white'
                   target='_blank'
                   rel='noopener noreferrer'

@@ -13,6 +13,7 @@ const config: PartialDeep<Config> = {
   },
   // files: {
   //   rootPath: 'data-files',
+  //   allowPublicSharing: false, // If true, public file sharing will be allowed (still requires a user to enable sharing for a given file or directory)
   // },
   // core: {
   //   enabledApps: ['news', 'notes', 'photos', 'expenses'], // dashboard and files cannot be disabled

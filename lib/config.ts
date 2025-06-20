@@ -21,6 +21,7 @@ export class AppConfig {
       },
       files: {
         rootPath: 'data-files',
+        allowPublicSharing: false,
       },
       core: {
         enabledApps: ['news', 'notes', 'photos', 'expenses'],
@@ -154,6 +155,12 @@ export class AppConfig {
     await this.loadConfig();
 
     return this.config.auth.enableSingleSignOn;
+  }
+
+  static async isPublicFileSharingAllowed(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.files.allowPublicSharing;
   }
 
   static async getFilesRootPath(): Promise<string> {

@@ -10,7 +10,14 @@
     "update": "deno run -A -r https://fresh.deno.dev/update .",
     "test": "deno test -A --check"
   },
-  "fmt": { "useTabs": false, "lineWidth": 120, "indentWidth": 2, "singleQuote": true, "proseWrap": "preserve" },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 120,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "proseWrap": "preserve",
+    "exclude": ["README.md"]
+  },
   "lint": {
     "rules": {
       "tags": ["fresh", "recommended"],

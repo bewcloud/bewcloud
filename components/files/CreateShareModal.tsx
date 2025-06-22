@@ -28,12 +28,12 @@ export default function CreateShareModal(
         <h1 class='text-2xl font-semibold my-5'>Create New Public Share Link</h1>
         <section class='py-5 my-2 border-y border-slate-500'>
           <fieldset class='block mb-2'>
-            <label class='text-slate-300 block pb-1' for='password'>Password</label>
+            <label class='text-slate-300 block pb-1' for='create-share-password'>Password</label>
             <input
               class='input-field'
               type='password'
               name='password'
-              id='password'
+              id='create-share-password'
               value={newPassword.value}
               onInput={(event) => {
                 newPassword.value = event.currentTarget.value;

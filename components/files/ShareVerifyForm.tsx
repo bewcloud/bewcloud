@@ -30,12 +30,12 @@ export default function ShareVerifyForm(
         method='POST'
       >
         <fieldset class='block mb-4'>
-          <label class='text-slate-300 block pb-1' for='token'>
+          <label class='text-slate-300 block pb-1' for='verify-password'>
             Password
           </label>
           <input
             type='password'
-            id='password'
+            id='verify-password'
             name='password'
             placeholder='Password'
             class='mt-1 input-field'

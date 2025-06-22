@@ -37,7 +37,16 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     if (
       !requestBody.filePath || !requestBody.pathInView || !requestBody.filePath.trim() ||
-      !requestBody.pathInView.trim() || !requestBody.filePath.startsWith('/') ||
+      !requestBody.pathInView.trim()
+    ) {
+      return new Response('Bad Request', { status: 400 });
+    }
+
+    // Fix Windows clients sending the directory path with backslashes
+    requestBody.filePath = requestBody.filePath.replace(/\\/g, '/');
+
+    if (
+      !requestBody.filePath.startsWith('/') ||
       requestBody.filePath.includes('../') || !requestBody.pathInView.startsWith('/') ||
       requestBody.pathInView.includes('../')
     ) {

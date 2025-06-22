@@ -73,14 +73,14 @@ export default function ManageShareModal(
             <code class='bg-slate-700 my-2 px-2 py-1 rounded-md'>{baseUrl}/file-share/{fileShareId}</code>
           </section>
           <fieldset class='block mb-2'>
-            <label class='text-slate-300 block pb-1' for='password'>
+            <label class='text-slate-300 block pb-1' for='manage-share-password'>
               {fileShare.value?.extra.hashed_password ? 'New Password' : 'Set Password'}
             </label>
             <input
               class='input-field'
               type='password'
-              name='password'
-              id='password'
+              name='manage-share-password'
+              id='manage-share-password'
               value={newPassword.value}
               onInput={(event) => {
                 newPassword.value = event.currentTarget.value;

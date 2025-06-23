@@ -31,6 +31,11 @@ export default function Note({ fileName, currentPath, contents }: NoteProps) {
           method: 'POST',
           body: JSON.stringify(requestBody),
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to save note. ${response.statusText} ${await response.text()}`);
+        }
+
         const result = await response.json() as ResponseBody;
 
         if (!result.success) {

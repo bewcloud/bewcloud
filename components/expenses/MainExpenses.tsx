@@ -165,10 +165,15 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to export expenses. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as ExportResponseBody;
 
       if (!result.success) {
-        throw new Error('Failed to get contact!');
+        throw new Error('Failed to export expenses!');
       }
 
       const exportContents = JSON.stringify(result.jsonContents, null, 2);

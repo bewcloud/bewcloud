@@ -37,6 +37,11 @@ export default function Articles({ initialArticles }: ArticlesProps) {
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to refresh articles. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as RefreshResponseBody;
 
       if (!result.success) {
@@ -87,6 +92,11 @@ export default function Articles({ initialArticles }: ArticlesProps) {
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to mark article as read. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as ReadResponseBody;
 
       if (!result.success) {
@@ -114,6 +124,11 @@ export default function Articles({ initialArticles }: ArticlesProps) {
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to mark all articles as read. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as ReadResponseBody;
 
       if (!result.success) {

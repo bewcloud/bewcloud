@@ -33,10 +33,15 @@ export default function Links({ initialLinks }: LinksProps) {
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save link. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as ResponseBody;
 
       if (!result.success) {
-        throw new Error('Failed to save notes!');
+        throw new Error('Failed to save link!');
       }
     } catch (error) {
       console.error(error);

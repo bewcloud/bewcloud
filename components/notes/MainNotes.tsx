@@ -64,6 +64,11 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
         method: 'POST',
         body: requestBody,
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create note. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as UploadResponseBody;
 
       if (!result.success) {
@@ -114,6 +119,11 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create directory. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as CreateDirectoryResponseBody;
 
       if (!result.success) {
@@ -155,6 +165,11 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
           method: 'POST',
           body: JSON.stringify(requestBody),
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete directory. ${response.statusText} ${await response.text()}`);
+        }
+
         const result = await response.json() as DeleteDirectoryResponseBody;
 
         if (!result.success) {
@@ -187,6 +202,11 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
           method: 'POST',
           body: JSON.stringify(requestBody),
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete note. ${response.statusText} ${await response.text()}`);
+        }
+
         const result = await response.json() as DeleteResponseBody;
 
         if (!result.success) {

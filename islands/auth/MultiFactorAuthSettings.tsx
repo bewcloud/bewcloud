@@ -100,7 +100,7 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
     const beginData = await beginResponse.json() as PasskeySetupBeginResponseBody;
 
     if (!beginData.success) {
-      throw new Error(beginData.error || 'Failed to begin passkey registration');
+      throw new Error(beginData.error || 'Failed to begin passkey registration.');
     }
 
     const registrationResponse = await startRegistration({ optionsJSON: beginData.options! });
@@ -125,7 +125,7 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
     const completeData = await completeResponse.json() as PasskeySetupCompleteResponseBody;
 
     if (!completeData.success) {
-      throw new Error(completeData.error || 'Failed to complete passkey registration');
+      throw new Error(completeData.error || 'Failed to complete passkey registration.');
     }
 
     setupData.value = {
@@ -142,10 +142,16 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
       body: JSON.stringify(requestBody),
     });
 
+    if (!response.ok) {
+      throw new Error(
+        `Failed to setup TOTP multi-factor authentication. ${response.statusText} ${await response.text()}`,
+      );
+    }
+
     const data = await response.json() as TOTPSetupResponseBody;
 
     if (!data.success || !data.data) {
-      throw new Error(data.error || 'Failed to setup TOTP multi-factor authentication');
+      throw new Error(data.error || 'Failed to setup TOTP multi-factor authentication.');
     }
 
     setupData.value = {
@@ -165,10 +171,17 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
       body: JSON.stringify(requestBody),
     });
 
+    if (!response.ok) {
+      throw new Error(
+        `Failed to setup email multi-factor authentication. Please check your SMTP settings are valid and try again. ${response.statusText} ${await response
+          .text()}`,
+      );
+    }
+
     const data = await response.json() as EmailSetupResponseBody;
 
     if (!data.success || !data.data) {
-      throw new Error(data.error || 'Failed to setup email multi-factor authentication');
+      throw new Error(data.error || 'Failed to setup email multi-factor authentication.');
     }
 
     setupData.value = {
@@ -221,13 +234,19 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
         body: JSON.stringify(requestBody),
       });
 
+      if (!response.ok) {
+        throw new Error(
+          `Failed to enable multi-factor authentication method. ${response.statusText} ${await response.text()}`,
+        );
+      }
+
       const data = await response.json() as MultiFactorAuthEnableResponseBody;
 
       if (!data.success) {
-        throw new Error(data.error || 'Failed to enable multi-factor authentication');
+        throw new Error(data.error || 'Failed to enable multi-factor authentication method.');
       }
 
-      success.value = 'Multi-factor authentication has been enabled successfully! Reloading...';
+      success.value = 'Multi-factor authentication method has been enabled successfully! Reloading...';
       setupData.value = null;
       verificationToken.value = '';
 
@@ -262,13 +281,19 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
         body: JSON.stringify(requestBody),
       });
 
+      if (!response.ok) {
+        throw new Error(
+          `Failed to disable multi-factor authentication method. ${response.statusText} ${await response.text()}`,
+        );
+      }
+
       const data = await response.json() as MultiFactorAuthDisableResponseBody;
 
       if (!data.success) {
-        throw new Error(data.error || 'Failed to disable multi-factor authentication');
+        throw new Error(data.error || 'Failed to disable multi-factor authentication method.');
       }
 
-      success.value = 'Multi-factor authentication has been disabled successfully! Reloading...';
+      success.value = 'Multi-factor authentication method has been disabled successfully! Reloading...';
       showDisableForm.value = null;
       disablePassword.value = '';
 

@@ -123,6 +123,11 @@ export default function MainFiles(
             method: 'POST',
             body: requestBody,
           });
+
+          if (!response.ok) {
+            throw new Error(`Failed to upload file. ${response.statusText} ${await response.text()}`);
+          }
+
           const result = await response.json() as UploadResponseBody;
 
           if (!result.success) {
@@ -170,6 +175,11 @@ export default function MainFiles(
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create directory. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as CreateDirectoryResponseBody;
 
       if (!result.success) {
@@ -239,6 +249,11 @@ export default function MainFiles(
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to rename directory. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as RenameDirectoryResponseBody;
 
       if (!result.success) {
@@ -273,6 +288,11 @@ export default function MainFiles(
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to rename file. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as RenameResponseBody;
 
       if (!result.success) {
@@ -327,6 +347,11 @@ export default function MainFiles(
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to move directory. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as MoveDirectoryResponseBody;
 
       if (!result.success) {
@@ -359,6 +384,11 @@ export default function MainFiles(
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to move file. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as MoveResponseBody;
 
       if (!result.success) {
@@ -391,6 +421,11 @@ export default function MainFiles(
           method: 'POST',
           body: JSON.stringify(requestBody),
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete directory. ${response.statusText} ${await response.text()}`);
+        }
+
         const result = await response.json() as DeleteDirectoryResponseBody;
 
         if (!result.success) {
@@ -423,6 +458,11 @@ export default function MainFiles(
           method: 'POST',
           body: JSON.stringify(requestBody),
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete file. ${response.statusText} ${await response.text()}`);
+        }
+
         const result = await response.json() as DeleteResponseBody;
 
         if (!result.success) {
@@ -536,6 +576,11 @@ export default function MainFiles(
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create share. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as CreateShareResponseBody;
 
       if (!result.success) {
@@ -587,6 +632,11 @@ export default function MainFiles(
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update share. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as UpdateShareResponseBody;
 
       if (!result.success) {
@@ -624,6 +674,11 @@ export default function MainFiles(
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete file share. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as DeleteShareResponseBody;
 
       if (!result.success) {

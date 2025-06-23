@@ -58,6 +58,11 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
             method: 'POST',
             body: requestBody,
           });
+
+          if (!response.ok) {
+            throw new Error(`Failed to upload photo. ${response.statusText} ${await response.text()}`);
+          }
+
           const result = await response.json() as UploadResponseBody;
 
           if (!result.success) {
@@ -104,6 +109,11 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create directory. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as CreateDirectoryResponseBody;
 
       if (!result.success) {

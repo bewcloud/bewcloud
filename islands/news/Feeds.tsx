@@ -84,6 +84,11 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to add feed. ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as AddResponseBody;
 
       if (!result.success) {
@@ -116,6 +121,11 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
           method: 'POST',
           body: JSON.stringify(requestBody),
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete feed. ${response.statusText} ${await response.text()}`);
+        }
+
         const result = await response.json() as DeleteResponseBody;
 
         if (!result.success) {
@@ -168,6 +178,11 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
             method: 'POST',
             body: JSON.stringify(requestBody),
           });
+
+          if (!response.ok) {
+            throw new Error(`Failed to import feeds. ${response.statusText} ${await response.text()}`);
+          }
+
           const result = await response.json() as ImportResponseBody;
 
           if (!result.success) {

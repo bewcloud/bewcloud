@@ -6,7 +6,7 @@ const migrationsDirectoryPath = `${Deno.cwd()}/db-migrations`;
 
 const migrationsDirectory = Deno.readDir(migrationsDirectoryPath);
 
-const db = new Database();
+const db = new Database({ throwOnConnectionError: true });
 
 interface Migration {
   id: string;

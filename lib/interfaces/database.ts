@@ -1,4 +1,4 @@
-import { Client } from 'https://deno.land/x/postgres@v0.19.3/mod.ts';
+import { Client } from 'postgres';
 import 'std/dotenv/load.ts';
 
 const POSTGRESQL_HOST = Deno.env.get('POSTGRESQL_HOST') || '';
@@ -21,8 +21,14 @@ const tls = POSTGRESQL_CAFILE
 
 export default class Database {
   protected db?: Client;
+  protected throwOnConnectionError?: boolean;
 
-  constructor(connectNow = false) {
+  constructor(
+    { connectNow = false, throwOnConnectionError = false }: { connectNow?: boolean; throwOnConnectionError?: boolean } =
+      {},
+  ) {
+    this.throwOnConnectionError = throwOnConnectionError;
+
     if (connectNow) {
       this.connectToPostgres();
     }
@@ -63,6 +69,10 @@ export default class Database {
       } else {
         console.log('Failed to connect to Postgres!');
         console.error(error);
+
+        if (this.throwOnConnectionError) {
+          throw error;
+        }
 
         // This allows tests (and the app) to work even if Postgres is not available
         const mockPostgresClient = {

@@ -1,0 +1,91 @@
+name: "bewCloud"
+description: "A simpler alternative to Nextcloud and ownCloud, built with TypeScript and Deno using Fresh."
+version: "2.2.3-5"
+slug: "bewcloud"
+url: "https://github.com/bewcloud/bewcloud"
+init: false
+arch:
+ - aarch64
+ - amd64
+ - armhf
+ - armv7
+ - i386
+startup: services
+ports:
+ 8000/tcp: 8000
+ports_description:
+ 8000/tcp: WebUI
+ingress: true
+ingress_port: 8000
+ingress_stream: true
+panel_icon: mdi:cloud-outline
+hassio_api: true
+hassio_role: default
+map:
+ - media:rw
+ - share:rw
+ - addon_config:rw
+schema:
+ baseUrl: "url?"
+ allowSignups: "bool?"
+ enableEmailVerification: "bool?"
+ enableForeverSignup: "bool?"
+ enableMultiFactor: "bool?"
+ allowedCookieDomains: "str?"
+ skipCookieDomainSecurity: "bool?"
+ enableSingleSignOn: "bool?"
+ singleSignOnUrl: "url?"
+ singleSignOnEmailAttribute: "str?"
+ singleSignOnScopes:
+  - "str?"
+ rootPath: "str?"
+ allowPublicSharing: "bool?"
+ enabledApps: 
+  - "match(^(news|notes|photos|expenses)$)?"
+ title: "str?"
+ description: "str?"
+ helpEmail: "email?"
+ from: "email?"
+ host: "str?"
+ port: "port?"
+ POSTGRESQL_HOST: "str?"
+ POSTGRESQL_USER: "str?"
+ POSTGRESQL_PASSWORD: "password?"
+ POSTGRESQL_DBNAME: "str?"
+ POSTGRESQL_PORT: "int?"
+ POSTGRESQL_CAFILE: "str?"
+ JWT_SECRET: "password?"
+ PASSWORD_SALT: "password?"
+ MFA_KEY: "str?"
+ MFA_SALT: "password?"
+ OIDC_CLIENT_ID: "str?"
+ OIDC_CLIENT_SECRET: "str?"
+ SMTP_USERNAME: "str?"
+ SMTP_PASSWORD: "password?"
+ runMigrateDB: "bool?"
+ runDropCreateDB: "bool?"
+options:
+ baseUrl: "http://homeassistant.local:8000"
+ allowSignups: false
+ enableEmailVerification: false
+ enableForeverSignup: true
+ enableMultiFactor: false
+ singleSignOnEmailAttribute: "email"
+ singleSignOnScopes:
+  - openid
+  - email
+ enabledApps:
+  - news
+  - notes
+  - photos
+  - expenses
+ POSTGRESQL_HOST: "postgresql"
+ POSTGRESQL_USER: "postgres"
+ POSTGRESQL_PASSWORD: "fake"
+ POSTGRESQL_DBNAME: "bewcloud"
+ POSTGRESQL_PORT: 5432
+ JWT_SECRET: "fake"
+ PASSWORD_SALT: "fake"
+ runMigrateDB: true
+ runDropCreateDB: true
+watchdog: "tcp://[HOST]:[PORT:8000]"

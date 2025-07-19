@@ -1,5 +1,6 @@
 import { UserModel } from './models/user.ts';
 import { Config, OptionalApp } from './types.ts';
+import { Client } from 'postgres';
 
 export class AppConfig {
   private static config: Config;
@@ -82,6 +83,145 @@ export class AppConfig {
       return;
     } catch (error) {
       console.error('Error loading config from bewcloud.config.ts. Using default config instead.', error);
+    } finally {
+      try {
+        const configFromJson = (await fetch('http://supervisor/addons/self/options/config', {
+            headers: {
+                Authorization: `Bearer ${Deno.env.get('SUPERVISOR_TOKEN')}`,
+                'Content-Type': 'application/json'
+            }
+        }).then(res => {
+            if (res.ok) {
+                return res.json();
+            } else {
+                throw new Error(`Response status: ${res.status}`);
+            }
+        })).data;
+        this.config = {
+          auth: {
+            baseUrl: configFromJson.baseUrl ?? config.auth.baseUrl,
+            allowSignups: configFromJson.allowSignups ?? config.auth.allowSignups,
+            enableEmailVerification: configFromJson.enableEmailVerification ?? config.auth.enableEmailVerification,
+            enableForeverSignup: configFromJson.enableForeverSignup ?? config.auth.enableForeverSignup,
+            enableMultiFactor: configFromJson.enableMultiFactor ?? config.auth.enableMultiFactor,
+            allowedCookieDomains: configFromJson.allowedCookieDomains ?? config.auth.allowedCookieDomains,
+            skipCookieDomainSecurity: configFromJson.skipCookieDomainSecurity ?? config.auth.skipCookieDomainSecurity,
+            enableSingleSignOn: configFromJson.enableSingleSignOn ?? config.auth.enableSingleSignOn,
+            singleSignOnUrl: configFromJson.singleSignOnUrl ?? config.auth.singleSignOnUrl,
+            singleSignOnEmailAttribute: configFromJson.singleSignOnEmailAttribute ?? config.auth.singleSignOnEmailAttribute,
+            singleSignOnScopes: configFromJson.singleSignOnScopes ?? config.auth.singleSignOnScopes,
+          },
+          files: {
+            rootPath: configFromJson.rootPath ?? config.files.rootPath,
+            allowPublicSharing: configFromJson.rootPath ?? config.files.rootPath,
+          },
+          core: {
+            enabledApps: configFromJson.enabledApps ?? config.core.enabledApps,
+          },
+          visuals: {
+            title: configFromJson.title ?? config.visuals.title,
+            description: configFromJson.description ?? config.visuals.description,
+            helpEmail: configFromJson.helpEmail ?? config.visuals.helpEmail,
+          },
+          email: {
+            from: configFromJson.from ?? config.email.from,
+            host: configFromJson.host ?? config.email.host,
+            port: configFromJson.port ?? config.email.port,
+          },
+        };
+        console.info('\nConfig loaded from config.json', JSON.stringify(this.config, null, 2), '\n');
+
+        const newOptions: Record<string, any> = {};
+        if (configFromJson.runDropCreateDB === true) {
+            let db: Client;
+            const tls = configFromJson.POSTGRESQL_CAFILE
+              ? {
+                enabled: true,
+                enforce: false,
+                caCertificates: [await Deno.readTextFile(configFromJson.POSTGRESQL_CAFILE)],
+              }
+              : {
+                enabled: true,
+                enforce: false,
+              };
+            try {
+              const postgresClient = new Client({
+                user: configFromJson.POSTGRESQL_USER,
+                password: configFromJson.POSTGRESQL_PASSWORD,
+                database: 'postgres',
+                hostname: configFromJson.POSTGRESQL_HOST,
+                port: configFromJson.POSTGRESQL_PORT,
+                tls,
+              });
+        
+              await postgresClient.connect();
+        
+              db = postgresClient;
+            } catch (error) {
+              // Try to connect without TLS, if the connection type is socket
+              if ((error as Error).toString().includes('No TLS options are allowed when host type is set to "socket"')) {
+                const postgresClient = new Client({
+                  user: configFromJson.POSTGRESQL_USER,
+                  password: configFromJson.POSTGRESQL_PASSWORD,
+                  database: 'postgres',
+                  hostname: configFromJson.POSTGRESQL_HOST,
+                  port: configFromJson.POSTGRESQL_PORT,
+                });
+        
+                await postgresClient.connect();
+        
+                db = postgresClient;
+              } else {
+                console.log('Failed to connect to Postgres!');
+                console.error(error);
+        
+                // This allows tests (and the app) to work even if Postgres is not available
+                const mockPostgresClient = {
+                  queryObject: () => {
+                    return {
+                      rows: [],
+                    };
+                  },
+                } as unknown as Client;
+        
+                db = mockPostgresClient;
+              }
+            }
+            await db!.queryArray`DROP DATABASE IF EXISTS "bewcloud"`
+            await db!.queryArray`CREATE DATABASE "bewcloud"`;
+            await db!.end();
+            db = undefined;
+            newOptions.runMigrateDB = false;
+        }
+        if (configFromJson.runMigrateDB === true) {
+            const command = new Deno.Command("make", {
+                args: [
+                    "migrate-db",
+                ],
+            });
+            const { code, stdout, stderr } = await command.output();
+            console.log(new TextDecoder().decode(stdout));
+            console.log(new TextDecoder().decode(stderr));
+            if (code === 0) {
+                newOptions.runMigrateDB = false;
+            }
+        }
+        await fetch('http://supervisor/addons/self/options', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${Deno.env.get('SUPERVISOR_TOKEN')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                options: {
+                    ...configFromJson,
+                    ...newOptions
+                }
+            })
+        });
+      } catch (error) {
+        console.error('Error loading config from config.json. Using default config instead unless bewcloud.config.ts loaded correctly.', error);
+      }
     }
 
     this.config = config;

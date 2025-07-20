@@ -11,6 +11,8 @@ interface Data {
   currentPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
+  isCardDavEnabled: boolean;
+  isCalDavEnabled: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -40,6 +42,11 @@ export const handler: Handlers<Data, FreshContextState> = {
     const userFiles = await FileModel.list(context.state.user.id, currentPath);
 
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
+    const contactsConfig = await AppConfig.getContactsConfig();
+    const calendarConfig = await AppConfig.getCalendarConfig();
+
+    const isCardDavEnabled = contactsConfig.enableCardDavServer;
+    const isCalDavEnabled = calendarConfig.enableCalDavServer;
 
     return await context.render({
       userDirectories,
@@ -47,6 +54,8 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath,
       baseUrl,
       isFileSharingAllowed: isPublicFileSharingAllowed,
+      isCardDavEnabled,
+      isCalDavEnabled,
     });
   },
 };
@@ -60,6 +69,8 @@ export default function FilesPage({ data }: PageProps<Data, FreshContextState>) 
         initialPath={data.currentPath}
         baseUrl={data.baseUrl}
         isFileSharingAllowed={data.isFileSharingAllowed}
+        isCardDavEnabled={data.isCardDavEnabled}
+        isCalDavEnabled={data.isCalDavEnabled}
       />
     </main>
   );

@@ -7,7 +7,10 @@ export const handler = [
   async function handleCors(request: Request, context: FreshContext<FreshContextState>) {
     const path = new URL(request.url).pathname;
 
-    if (request.method == 'OPTIONS' && path !== '/dav' && !path.startsWith('/dav/')) {
+    if (
+      request.method == 'OPTIONS' && path !== '/dav' && !path.startsWith('/dav/') && path !== '/carddav' &&
+      !path.startsWith('/carddav/') && path !== '/caldav' && !path.startsWith('/caldav/')
+    ) {
       const response = new Response(null, {
         status: 204,
       });
@@ -68,13 +71,17 @@ export const handler = [
     const response = await context.next();
 
     console.info(`${new Date().toISOString()} - [${response.status}] ${request.method} ${request.url}`);
-    // NOTE: Uncomment when debugging WebDav stuff
-    // if (request.url.includes('/dav')) {
-    //   console.info(`Request`, request.headers);
-    //   console.info((await request.clone().text()) || '<No Body>');
-    //   console.info(`Response`, response.headers);
-    //   console.info(`Status`, response.status);
-    // }
+    // NOTE: Uncomment when debugging WebDav/CardDav/CalDav stuff
+    if (request.url.includes('/dav') || request.url.includes('/carddav') || request.url.includes('/caldav')) {
+      console.info(`Request`, request.headers);
+      try {
+        console.info((await request.clone().text()) || '<No Body>');
+      } catch (_error) {
+        console.info('<No Body>');
+      }
+      console.info(`Response`, response.headers);
+      console.info(`Status`, response.status);
+    }
 
     return response;
   },

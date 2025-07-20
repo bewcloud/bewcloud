@@ -200,6 +200,18 @@ export interface Config {
     /** The SMTP port to send emails from */
     port: number;
   };
+  contacts: {
+    /** If true, the CardDAV server will be enabled (proxied) */
+    enableCardDavServer: boolean;
+    /** The CardDAV server URL to proxy to */
+    cardDavUrl: string;
+  };
+  calendar: {
+    /** If true, the CalDAV server will be enabled (proxied) */
+    enableCalDavServer: boolean;
+    /** The CalDAV server URL to proxy to */
+    calDavUrl: string;
+  };
 }
 
 export type MultiFactorAuthMethodType = 'totp' | 'passkey' | 'email';

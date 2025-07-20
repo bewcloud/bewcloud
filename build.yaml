@@ -1,9 +1,0 @@
-# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
-build_from:
-  arm64: "denoland/deno:alpine-2.3.6"
-  amd64: "denoland/deno:alpine-2.3.6"
-labels:
-  org.opencontainers.image.title: "bewCloud"
-  org.opencontainers.image.description: "A simpler alternative to Nextcloud and ownCloud, built with TypeScript and Deno using Fresh."
-  org.opencontainers.image.source: "https://github.com/bewcloud/bewcloud"
-  org.opencontainers.image.licenses: "AGPL-3.0"

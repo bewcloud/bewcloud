@@ -72,16 +72,16 @@ export const handler = [
 
     console.info(`${new Date().toISOString()} - [${response.status}] ${request.method} ${request.url}`);
     // NOTE: Uncomment when debugging WebDav/CardDav/CalDav stuff
-    if (request.url.includes('/dav') || request.url.includes('/carddav') || request.url.includes('/caldav')) {
-      console.info(`Request`, request.headers);
-      try {
-        console.info((await request.clone().text()) || '<No Body>');
-      } catch (_error) {
-        console.info('<No Body>');
-      }
-      console.info(`Response`, response.headers);
-      console.info(`Status`, response.status);
-    }
+    // if (request.url.includes('/dav') || request.url.includes('/carddav') || request.url.includes('/caldav')) {
+    //   console.info(`Request`, request.headers);
+    //   try {
+    //     console.info((await request.clone().text()) || '<No Body>');
+    //   } catch (_error) {
+    //     console.info('<No Body>');
+    //   }
+    //   console.info(`Response`, response.headers);
+    //   console.info(`Status`, response.status);
+    // }
 
     return response;
   },

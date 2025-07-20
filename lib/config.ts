@@ -136,6 +136,14 @@ export class AppConfig {
             host: configFromJson.host ?? config.email.host,
             port: configFromJson.port ?? config.email.port,
           },
+          contacts: {
+            enableCardDavServer: configFromJson.enableCardDavServer ?? config.contacts.enableCardDavServer,
+            cardDavUrl: configFromJson.cardDavUrl ?? config.contacts.cardDavUrl,
+          },
+          calendar: {
+            enableCalDavServer: configFromJson.enableCalDavServer ?? config.calendar.enableCalDavServer,
+            calDavUrl: configFromJson.calDavUrl ?? config.calendar.calDavUrl,
+          },
         };
         console.info('\nConfig loaded from config.json', JSON.stringify(this.config, null, 2), '\n');
 

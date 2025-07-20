@@ -1,6 +1,6 @@
 name: "bewCloud"
 description: "A simpler alternative to Nextcloud and ownCloud, built with TypeScript and Deno using Fresh."
-version: "2.2.3-5"
+version: "2.3.0"
 slug: "bewcloud"
 url: "https://github.com/bewcloud/bewcloud"
 init: false

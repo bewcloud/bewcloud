@@ -48,11 +48,22 @@ interface MainFilesProps {
   initialPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
+  isCardDavEnabled?: boolean;
+  isCalDavEnabled?: boolean;
   fileShareId?: string;
 }
 
 export default function MainFiles(
-  { initialDirectories, initialFiles, initialPath, baseUrl, isFileSharingAllowed, fileShareId }: MainFilesProps,
+  {
+    initialDirectories,
+    initialFiles,
+    initialPath,
+    baseUrl,
+    isFileSharingAllowed,
+    isCardDavEnabled,
+    isCalDavEnabled,
+    fileShareId,
+  }: MainFilesProps,
 ) {
   const isAdding = useSignal<boolean>(false);
   const isUploading = useSignal<boolean>(false);
@@ -875,6 +886,24 @@ export default function MainFiles(
           <section class='flex flex-row items-center justify-start my-12'>
             <span class='font-semibold'>WebDav URL:</span>{' '}
             <code class='bg-slate-600 mx-2 px-2 py-1 rounded-md'>{baseUrl}/dav</code>
+          </section>
+        )
+        : null}
+
+      {!fileShareId && isCardDavEnabled
+        ? (
+          <section class='flex flex-row items-center justify-start my-12'>
+            <span class='font-semibold'>CardDav URL:</span>{' '}
+            <code class='bg-slate-600 mx-2 px-2 py-1 rounded-md'>{baseUrl}/carddav</code>
+          </section>
+        )
+        : null}
+
+      {!fileShareId && isCalDavEnabled
+        ? (
+          <section class='flex flex-row items-center justify-start my-12'>
+            <span class='font-semibold'>CalDav URL:</span>{' '}
+            <code class='bg-slate-600 mx-2 px-2 py-1 rounded-md'>{baseUrl}/caldav</code>
           </section>
         )
         : null}

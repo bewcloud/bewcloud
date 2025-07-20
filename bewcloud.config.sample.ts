@@ -28,6 +28,14 @@ const config: PartialDeep<Config> = {
   //   host: 'localhost',
   //   port: 465,
   // },
+  // contacts: {
+  //   enableCardDavServer: true,
+  //   cardDavUrl: 'http://127.0.0.1:5232',
+  // },
+  // calendar: {
+  //   enableCalDavServer: true,
+  //   calDavUrl: 'http://127.0.0.1:5232',
+  // },
 };
 
 export default config;

@@ -1,0 +1,149 @@
+# -*- mode: conf -*-
+# vim:ft=cfg
+
+# Config file for Radicale - A simple calendar server
+
+[server]
+
+# CalDAV server hostnames separated by a comma
+# IPv4 syntax: address:port
+# IPv6 syntax: [address]:port
+hosts = 0.0.0.0:5232
+
+# Max parallel connections
+#max_connections = 8
+
+# Max size of request body (bytes)
+#max_content_length = 100000000
+
+# Socket timeout (seconds)
+#timeout = 30
+
+
+[encoding]
+
+# Encoding for responding requests
+#request = utf-8
+
+# Encoding for storing local collections
+#stock = utf-8
+
+
+[auth]
+
+# Authentication method
+#type = none
+type = http_x_remote_user
+
+# Cache logins for until expiration time
+#cache_logins = false
+
+# Expiration time for caching successful logins in seconds
+#cache_successful_logins_expiry = 15
+
+## Expiration time of caching failed logins in seconds
+#cache_failed_logins_expiry = 90
+
+# IMAP server hostname
+# Syntax: address | address:port | [address]:port | imap.server.tld
+#imap_host = localhost
+
+# Secure the IMAP connection
+# Value: tls | starttls | none
+#imap_security = tls
+
+# OAuth2 token endpoint URL
+#oauth2_token_endpoint = <URL>
+
+
+[rights]
+
+# Rights backend
+# Value: authenticated | owner_only | owner_write | from_file
+#type = owner_only
+
+# File for rights management from_file
+#file = /etc/radicale/rights
+
+# Permit delete of a collection (global)
+#permit_delete_collection = True
+
+# Permit overwrite of a collection (global)
+#permit_overwrite_collection = True
+
+# URL Decode the given username (when URL-encoded by the client - useful for iOS devices when using email address)
+# urldecode_username = False
+
+[storage]
+
+# Storage backend
+# Value: multifilesystem | multifilesystem_nolock
+#type = multifilesystem
+
+# Folder for storing local collections, created if not present
+filesystem_folder = /data/collections
+
+# Delete sync token that are older (seconds)
+#max_sync_token_age = 2592000
+
+# Skip broken item instead of triggering an exception
+#skip_broken_item = True
+
+[web]
+
+# Web interface backend
+# Value: none | internal
+#type = internal
+
+
+[logging]
+
+# Threshold for the logger
+# Value: debug | info | warning | error | critical
+#level = info
+
+# Don't include passwords in logs
+#mask_passwords = True
+
+# Log bad PUT request content
+#bad_put_request_content = False
+
+# Log backtrace on level=debug
+#backtrace_on_debug = False
+
+# Log request header on level=debug
+#request_header_on_debug = False
+
+# Log request content on level=debug
+#request_content_on_debug = False
+
+# Log response content on level=debug
+#response_content_on_debug = False
+
+# Log rights rule which doesn't match on level=debug
+#rights_rule_doesnt_match_on_debug = False
+
+# Log storage cache actions on level=debug
+#storage_cache_actions_on_debug = False
+
+[headers]
+
+# Additional HTTP headers
+#Access-Control-Allow-Origin = *
+
+
+[hook]
+
+# Hook types
+# Value: none | rabbitmq
+#type = none
+#rabbitmq_endpoint =
+#rabbitmq_topic =
+#rabbitmq_queue_type = classic
+
+
+[reporting]
+
+# When returning a free-busy report, limit the number of returned
+# occurences per event to prevent DOS attacks.
+#max_freebusy_occurrence = 10000

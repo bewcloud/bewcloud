@@ -28,7 +28,7 @@ Download/copy [`docker-compose.yml`](/docker-compose.yml), [`.env.sample`](/.env
 > `1993:1993` below comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
 
 ```sh
-$ mkdir data-files # local directory for storing user-uploaded files
+$ mkdir data-files data-radicale # local directories for storing user-uploaded files and radicale data
 $ sudo chown -R 1993:1993 data-files # solves permission-related issues in the container with uploading files
 $ docker compose up -d # makes the app available at http://localhost:8000
 $ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any data updates)
@@ -91,11 +91,14 @@ $ make build # generates all static files for production deploy
 
 Just push to the `main` branch.
 
-## Where's Contacts/Calendar (CardDav/CalDav)?! Wasn't this supposed to be a core Nextcloud replacement?
+## How does Contacts/CardDav and Calendar/CalDav work?
 
-[Check this tag/release for more info and the code where/when that was being done](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav). Contacts/CardDav worked and Calendar/CalDav mostly worked as well at that point.
+CalDav/CardDav is now available since [v2.3.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0), using [Radicale](https://radicale.org/v3.html) via Docker, which is already _very_ efficient (and battle-tested). The clients are not yet implemented. [Check this tag/release for custom-made server and clients where it was all mostly working, except for many edge cases](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav).
 
-My focus was to get me to replace Nextcloud for me and my family ASAP, and it turns out it's not easy to do it all in a single, installable _thing_, so I focused on the Files UI, sync, and sharing, since [Radicale](https://radicale.org/v3.html) solved my other issues better than my own solution (and it's already _very_ efficient).
+In order to share a calendar, you can either have a shared user, or you can symlink the calendar to the user's own calendar (simply `ln -s /<absolute-path-to-data-radicale>/collections/collection-root/<owner-user-id>/<calendar-to-share> /<absolute-path-to-data-radicale>/collections/collection-root/<user-id-to-share-with>/`).
+
+> [!NOTE]
+> If you're running radicale with docker, the symlink needs to point to the container's directory, usually starting with `/data` if you didn't change the `radicale-config/config`, otherwise the container will fail to load the linked directory.
 
 ## How does private file sharing work?
 

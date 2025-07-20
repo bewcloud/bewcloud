@@ -15,3 +15,6 @@ data-files/
 
 # Config
 bewcloud.config.ts
+
+# Radicale files
+data-radicale/

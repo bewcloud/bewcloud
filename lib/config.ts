@@ -37,6 +37,14 @@ export class AppConfig {
         host: 'localhost',
         port: 465,
       },
+      contacts: {
+        enableCardDavServer: true,
+        cardDavUrl: 'http://127.0.0.1:5232',
+      },
+      calendar: {
+        enableCalDavServer: true,
+        calDavUrl: 'http://127.0.0.1:5232',
+      },
     };
   }
 
@@ -315,5 +323,17 @@ export class AppConfig {
     await this.loadConfig();
 
     return this.config.email;
+  }
+
+  static async getContactsConfig(): Promise<Config['contacts']> {
+    await this.loadConfig();
+
+    return this.config.contacts;
+  }
+
+  static async getCalendarConfig(): Promise<Config['calendar']> {
+    await this.loadConfig();
+
+    return this.config.calendar;
   }
 }

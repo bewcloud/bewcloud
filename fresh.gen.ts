@@ -2,6 +2,8 @@
 // This file SHOULD be checked into source version control.
 // This file is automatically updated during development when running `dev.ts`.
 
+import * as $_well_known_caldav from './routes/.well-known/caldav.tsx';
+import * as $_well_known_carddav from './routes/.well-known/carddav.tsx';
 import * as $_404 from './routes/_404.tsx';
 import * as $_app from './routes/_app.tsx';
 import * as $_middleware from './routes/_middleware.tsx';
@@ -45,6 +47,8 @@ import * as $api_news_import_feeds from './routes/api/news/import-feeds.tsx';
 import * as $api_news_mark_read from './routes/api/news/mark-read.tsx';
 import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.tsx';
 import * as $api_notes_save from './routes/api/notes/save.tsx';
+import * as $caldav from './routes/caldav.tsx';
+import * as $carddav from './routes/carddav.tsx';
 import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav from './routes/dav.tsx';
 import * as $expenses from './routes/expenses.tsx';
@@ -82,6 +86,8 @@ import type { Manifest } from '$fresh/server.ts';
 
 const manifest = {
   routes: {
+    './routes/.well-known/caldav.tsx': $_well_known_caldav,
+    './routes/.well-known/carddav.tsx': $_well_known_carddav,
     './routes/_404.tsx': $_404,
     './routes/_app.tsx': $_app,
     './routes/_middleware.tsx': $_middleware,
@@ -125,6 +131,8 @@ const manifest = {
     './routes/api/news/mark-read.tsx': $api_news_mark_read,
     './routes/api/news/refresh-articles.tsx': $api_news_refresh_articles,
     './routes/api/notes/save.tsx': $api_notes_save,
+    './routes/caldav.tsx': $caldav,
+    './routes/carddav.tsx': $carddav,
     './routes/dashboard.tsx': $dashboard,
     './routes/dav.tsx': $dav,
     './routes/expenses.tsx': $expenses,

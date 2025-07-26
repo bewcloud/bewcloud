@@ -10,6 +10,10 @@ const config: PartialDeep<Config> = {
     enableMultiFactor: false, // If true, users can enable multi-factor authentication (TOTP, Passkeys, or Email if the SMTP settings below are set)
     // allowedCookieDomains: ['example.com', 'example.net'], // Can be set to allow more than the baseUrl's domain for session cookies
     // skipCookieDomainSecurity: true, // If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel
+    // enableSingleSignOn: false, // If true, single sign-on will be enabled
+    // singleSignOnUrl: '', // The Discovery URL (AKA Issuer) of the identity/single sign-on provider
+    // singleSignOnEmailAttribute: 'email', // The attribute to prefer as email of the identity/single sign-on provider
+    // singleSignOnScopes: ['openid', 'email'], // The scopes to request from the identity/single sign-on provider
   },
   // files: {
   //   rootPath: 'data-files',

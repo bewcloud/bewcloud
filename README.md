@@ -20,7 +20,7 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 Or on your own machine:
 
-Download/copy [`docker-compose.yml`](/docker-compose.yml), [`.env.sample`](/.env.sample) as `.env`, and [`bewcloud.config.sample.ts`](/bewcloud.config.sample.ts) as `bewcloud.config.ts`.
+Download/copy [`docker-compose.yml`](/docker-compose.yml), [`.env.sample`](/.env.sample) as `.env`, [`bewcloud.config.sample.ts`](/bewcloud.config.sample.ts) as `bewcloud.config.ts`, and [`radicale-config/config`](/radicale-config/config) as `radicale-config/config` (if you're using CalDav/CardDav).
 
 > [!NOTE]
 > `1993:1993` below comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.

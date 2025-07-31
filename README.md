@@ -37,6 +37,148 @@ Alternatively, check the [Development section below](#development).
 > [!IMPORTANT]
 > Even with signups disabled (`config.auth.allowSignups=false`), the first signup will work and become an admin.
 
+## Configuration
+
+bewCloud can be configured using environment variables or a `bewcloud.config.ts` file. Environment variables take precedence over config file settings.
+
+### Required Environment Variables
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `JWT_SECRET` | **(required)** | Secret key for JWT token signing |
+| `PASSWORD_SALT` | **(required)** | Salt for password hashing |
+
+### Database Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `POSTGRESQL_HOST` | `""` | PostgreSQL server hostname |
+| `POSTGRESQL_USER` | `""` | PostgreSQL username |
+| `POSTGRESQL_PASSWORD` | `""` | PostgreSQL password |
+| `POSTGRESQL_DBNAME` | `""` | PostgreSQL database name |
+| `POSTGRESQL_PORT` | `""` | PostgreSQL server port |
+| `POSTGRESQL_CAFILE` | `""` | Path to PostgreSQL CA certificate file (optional) |
+
+### Authentication Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `BEWCLOUD_AUTH_BASE_URL` | `http://localhost:8000` | The base URL of your application |
+| `BEWCLOUD_AUTH_ALLOW_SIGNUPS` | `false` | Allow new user registrations |
+| `BEWCLOUD_AUTH_ENABLE_EMAIL_VERIFICATION` | `false` | Require email verification for signups |
+| `BEWCLOUD_AUTH_ENABLE_FOREVER_SIGNUP` | `true` | Make signups active for 100 years |
+| `BEWCLOUD_AUTH_ENABLE_MULTI_FACTOR` | `false` | Enable multi-factor authentication (TOTP, Passkeys, Email) |
+| `BEWCLOUD_AUTH_ALLOWED_COOKIE_DOMAINS` | `[]` | Comma-separated list of allowed cookie domains |
+| `BEWCLOUD_AUTH_SKIP_COOKIE_DOMAIN_SECURITY` | `false` | Skip strict cookie domain checking (useful for reverse proxies) |
+| `BEWCLOUD_AUTH_ENABLE_SINGLE_SIGN_ON` | `false` | Enable SSO/OIDC authentication |
+| `BEWCLOUD_AUTH_SINGLE_SIGN_ON_URL` | `""` | Discovery URL (Issuer) of your identity provider |
+| `BEWCLOUD_AUTH_SINGLE_SIGN_ON_EMAIL_ATTRIBUTE` | `email` | Email attribute from your identity provider |
+| `BEWCLOUD_AUTH_SINGLE_SIGN_ON_SCOPES` | `openid,email` | Comma-separated list of OAuth scopes |
+| `MFA_KEY` | `""` | Secret key for multi-factor authentication |
+| `MFA_SALT` | `""` | Salt for multi-factor authentication |
+
+### OIDC/SSO Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `OIDC_CLIENT_ID` | `""` | OAuth/OIDC client ID |
+| `OIDC_CLIENT_SECRET` | `""` | OAuth/OIDC client secret |
+
+### Files Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `BEWCLOUD_FILES_ROOT_PATH` | `data-files` | Directory for storing user files |
+| `BEWCLOUD_FILES_ALLOW_PUBLIC_SHARING` | `false` | Allow public file sharing |
+
+### Core Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `BEWCLOUD_CORE_ENABLED_APPS` | `news,notes,photos,expenses` | Comma-separated list of enabled apps |
+
+### Visual Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `BEWCLOUD_VISUALS_TITLE` | `""` | Custom title for your instance |
+| `BEWCLOUD_VISUALS_DESCRIPTION` | `""` | Custom description for your instance |
+| `BEWCLOUD_VISUALS_HELP_EMAIL` | `help@bewcloud.com` | Help/support email address |
+
+### Email Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `BEWCLOUD_EMAIL_FROM` | `help@bewcloud.com` | From address for outgoing emails |
+| `BEWCLOUD_EMAIL_HOST` | `localhost` | SMTP server hostname |
+| `BEWCLOUD_EMAIL_PORT` | `465` | SMTP server port |
+| `SMTP_USERNAME` | `""` | SMTP authentication username |
+| `SMTP_PASSWORD` | `""` | SMTP authentication password |
+
+### Contacts Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `BEWCLOUD_CONTACTS_ENABLE_CARDDAV_SERVER` | `true` | Enable CardDAV server for contacts |
+| `BEWCLOUD_CONTACTS_CARDDAV_URL` | `http://127.0.0.1:5232` | CardDAV server URL |
+
+### Calendar Configuration
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `BEWCLOUD_CALENDAR_ENABLE_CALDAV_SERVER` | `true` | Enable CalDAV server for calendars |
+| `BEWCLOUD_CALENDAR_CALDAV_URL` | `http://127.0.0.1:5232` | CalDAV server URL |
+
+### Configuration Priority
+
+1. Environment variables (highest priority)
+2. `bewcloud.config.ts` file settings
+3. Default values (lowest priority)
+
+### Example Configuration
+
+Create a `.env` file with your desired settings:
+
+```env
+# Required
+JWT_SECRET=your-super-secret-jwt-key-here
+PASSWORD_SALT=your-password-salt-here
+
+# Database
+POSTGRESQL_HOST=localhost
+POSTGRESQL_USER=postgres
+POSTGRESQL_PASSWORD=your-db-password
+POSTGRESQL_DBNAME=bewcloud
+POSTGRESQL_PORT=5432
+
+# Application
+BEWCLOUD_AUTH_BASE_URL=https://cloud.example.com
+BEWCLOUD_AUTH_ALLOW_SIGNUPS=true
+BEWCLOUD_VISUALS_TITLE=My Personal Cloud
+BEWCLOUD_VISUALS_DESCRIPTION=Welcome to my personal cloud storage
+BEWCLOUD_FILES_ALLOW_PUBLIC_SHARING=true
+BEWCLOUD_CORE_ENABLED_APPS=news,notes,photos,expenses
+
+# Email (optional, for notifications and MFA)
+SMTP_USERNAME=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+BEWCLOUD_EMAIL_HOST=smtp.gmail.com
+BEWCLOUD_EMAIL_PORT=465
+BEWCLOUD_EMAIL_FROM=noreply@yourdomain.com
+
+# OIDC/SSO (optional)
+OIDC_CLIENT_ID=your-oidc-client-id
+OIDC_CLIENT_SECRET=your-oidc-client-secret
+BEWCLOUD_AUTH_ENABLE_SINGLE_SIGN_ON=true
+BEWCLOUD_AUTH_SINGLE_SIGN_ON_URL=https://your-identity-provider.com
+
+# Multi-factor Authentication (optional)
+MFA_KEY=your-mfa-secret-key
+MFA_SALT=your-mfa-salt
+```
+
+Or use the `bewcloud.config.ts` file for more complex configurations with TypeScript support.
+
 ## Sponsors
 
 These are the amazing entities or individuals who are sponsoring this project for this current month. If you'd like to show up here, [check the GitHub Sponsors page](https://github.com/sponsors/bewcloud) or [make a donation](https://donate.stripe.com/bIYeWBbw00Ape5iaFi) above $50 ($100 to show up on the website)!

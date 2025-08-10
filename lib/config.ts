@@ -24,7 +24,7 @@ export class AppConfig {
         allowPublicSharing: false,
       },
       core: {
-        enabledApps: ['news', 'notes', 'photos', 'expenses'],
+        enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts'],
       },
       visuals: {
         title: '',
@@ -82,6 +82,14 @@ export class AppConfig {
         email: {
           ...config.email,
           ...configFromFile.email,
+        },
+        contacts: {
+          ...config.contacts,
+          ...configFromFile.contacts,
+        },
+        calendar: {
+          ...config.calendar,
+          ...configFromFile.calendar,
         },
       };
 

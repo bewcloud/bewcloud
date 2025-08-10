@@ -91,7 +91,7 @@ Just push to the `main` branch.
 
 ## How does Contacts/CardDav and Calendar/CalDav work?
 
-CalDav/CardDav is now available since [v2.3.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0), using [Radicale](https://radicale.org/v3.html) via Docker, which is already _very_ efficient (and battle-tested). The clients are not yet implemented. [Check this tag/release for custom-made server and clients where it was all mostly working, except for many edge cases](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav).
+CalDav/CardDav is now available since [v2.3.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0), using [Radicale](https://radicale.org/v3.html) via Docker, which is already _very_ efficient (and battle-tested). The client for CardDav is available since [v2.4.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0) and for CalDav is not yet implemented. [Check this tag/release for custom-made server and clients where it was all mostly working, except for many edge cases](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav).
 
 In order to share a calendar, you can either have a shared user, or you can symlink the calendar to the user's own calendar (simply `ln -s /<absolute-path-to-data-radicale>/collections/collection-root/<owner-user-id>/<calendar-to-share> /<absolute-path-to-data-radicale>/collections/collection-root/<user-id-to-share-with>/`).
 

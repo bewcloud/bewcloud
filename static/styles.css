@@ -83,6 +83,10 @@ img.gray {
   filter: invert(30%) sepia(46%) saturate(356%) hue-rotate(174deg) brightness(90%) contrast(82%);
 }
 
+img.blue {
+  filter: invert(74%) sepia(36%) saturate(7057%) hue-rotate(186deg) brightness(101%) contrast(97%);
+}
+
 details summary::-webkit-details-marker {
   display: none;
 }

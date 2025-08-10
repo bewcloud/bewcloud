@@ -44,13 +44,14 @@
     "chart.js": "https://esm.sh/chart.js@4.4.9/auto",
     "otpauth": "https://esm.sh/otpauth@9.4.0",
     "qrcode": "https://esm.sh/qrcode@1.5.4",
-    "openid-client": "https://esm.sh/openid-client@6.5.0",
-    "@simplewebauthn/server": "jsr:@simplewebauthn/server@13.1.1",
-    "@simplewebauthn/server/helpers": "jsr:@simplewebauthn/server@13.1.1/helpers",
-    "@simplewebauthn/browser": "jsr:@simplewebauthn/browser@13.1.0",
+    "openid-client": "https://esm.sh/openid-client@6.6.3",
+    "@simplewebauthn/server": "jsr:@simplewebauthn/server@13.1.2",
+    "@simplewebauthn/server/helpers": "jsr:@simplewebauthn/server@13.1.2/helpers",
+    "@simplewebauthn/browser": "jsr:@simplewebauthn/browser@13.1.2",
     "tailwindcss": "npm:tailwindcss@3.4.17",
     "tailwindcss/": "npm:/tailwindcss@3.4.17/",
     "tailwindcss/plugin": "npm:/tailwindcss@3.4.17/plugin.js",
-    "nodemailer": "npm:nodemailer@7.0.3"
+    "nodemailer": "npm:nodemailer@7.0.5",
+    "tsdav": "https://raw.githubusercontent.com/sunsama/tsdav/cc1c5a09b64c87bbee7e5f171cfcb6748e99469e/dist/tsdav.js"
   }
 }

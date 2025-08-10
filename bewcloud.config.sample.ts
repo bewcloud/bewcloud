@@ -20,7 +20,7 @@ const config: PartialDeep<Config> = {
   //   allowPublicSharing: false, // If true, public file sharing will be allowed (still requires a user to enable sharing for a given file or directory)
   // },
   // core: {
-  //   enabledApps: ['news', 'notes', 'photos', 'expenses'], // dashboard and files cannot be disabled
+  //   enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts], // dashboard and files cannot be disabled
   // },
   // visuals: {
   //   title: 'My own cloud',

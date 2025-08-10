@@ -56,6 +56,12 @@ export default function Header({ route, user, enabledApps }: Data) {
         label: 'Expenses',
       }
       : null,
+    enabledApps.includes('contacts')
+      ? {
+        url: '/contacts',
+        label: 'Contacts',
+      }
+      : null,
   ];
 
   const menuItems = potentialMenuItems.filter(Boolean) as MenuItem[];
@@ -75,6 +81,10 @@ export default function Header({ route, user, enabledApps }: Data) {
 
     if (route.startsWith('/expenses')) {
       pageLabel = 'Budgets & Expenses';
+    }
+
+    if (route.startsWith('/contacts')) {
+      pageLabel = 'Contacts';
     }
 
     return (

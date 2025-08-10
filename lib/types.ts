@@ -147,7 +147,7 @@ export const currencyMap = new Map<SupportedCurrencySymbol, SupportedCurrency>([
 
 export type PartialDeep<T> = (T extends (infer U)[] ? PartialDeep<U>[] : { [P in keyof T]?: PartialDeep<T[P]> }) | T;
 
-export type OptionalApp = 'news' | 'notes' | 'photos' | 'expenses';
+export type OptionalApp = 'news' | 'notes' | 'photos' | 'expenses' | 'contacts';
 
 export interface Config {
   auth: {

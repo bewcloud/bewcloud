@@ -15,6 +15,13 @@ import * as $api_auth_multi_factor_passkey_setup_begin from './routes/api/auth/m
 import * as $api_auth_multi_factor_passkey_setup_complete from './routes/api/auth/multi-factor/passkey/setup-complete.ts';
 import * as $api_auth_multi_factor_passkey_verify from './routes/api/auth/multi-factor/passkey/verify.ts';
 import * as $api_auth_multi_factor_totp_setup from './routes/api/auth/multi-factor/totp/setup.ts';
+import * as $api_contacts_add_addressbook from './routes/api/contacts/add-addressbook.tsx';
+import * as $api_contacts_add from './routes/api/contacts/add.tsx';
+import * as $api_contacts_delete_addressbook from './routes/api/contacts/delete-addressbook.tsx';
+import * as $api_contacts_delete from './routes/api/contacts/delete.tsx';
+import * as $api_contacts_get_addressbooks from './routes/api/contacts/get-addressbooks.tsx';
+import * as $api_contacts_get from './routes/api/contacts/get.tsx';
+import * as $api_contacts_import from './routes/api/contacts/import.tsx';
 import * as $api_dashboard_save_links from './routes/api/dashboard/save-links.tsx';
 import * as $api_dashboard_save_notes from './routes/api/dashboard/save-notes.tsx';
 import * as $api_expenses_add_budget from './routes/api/expenses/add-budget.tsx';
@@ -49,6 +56,8 @@ import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.
 import * as $api_notes_save from './routes/api/notes/save.tsx';
 import * as $caldav from './routes/caldav.tsx';
 import * as $carddav from './routes/carddav.tsx';
+import * as $contacts from './routes/contacts.tsx';
+import * as $contacts_contactId_ from './routes/contacts/[contactId].tsx';
 import * as $dashboard from './routes/dashboard.tsx';
 import * as $dav from './routes/dav.tsx';
 import * as $expenses from './routes/expenses.tsx';
@@ -73,6 +82,8 @@ import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
 import * as $auth_MultiFactorAuthSettings from './islands/auth/MultiFactorAuthSettings.tsx';
 import * as $auth_PasswordlessPasskeyLogin from './islands/auth/PasswordlessPasskeyLogin.tsx';
+import * as $contacts_Contacts from './islands/contacts/Contacts.tsx';
+import * as $contacts_ViewContact from './islands/contacts/ViewContact.tsx';
 import * as $dashboard_Links from './islands/dashboard/Links.tsx';
 import * as $dashboard_Notes from './islands/dashboard/Notes.tsx';
 import * as $expenses_ExpensesWrapper from './islands/expenses/ExpensesWrapper.tsx';
@@ -99,6 +110,13 @@ const manifest = {
     './routes/api/auth/multi-factor/passkey/setup-complete.ts': $api_auth_multi_factor_passkey_setup_complete,
     './routes/api/auth/multi-factor/passkey/verify.ts': $api_auth_multi_factor_passkey_verify,
     './routes/api/auth/multi-factor/totp/setup.ts': $api_auth_multi_factor_totp_setup,
+    './routes/api/contacts/add-addressbook.tsx': $api_contacts_add_addressbook,
+    './routes/api/contacts/add.tsx': $api_contacts_add,
+    './routes/api/contacts/delete-addressbook.tsx': $api_contacts_delete_addressbook,
+    './routes/api/contacts/delete.tsx': $api_contacts_delete,
+    './routes/api/contacts/get-addressbooks.tsx': $api_contacts_get_addressbooks,
+    './routes/api/contacts/get.tsx': $api_contacts_get,
+    './routes/api/contacts/import.tsx': $api_contacts_import,
     './routes/api/dashboard/save-links.tsx': $api_dashboard_save_links,
     './routes/api/dashboard/save-notes.tsx': $api_dashboard_save_notes,
     './routes/api/expenses/add-budget.tsx': $api_expenses_add_budget,
@@ -133,6 +151,8 @@ const manifest = {
     './routes/api/notes/save.tsx': $api_notes_save,
     './routes/caldav.tsx': $caldav,
     './routes/carddav.tsx': $carddav,
+    './routes/contacts.tsx': $contacts,
+    './routes/contacts/[contactId].tsx': $contacts_contactId_,
     './routes/dashboard.tsx': $dashboard,
     './routes/dav.tsx': $dav,
     './routes/expenses.tsx': $expenses,
@@ -159,6 +179,8 @@ const manifest = {
     './islands/Settings.tsx': $Settings,
     './islands/auth/MultiFactorAuthSettings.tsx': $auth_MultiFactorAuthSettings,
     './islands/auth/PasswordlessPasskeyLogin.tsx': $auth_PasswordlessPasskeyLogin,
+    './islands/contacts/Contacts.tsx': $contacts_Contacts,
+    './islands/contacts/ViewContact.tsx': $contacts_ViewContact,
     './islands/dashboard/Links.tsx': $dashboard_Links,
     './islands/dashboard/Notes.tsx': $dashboard_Notes,
     './islands/expenses/ExpensesWrapper.tsx': $expenses_ExpensesWrapper,

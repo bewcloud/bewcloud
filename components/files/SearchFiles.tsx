@@ -13,13 +13,20 @@ export default function SearchFiles({}: SearchFilesProps) {
   const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
   const closeTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
 
-  const dateFormat = new Intl.DateTimeFormat('en-GB', {
+  const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-  });
+  };
+
+  // Force timeZone to UTC for the server rendering
+  if (typeof window === 'undefined') {
+    dateFormatOptions.timeZone = 'UTC';
+  }
+
+  const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
   function searchFiles(searchTerm: string) {
     if (searchTimeout.value) {

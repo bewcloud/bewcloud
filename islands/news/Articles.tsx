@@ -22,7 +22,14 @@ export default function Articles({ initialArticles }: ArticlesProps) {
   const sessionReadArticleIds = useSignal<Set<string>>(new Set());
   const isFilterDropdownOpen = useSignal<boolean>(false);
 
-  const dateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' });
+  const dateFormatOptions: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
+
+  // Force timeZone to UTC for the server rendering
+  if (typeof window === 'undefined') {
+    dateFormatOptions.timeZone = 'UTC';
+  }
+
+  const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
   async function refreshArticles() {
     if (isRefreshing.value) {

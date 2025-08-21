@@ -57,7 +57,14 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
   const feeds = useSignal<NewsFeed[]>(initialFeeds);
   const isOptionsDropdownOpen = useSignal<boolean>(false);
 
-  const dateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+  const dateFormatOptions: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
+
+  // Force timeZone to UTC for the server rendering
+  if (typeof window === 'undefined') {
+    dateFormatOptions.timeZone = 'UTC';
+  }
+
+  const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
   async function onClickAddFeed() {
     if (isAdding.value) {

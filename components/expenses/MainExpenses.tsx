@@ -63,7 +63,18 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
   const shouldResetBudgetModal = useSignal<boolean>(false);
   const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
 
-  const dateFormat = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long' });
+  const dateFormatOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+  };
+
+  // Force timeZone to UTC for the server rendering
+  if (typeof window === 'undefined') {
+    dateFormatOptions.timeZone = 'UTC';
+  }
+
+  const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
+
   const thisMonth = new Date().toISOString().substring(0, 7);
 
   function onClickImportFile() {

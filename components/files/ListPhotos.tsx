@@ -26,14 +26,21 @@ export default function ListFiles(
     isShowingNotes,
   }: ListFilesProps,
 ) {
-  const dateFormat = new Intl.DateTimeFormat('en-GB', {
+  const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
-  });
+  };
+
+  // Force timeZone to UTC for the server rendering
+  if (typeof window === 'undefined') {
+    dateFormatOptions.timeZone = 'UTC';
+  }
+
+  const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
   const routePath = isShowingNotes ? 'notes' : 'files';
   const itemSingleLabel = isShowingNotes ? 'note' : 'file';

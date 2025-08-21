@@ -13,10 +13,17 @@ export default function ListExpenses(
     onClickEditExpense,
   }: ListExpensesProps,
 ) {
-  const dateFormat = new Intl.DateTimeFormat('en-US', {
+  const dateFormatOptions: Intl.DateTimeFormatOptions = {
     month: 'short',
     day: 'numeric',
-  });
+  };
+
+  // Force timeZone to UTC for the server rendering
+  if (typeof window === 'undefined') {
+    dateFormatOptions.timeZone = 'UTC';
+  }
+
+  const dateFormat = new Intl.DateTimeFormat('en-US', dateFormatOptions);
 
   return (
     <section class='mx-auto max-w-7xl my-8 mt-12'>

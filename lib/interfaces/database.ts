@@ -1,6 +1,49 @@
 import { Client } from 'postgres';
 import 'std/dotenv/load.ts';
 
+/* Load env variables from Home Assistant add-on config */
+try {
+    await fetch('http://supervisor/addons/self/options/config', {
+        headers: {
+            Authorization: `Bearer ${Deno.env.get('SUPERVISOR_TOKEN')}`,
+            'Content-Type': 'application/json'
+        }
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        } else {
+            throw new Error(`Response status: ${res.status}`)
+        }
+    }).then(json => {
+        const data = json.data;
+        const env_vars = [
+            'POSTGRESQL_HOST',
+            'POSTGRESQL_USER',
+            'POSTGRESQL_PASSWORD',
+            'POSTGRESQL_DBNAME',
+            'POSTGRESQL_PORT',
+            'POSTGRESQL_CAFILE',
+            'JWT_SECRET',
+            'PASSWORD_SALT',
+            'MFA_KEY',
+            'MFA_SALT',
+            'OIDC_CLIENT_ID',
+            'OIDC_CLIENT_SECRET',
+            'SMTP_USERNAME',
+            'SMTP_PASSWORD',
+        ];
+        env_vars.forEach (v => {
+          if (data[v] != null) {
+            Deno.env.set(v, data[v]);
+          }
+        });
+        console.info(`Environment variables: ${JSON.stringify(Deno.env.toObject(), null, 2)}`);
+    }).catch(error => console.error(error));
+} catch (error) {
+    // Not running as a Home Assistant add-on
+    console.error(error);
+}
+
 const POSTGRESQL_HOST = Deno.env.get('POSTGRESQL_HOST') || '';
 const POSTGRESQL_USER = Deno.env.get('POSTGRESQL_USER') || '';
 const POSTGRESQL_PASSWORD = Deno.env.get('POSTGRESQL_PASSWORD') || '';

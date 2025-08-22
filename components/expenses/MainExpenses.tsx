@@ -66,12 +66,8 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
   const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'long',
+    timeZone: 'UTC', // Expense dates are stored without timezone info, so we need to force to UTC so it's consistent across db, server, and client
   };
-
-  // Force timeZone to UTC for the server rendering
-  if (typeof window === 'undefined') {
-    dateFormatOptions.timeZone = 'UTC';
-  }
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 

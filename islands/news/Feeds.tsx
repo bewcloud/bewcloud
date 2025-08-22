@@ -59,11 +59,6 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
 
   const dateFormatOptions: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
 
-  // Force timeZone to UTC for the server rendering
-  if (typeof window === 'undefined') {
-    dateFormatOptions.timeZone = 'UTC';
-  }
-
   const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
   async function onClickAddFeed() {

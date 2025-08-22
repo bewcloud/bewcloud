@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:v2.4.1
+    image: ghcr.io/bewcloud/bewcloud:v2.4.2
     restart: always
     ports:
       - 127.0.0.1:8000:8000

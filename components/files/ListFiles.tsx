@@ -53,11 +53,6 @@ export default function ListFiles(
     minute: '2-digit',
   };
 
-  // Force timeZone to UTC for the server rendering
-  if (typeof window === 'undefined') {
-    dateFormatOptions.timeZone = 'UTC';
-  }
-
   const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
   let routePath = fileShareId ? `file-share/${fileShareId}` : 'files';

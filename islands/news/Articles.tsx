@@ -24,11 +24,6 @@ export default function Articles({ initialArticles }: ArticlesProps) {
 
   const dateFormatOptions: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
 
-  // Force timeZone to UTC for the server rendering
-  if (typeof window === 'undefined') {
-    dateFormatOptions.timeZone = 'UTC';
-  }
-
   const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
   async function refreshArticles() {

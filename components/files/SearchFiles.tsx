@@ -21,11 +21,6 @@ export default function SearchFiles({}: SearchFilesProps) {
     minute: '2-digit',
   };
 
-  // Force timeZone to UTC for the server rendering
-  if (typeof window === 'undefined') {
-    dateFormatOptions.timeZone = 'UTC';
-  }
-
   const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
   function searchFiles(searchTerm: string) {

@@ -19,7 +19,7 @@ export default function ListExpenses(
     timeZone: 'UTC', // Expense dates are stored without timezone info, so we need to force to UTC so it's consistent across db, server, and client
   };
 
-  const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
+  const dateFormat = new Intl.DateTimeFormat('en-US', dateFormatOptions);
 
   return (
     <section class='mx-auto max-w-7xl my-8 mt-12'>

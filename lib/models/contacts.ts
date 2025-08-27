@@ -135,7 +135,32 @@ export class ContactModel {
   ): Promise<AddressBook[]> {
     const client = await getClient(userId);
 
-    const davAddressBooks: DAVObject[] = await client.fetchAddressBooks();
+    let davAddressBooks: DAVObject[] = [];
+
+    try {
+      davAddressBooks = await client.fetchAddressBooks();
+    } catch (_error) {
+      // It's possible the user doesn't exist in Radicale yet, so try creating it by doing a simple PROPFIND request for the main addressbook's address (Radicale will automatically create the user)
+      const userUrl = `${contactsConfig.cardDavUrl}/${userId}/`;
+
+      const xmlBody = `<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">
+  <prop>
+    <card:addressbook-home-set/>
+  </prop>
+</propfind>`;
+
+      await fetch(userUrl, {
+        method: 'PROPFIND',
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'X-Remote-User': userId,
+        },
+        body: xmlBody,
+      });
+
+      davAddressBooks = await client.fetchAddressBooks();
+    }
 
     const addressBooks: AddressBook[] = davAddressBooks.map((davAddressBook) => {
       const uid = davAddressBook.url.split('/').filter(Boolean).pop()!;

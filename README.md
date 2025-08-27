@@ -18,21 +18,31 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 [![Buy managed cloud (1 month)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20month)-51a4fb?style=for-the-badge)](https://buy.stripe.com/fZu8wOb5RfIydj56FA1gs0J)
 
-Or on your own machine:
-
-Download/copy [`docker-compose.yml`](/docker-compose.yml), [`.env.sample`](/.env.sample) as `.env`, [`bewcloud.config.sample.ts`](/bewcloud.config.sample.ts) as `bewcloud.config.ts`, and [`radicale-config/config`](/radicale-config/config) as `radicale-config/config` (if you're using CalDav/CardDav).
-
-> [!NOTE]
-> `1993:1993` below comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
+Or on your own machine, start with these commands:
 
 ```sh
 $ mkdir data-files data-radicale # local directories for storing user-uploaded files and radicale data
 $ sudo chown -R 1993:1993 data-files # solves permission-related issues in the container with uploading files
+```
+
+> [!NOTE]
+> `1993:1993` below comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
+
+Now, download/copy the following configuration files (and tweak their contents as necessary, though no changes should yield a working — but very unsafe — setup):
+
+- [`docker-compose.yml`](/docker-compose.yml)
+- [`.env.sample`](/.env.sample) and save it as `.env`
+- [`bewcloud.config.sample.ts`](/bewcloud.config.sample.ts) and save it as `bewcloud.config.ts`
+- [`radicale-config/config`](/radicale-config/config) and save it as `radicale-config/config` (if you're using CalDav/CardDav)
+
+Finally, run these commands:
+
+```sh
 $ docker compose up -d # makes the app available at http://localhost:8000
 $ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any data updates)
 ```
 
-Alternatively, check the [Development section below](#development).
+If you're interested in building/contributing, check the [Development section below](#development).
 
 > [!IMPORTANT]
 > Even with signups disabled (`config.auth.allowSignups=false`), the first signup will work and become an admin.

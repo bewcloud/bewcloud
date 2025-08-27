@@ -33,7 +33,7 @@ Now, download/copy the following configuration files (and tweak their contents a
 - [`docker-compose.yml`](/docker-compose.yml)
 - [`.env.sample`](/.env.sample) and save it as `.env`
 - [`bewcloud.config.sample.ts`](/bewcloud.config.sample.ts) and save it as `bewcloud.config.ts`
-- [`radicale-config/config`](/radicale-config/config) and save it as `radicale-config/config` (if you're using CalDav/CardDav)
+- [`radicale-config/config`](/radicale-config/config) and save it as `radicale-config/config` (if you're using CalDav/CardDav/Contacts)
 
 Finally, run these commands:
 

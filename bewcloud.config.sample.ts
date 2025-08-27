@@ -34,11 +34,11 @@ const config: PartialDeep<Config> = {
   // },
   // contacts: {
   //   enableCardDavServer: true,
-  //   cardDavUrl: 'http://127.0.0.1:5232',
+  //   cardDavUrl: 'http://radicale:5232',
   // },
   // calendar: {
   //   enableCalDavServer: true,
-  //   calDavUrl: 'http://127.0.0.1:5232',
+  //   calDavUrl: 'http://radicale:5232',
   // },
 };
 

@@ -31,14 +31,14 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     const requestBodyText = await request.clone().text();
 
     // Remove the `/caldav/` prefix from the hrefs in the request
-    let parsedRequestBodyText = requestBodyText.replaceAll('<href>/caldav/', `<href>/`).replaceAll(
+    let parsedRequestBodyText: string | undefined = requestBodyText.replaceAll('<href>/caldav/', `<href>/`).replaceAll(
       ':href>/caldav/',
       `:href>/`,
     );
 
     // The spec doesn't allow a body for GET or HEAD requests (and Deno fails if you try)
     if (request.method === 'GET' || request.method === 'HEAD') {
-      parsedRequestBodyText = '';
+      parsedRequestBodyText = undefined;
     }
 
     const response = await fetch(`${calendarConfig.calDavUrl}/${path}`, {

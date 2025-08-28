@@ -10,10 +10,6 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 ## Self-host it!
 
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/bewcloud/bewcloud)
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/bewcloud/bewcloud)
-
 [![Buy managed cloud (1 year)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20year)-51a4fb?style=for-the-badge)](https://buy.stripe.com/eVa01HgQk0Ap0eseVz)
 
 [![Buy managed cloud (1 month)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20month)-51a4fb?style=for-the-badge)](https://buy.stripe.com/fZu8wOb5RfIydj56FA1gs0J)
@@ -21,26 +17,27 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 Or on your own machine, start with these commands:
 
 ```sh
-$ mkdir data-files data-radicale # local directories for storing user-uploaded files and radicale data
-$ sudo chown -R 1993:1993 data-files # solves permission-related issues in the container with uploading files
+mkdir data-files data-radicale radicale-config # local directories for storing user-uploaded files, radicale data, and radicale config (these last two are necessary only if you're using CalDav/CardDav/Contacts)
 ```
-
-> [!NOTE]
-> `1993:1993` below comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
 
 Now, download/copy the following configuration files (and tweak their contents as necessary, though no changes should yield a working — but very unsafe — setup):
 
 - [`docker-compose.yml`](/docker-compose.yml)
 - [`.env.sample`](/.env.sample) and save it as `.env`
 - [`bewcloud.config.sample.ts`](/bewcloud.config.sample.ts) and save it as `bewcloud.config.ts`
-- [`radicale-config/config`](/radicale-config/config) and save it as `radicale-config/config` (if you're using CalDav/CardDav/Contacts)
+- [`radicale-config/config`](/radicale-config/config) and save it as `radicale-config/config` (necessary only if you're using CalDav/CardDav/Contacts)
 
 Finally, run these commands:
 
 ```sh
-$ docker compose up -d # makes the app available at http://localhost:8000
-$ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any data updates)
+docker compose up -d # makes the app available at http://localhost:8000
+docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any data updates)
 ```
+
+> [!NOTE]
+> If you run into permission issues, you can try running `sudo chown -R 1993:1993 data-files` to fix them.
+>
+> `1993:1993` above comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
 
 If you're interested in building/contributing, check the [Development section below](#development).
 
@@ -71,23 +68,23 @@ These are the amazing entities or individuals who are sponsoring this project fo
 ### Commands
 
 ```sh
-$ docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
-$ make migrate-db # runs any missing database migrations
-$ make start # runs the app
-$ make format # formats the code
-$ make test # runs tests
+docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
+make migrate-db # runs any missing database migrations
+make start # runs the app
+make format # formats the code
+make test # runs tests
 ```
 
 ### Other less-used commands
 
 ```sh
-$ make exec-db # runs psql inside the postgres container, useful for running direct development queries like `DROP DATABASE "bewcloud"; CREATE DATABASE "bewcloud";`
-$ make build # generates all static files for production deploy
+make exec-db # runs psql inside the postgres container, useful for running direct development queries like `DROP DATABASE "bewcloud"; CREATE DATABASE "bewcloud";`
+make build # generates all static files for production deploy
 ```
 
 ## Structure
 
-- Routes defined at `routes/`.
+- Routes are defined at `routes/`.
 - Static files are defined at `static/`.
 - Frontend-only components are defined at `components/`.
 - Isomorphic components are defined at `islands/`.
@@ -101,7 +98,7 @@ Just push to the `main` branch.
 
 ## How does Contacts/CardDav and Calendar/CalDav work?
 
-CalDav/CardDav is now available since [v2.3.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0), using [Radicale](https://radicale.org/v3.html) via Docker, which is already _very_ efficient (and battle-tested). The client for CardDav is available since [v2.4.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0) and for CalDav is not yet implemented. [Check this tag/release for custom-made server and clients where it was all mostly working, except for many edge cases](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav).
+CalDav/CardDav is now available since [v2.3.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0), using [Radicale](https://radicale.org/v3.html) via Docker, which is already _very_ efficient (and battle-tested). The "Contacts" client for CardDav is available since [v2.4.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0) and for CalDav is not yet implemented. [Check this tag/release for custom-made server and clients where it was all mostly working, except for many edge cases](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav).
 
 In order to share a calendar, you can either have a shared user, or you can symlink the calendar to the user's own calendar (simply `ln -s /<absolute-path-to-data-radicale>/collections/collection-root/<owner-user-id>/<calendar-to-share> /<absolute-path-to-data-radicale>/collections/collection-root/<user-id-to-share-with>/`).
 

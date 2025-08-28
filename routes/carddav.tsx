@@ -31,10 +31,15 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     const requestBodyText = await request.clone().text();
 
     // Remove the `/carddav/` prefix from the hrefs in the request
-    const parsedRequestBodyText = requestBodyText.replaceAll('<href>/carddav/', `<href>/`).replaceAll(
+    let parsedRequestBodyText = requestBodyText.replaceAll('<href>/carddav/', `<href>/`).replaceAll(
       ':href>/carddav/',
       `:href>/`,
     );
+
+    // The spec doesn't allow a body for GET or HEAD requests (and Deno fails if you try)
+    if (request.method === 'GET' || request.method === 'HEAD') {
+      parsedRequestBodyText = '';
+    }
 
     const response = await fetch(`${contactsConfig.cardDavUrl}/${path}`, {
       headers: {

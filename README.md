@@ -98,7 +98,7 @@ Just push to the `main` branch.
 
 ## How does Contacts/CardDav and Calendar/CalDav work?
 
-CalDav/CardDav is now available since [v2.3.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0), using [Radicale](https://radicale.org/v3.html) via Docker, which is already _very_ efficient (and battle-tested). The "Contacts" client for CardDav is available since [v2.4.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0) and for CalDav is not yet implemented. [Check this tag/release for custom-made server and clients where it was all mostly working, except for many edge cases](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav).
+CalDav/CardDav is now available since [v2.3.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0), using [Radicale](https://radicale.org/v3.html) via Docker, which is already _very_ efficient (and battle-tested). The "Contacts" client for CardDav is available since [v2.4.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0) and the "Calendar" client for CalDav is available since [v2.5.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.5.0). [Check this tag/release for custom-made server code where it was all mostly working, except for many edge cases, if you're interested](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav).
 
 In order to share a calendar, you can either have a shared user, or you can symlink the calendar to the user's own calendar (simply `ln -s /<absolute-path-to-data-radicale>/collections/collection-root/<owner-user-id>/<calendar-to-share> /<absolute-path-to-data-radicale>/collections/collection-root/<user-id-to-share-with>/`).
 
@@ -107,7 +107,7 @@ In order to share a calendar, you can either have a shared user, or you can syml
 
 ## How does private file sharing work?
 
-Public file sharing is now possible since [v2.2.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.2.0). [Check this PR for advanced sharing with internal and external users, with read and write access that was being done and almost working](https://github.com/bewcloud/bewcloud/pull/4). I ditched all that complexity for simply using [symlinks](https://en.wikipedia.org/wiki/Symbolic_link) for internal sharing, as it served my use case (I have multiple data backups and trust the people I provide accounts to, with the symlinks).
+Public file sharing is now possible since [v2.2.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.2.0). [Check this PR for advanced sharing with internal and external users, with read and write access that was being done and almost working, if you're interested](https://github.com/bewcloud/bewcloud/pull/4). I ditched all that complexity for simply using [symlinks](https://en.wikipedia.org/wiki/Symbolic_link) for internal sharing, as it served my use case (I have multiple data backups and trust the people I provide accounts to, with the symlinks).
 
 You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-to-share> /<absolute-path-to-data-files>/<user-id-to-share-with>/` to create a shared directory between two users, and the same directory can have different names, now.
 

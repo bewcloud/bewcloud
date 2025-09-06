@@ -62,6 +62,12 @@ export default function Header({ route, user, enabledApps }: Data) {
         label: 'Contacts',
       }
       : null,
+    enabledApps.includes('calendar')
+      ? {
+        url: '/calendar',
+        label: 'Calendar',
+      }
+      : null,
   ];
 
   const menuItems = potentialMenuItems.filter(Boolean) as MenuItem[];
@@ -85,6 +91,10 @@ export default function Header({ route, user, enabledApps }: Data) {
 
     if (route.startsWith('/contacts')) {
       pageLabel = 'Contacts';
+    }
+
+    if (route.startsWith('/calendar')) {
+      pageLabel = 'Calendar';
     }
 
     return (

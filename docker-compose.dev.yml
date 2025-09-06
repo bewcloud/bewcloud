@@ -20,7 +20,7 @@ services:
   radicale:
     image: tomsquest/docker-radicale:3.5.4.0
     ports:
-      - 127.0.0.1:5232:5232
+      - 5232:5232
     init: true
     read_only: true
     security_opt:

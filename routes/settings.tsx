@@ -8,6 +8,7 @@ import { getFormDataField } from '/lib/form-utils.tsx';
 import { EmailModel } from '/lib/models/email.ts';
 import { AppConfig } from '/lib/config.ts';
 import Settings, { Action, actionWords } from '/islands/Settings.tsx';
+import { getTimeZones } from '/lib/utils/calendar.ts';
 
 interface Data {
   error?: {
@@ -20,8 +21,10 @@ interface Data {
   };
   formData: Record<string, any>;
   currency?: SupportedCurrencySymbol;
+  timezoneId?: string;
   isExpensesAppEnabled: boolean;
   isMultiFactorAuthEnabled: boolean;
+  isCalendarAppEnabled: boolean;
   helpEmail: string;
   user: {
     extra: Pick<User['extra'], 'multi_factor_auth_methods'>;
@@ -37,13 +40,16 @@ export const handler: Handlers<Data, FreshContextState> = {
     const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
+    const isCalendarAppEnabled = await AppConfig.isAppEnabled('calendar');
 
     return await context.render({
       formData: {},
       currency: context.state.user.extra.expenses_currency,
+      timezoneId: context.state.user.extra.timezone?.id || 'UTC',
       isExpensesAppEnabled,
       helpEmail,
       isMultiFactorAuthEnabled,
+      isCalendarAppEnabled,
       user: context.state.user,
     });
   },
@@ -55,6 +61,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const isExpensesAppEnabled = await AppConfig.isAppEnabled('expenses');
     const helpEmail = (await AppConfig.getConfig()).visuals.helpEmail;
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
+    const isCalendarAppEnabled = await AppConfig.isAppEnabled('calendar');
 
     let action: Action = 'change-email';
     let errorTitle = '';
@@ -183,6 +190,24 @@ export const handler: Handlers<Data, FreshContextState> = {
 
         successTitle = 'Currency changed!';
         successMessage = 'Currency changed successfully.';
+      } else if (action === 'change-timezone') {
+        const timezones = getTimeZones();
+        const newTimezoneId = getFormDataField(formData, 'timezone');
+        const matchingTimezone = timezones.find((timezone) => timezone.id === newTimezoneId);
+
+        if (!matchingTimezone) {
+          throw new Error(`Invalid timezone.`);
+        }
+
+        user.extra.timezone = {
+          id: newTimezoneId,
+          utcOffset: matchingTimezone.utcOffset,
+        };
+
+        await UserModel.update(user);
+
+        successTitle = 'Timezone changed!';
+        successMessage = 'Timezone changed successfully.';
       }
 
       const notice = successTitle
@@ -196,9 +221,11 @@ export const handler: Handlers<Data, FreshContextState> = {
         notice,
         formData: convertFormDataToObject(formData),
         currency: user.extra.expenses_currency,
+        timezoneId: user.extra.timezone?.id || 'UTC',
         isExpensesAppEnabled,
         helpEmail,
         isMultiFactorAuthEnabled,
+        isCalendarAppEnabled,
         user: user,
       });
     } catch (error) {
@@ -210,9 +237,11 @@ export const handler: Handlers<Data, FreshContextState> = {
         error: { title: errorTitle, message: errorMessage },
         formData: convertFormDataToObject(formData),
         currency: user.extra.expenses_currency,
+        timezoneId: user.extra.timezone?.id || 'UTC',
         isExpensesAppEnabled,
         helpEmail,
         isMultiFactorAuthEnabled,
+        isCalendarAppEnabled,
         user: user,
       });
     }
@@ -227,8 +256,10 @@ export default function SettingsPage({ data }: PageProps<Data, FreshContextState
         error={data?.error}
         notice={data?.notice}
         currency={data?.currency}
+        timezoneId={data?.timezoneId}
         isExpensesAppEnabled={data?.isExpensesAppEnabled}
         isMultiFactorAuthEnabled={data?.isMultiFactorAuthEnabled}
+        isCalendarAppEnabled={data?.isCalendarAppEnabled}
         helpEmail={data?.helpEmail}
         user={data?.user}
       />

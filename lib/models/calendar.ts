@@ -120,6 +120,7 @@ export class CalendarModel {
   static async create(
     userId: string,
     name: string,
+    color: string,
   ): Promise<void> {
     const calendarId = crypto.randomUUID();
     const calendarUrl = `${calendarConfig.calDavUrl}/${userId}/${calendarId}/`;
@@ -129,7 +130,8 @@ export class CalendarModel {
     await client.makeCalendar({
       url: calendarUrl,
       props: {
-        displayName: name,
+        displayname: name,
+        calendarColor: color,
       },
     });
   }
@@ -163,8 +165,10 @@ export class CalendarModel {
 
   static async delete(
     userId: string,
-    calendarUrl: string,
+    calendarId: string,
   ): Promise<void> {
+    const calendarUrl = `${calendarConfig.calDavUrl}/${userId}/${calendarId}/`;
+
     const client = await getClient(userId);
 
     await client.deleteObject({

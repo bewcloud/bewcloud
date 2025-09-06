@@ -37,6 +37,11 @@ export default function Calendars({ initialCalendars }: CalendarsProps) {
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to add calendar! ${response.statusText} ${await response.text()}`);
+      }
+
       const result = await response.json() as AddResponseBody;
 
       if (!result.success) {
@@ -65,6 +70,11 @@ export default function Calendars({ initialCalendars }: CalendarsProps) {
           method: 'POST',
           body: JSON.stringify(requestBody),
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete calendar! ${response.statusText} ${await response.text()}`);
+        }
+
         const result = await response.json() as DeleteResponseBody;
 
         if (!result.success) {

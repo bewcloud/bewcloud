@@ -21,6 +21,7 @@ export const CALENDAR_COLOR_OPTIONS = [
   'bg-fuchsia-700',
   'bg-pink-800',
   'bg-rose-700',
+  'bg-gray-700',
 ] as const;
 
 const CALENDAR_COLOR_OPTIONS_HEX = [
@@ -44,9 +45,12 @@ const CALENDAR_COLOR_OPTIONS_HEX = [
   '#9D21B1',
   '#9C174D',
   '#BC133D',
+  '#384354',
 ] as const;
 
-export function getColorAsHex(calendarColor: string) {
+export function getColorAsHex(
+  calendarColor: (typeof CALENDAR_COLOR_OPTIONS)[number],
+): (typeof CALENDAR_COLOR_OPTIONS_HEX)[number] {
   const colorIndex = CALENDAR_COLOR_OPTIONS.findIndex((color) => color === calendarColor);
 
   return CALENDAR_COLOR_OPTIONS_HEX[colorIndex] || '#384354';

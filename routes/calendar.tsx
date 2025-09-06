@@ -4,7 +4,7 @@ import { FreshContextState } from '/lib/types.ts';
 import { Calendar, CalendarEvent, CalendarEventModel, CalendarModel } from '/lib/models/calendar.ts';
 import CalendarWrapper from '/islands/calendar/CalendarWrapper.tsx';
 import { AppConfig } from '/lib/config.ts';
-import { getDateRangeForCalendarView } from '/lib/utils/calendar.ts';
+import { getColorAsHex, getDateRangeForCalendarView } from '/lib/utils/calendar.ts';
 
 interface Data {
   userCalendars: Calendar[];
@@ -42,7 +42,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     // Create default calendar if none exists
     if (userCalendars.length === 0) {
-      await CalendarModel.create(userId, 'Calendar');
+      await CalendarModel.create(userId, 'Calendar', getColorAsHex('bg-red-700'));
 
       userCalendars = await CalendarModel.list(userId);
     }

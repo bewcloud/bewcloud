@@ -3,6 +3,7 @@ import { assertMatch } from 'std/assert/assert_match.ts';
 
 import { Calendar, CalendarEvent } from '/lib/models/calendar.ts';
 import {
+  CALENDAR_COLOR_OPTIONS,
   convertRRuleToWords,
   generateVCalendar,
   generateVEvent,
@@ -29,7 +30,7 @@ Deno.test('that getColorAsHex works', () => {
   ];
 
   for (const test of tests) {
-    const output = getColorAsHex(test.input);
+    const output = getColorAsHex(test.input as typeof CALENDAR_COLOR_OPTIONS[number]);
     assertEquals(output, test.expected);
   }
 });

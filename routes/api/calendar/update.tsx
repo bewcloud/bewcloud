@@ -3,7 +3,7 @@ import { Handlers } from 'fresh/server.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { Calendar, CalendarModel } from '/lib/models/calendar.ts';
 import { UserModel } from '/lib/models/user.ts';
-import { getColorAsHex } from '/lib/utils/calendar.ts';
+import { CALENDAR_COLOR_OPTIONS, getColorAsHex } from '/lib/utils/calendar.ts';
 
 interface Data {}
 
@@ -37,7 +37,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       calendar.displayName = requestBody.name;
       calendar.calendarColor = requestBody.color?.startsWith('#')
         ? requestBody.color
-        : getColorAsHex(requestBody.color || 'bg-gray-700');
+        : getColorAsHex((requestBody.color || 'bg-gray-700') as typeof CALENDAR_COLOR_OPTIONS[number]);
 
       await CalendarModel.update(context.state.user.id, calendar.url, calendar.displayName, calendar.calendarColor);
 

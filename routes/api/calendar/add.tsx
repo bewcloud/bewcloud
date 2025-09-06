@@ -2,6 +2,7 @@ import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
 import { Calendar, CalendarModel } from '/lib/models/calendar.ts';
+import { getColorAsHex } from '/lib/utils/calendar.ts';
 
 interface Data {}
 
@@ -23,7 +24,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const requestBody = await request.clone().json() as RequestBody;
 
     if (requestBody.name) {
-      await CalendarModel.create(context.state.user.id, requestBody.name);
+      await CalendarModel.create(context.state.user.id, requestBody.name, getColorAsHex('bg-gray-700'));
     }
 
     const newCalendars = await CalendarModel.list(context.state.user.id);

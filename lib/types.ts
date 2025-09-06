@@ -14,6 +14,11 @@ export interface User {
     dav_hashed_password?: string;
     expenses_currency?: SupportedCurrencySymbol;
     multi_factor_auth_methods?: MultiFactorAuthMethod[];
+    hidden_calendar_ids?: string[];
+    timezone?: {
+      id: string;
+      utcOffset: number;
+    };
   };
   created_at: Date;
 }
@@ -147,7 +152,7 @@ export const currencyMap = new Map<SupportedCurrencySymbol, SupportedCurrency>([
 
 export type PartialDeep<T> = (T extends (infer U)[] ? PartialDeep<U>[] : { [P in keyof T]?: PartialDeep<T[P]> }) | T;
 
-export type OptionalApp = 'news' | 'notes' | 'photos' | 'expenses' | 'contacts';
+export type OptionalApp = 'news' | 'notes' | 'photos' | 'expenses' | 'contacts' | 'calendar';
 
 export interface Config {
   auth: {

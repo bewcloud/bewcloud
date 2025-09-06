@@ -3,6 +3,7 @@ import { convertObjectToFormData } from '/lib/utils/misc.ts';
 import { currencyMap, SupportedCurrencySymbol, User } from '/lib/types.ts';
 import MultiFactorAuthSettings from '/islands/auth/MultiFactorAuthSettings.tsx';
 import { getEnabledMultiFactorAuthMethodsFromUser } from '/lib/utils/multi-factor-auth.ts';
+import { getTimeZones } from '/lib/utils/calendar.ts';
 
 interface SettingsProps {
   formData: Record<string, any>;
@@ -15,8 +16,10 @@ interface SettingsProps {
     message: string;
   };
   currency?: SupportedCurrencySymbol;
+  timezoneId?: string;
   isExpensesAppEnabled: boolean;
   isMultiFactorAuthEnabled: boolean;
+  isCalendarAppEnabled: boolean;
   helpEmail: string;
   user: {
     extra: Pick<User['extra'], 'multi_factor_auth_methods'>;
@@ -29,7 +32,8 @@ export type Action =
   | 'change-password'
   | 'change-dav-password'
   | 'delete-account'
-  | 'change-currency';
+  | 'change-currency'
+  | 'change-timezone';
 
 export const actionWords = new Map<Action, string>([
   ['change-email', 'change email'],
@@ -38,9 +42,10 @@ export const actionWords = new Map<Action, string>([
   ['change-dav-password', 'change WebDav password'],
   ['delete-account', 'delete account'],
   ['change-currency', 'change currency'],
+  ['change-timezone', 'change timezone'],
 ]);
 
-function formFields(action: Action, formData: FormData, currency?: SupportedCurrencySymbol) {
+function formFields(action: Action, formData: FormData, currency?: SupportedCurrencySymbol, timezoneId?: string) {
   const fields: FormField[] = [
     {
       name: 'action',
@@ -122,6 +127,20 @@ function formFields(action: Action, formData: FormData, currency?: SupportedCurr
       value: getFormDataField(formData, 'currency') || currency,
       required: true,
     });
+  } else if (action === 'change-timezone') {
+    const timezones = getTimeZones();
+
+    fields.push({
+      name: 'timezone',
+      label: 'Timezone',
+      type: 'select',
+      options: timezones.map((timezone) => ({
+        value: timezone.id,
+        label: timezone.label,
+      })),
+      value: getFormDataField(formData, 'timezone') || timezoneId,
+      required: true,
+    });
   }
   return fields;
 }
@@ -132,8 +151,10 @@ export default function Settings(
     error,
     notice,
     currency,
+    timezoneId,
     isExpensesAppEnabled,
     isMultiFactorAuthEnabled,
+    isCalendarAppEnabled,
     helpEmail,
     user,
   }: SettingsProps,
@@ -201,9 +222,31 @@ export default function Settings(
               </p>
 
               <form method='POST' class='mb-12'>
-                {formFields('change-currency', formData, currency).map((field) => generateFieldHtml(field, formData))}
+                {formFields('change-currency', formData, currency, timezoneId).map((field) =>
+                  generateFieldHtml(field, formData)
+                )}
                 <section class='flex justify-end mt-8 mb-4'>
                   <button class='button-secondary' type='submit'>Change currency</button>
+                </section>
+              </form>
+            </>
+          )
+          : null}
+
+        {isCalendarAppEnabled
+          ? (
+            <>
+              <h2 class='text-2xl mb-4 text-left px-4 max-w-screen-md mx-auto lg:min-w-96'>Change your timezone</h2>
+              <p class='text-left mt-2 mb-6 px-4 max-w-screen-md mx-auto lg:min-w-96'>
+                This is only used in the calendar app.
+              </p>
+
+              <form method='POST' class='mb-12'>
+                {formFields('change-timezone', formData, currency, timezoneId).map((field) =>
+                  generateFieldHtml(field, formData)
+                )}
+                <section class='flex justify-end mt-8 mb-4'>
+                  <button class='button-secondary' type='submit'>Change timezone</button>
                 </section>
               </form>
             </>

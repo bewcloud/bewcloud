@@ -7,7 +7,6 @@ interface FilesWrapperProps {
   initialPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
-  isCalDavEnabled?: boolean;
   fileShareId?: string;
 }
 
@@ -19,7 +18,6 @@ export default function FilesWrapper(
     initialPath,
     baseUrl,
     isFileSharingAllowed,
-    isCalDavEnabled,
     fileShareId,
   }: FilesWrapperProps,
 ) {
@@ -30,7 +28,6 @@ export default function FilesWrapper(
       initialPath={initialPath}
       baseUrl={baseUrl}
       isFileSharingAllowed={isFileSharingAllowed}
-      isCalDavEnabled={isCalDavEnabled}
       fileShareId={fileShareId}
     />
   );

@@ -15,6 +15,14 @@ import * as $api_auth_multi_factor_passkey_setup_begin from './routes/api/auth/m
 import * as $api_auth_multi_factor_passkey_setup_complete from './routes/api/auth/multi-factor/passkey/setup-complete.ts';
 import * as $api_auth_multi_factor_passkey_verify from './routes/api/auth/multi-factor/passkey/verify.ts';
 import * as $api_auth_multi_factor_totp_setup from './routes/api/auth/multi-factor/totp/setup.ts';
+import * as $api_calendar_add_event from './routes/api/calendar/add-event.tsx';
+import * as $api_calendar_add from './routes/api/calendar/add.tsx';
+import * as $api_calendar_delete_event from './routes/api/calendar/delete-event.tsx';
+import * as $api_calendar_delete from './routes/api/calendar/delete.tsx';
+import * as $api_calendar_export_events from './routes/api/calendar/export-events.tsx';
+import * as $api_calendar_import from './routes/api/calendar/import.tsx';
+import * as $api_calendar_search_events from './routes/api/calendar/search-events.tsx';
+import * as $api_calendar_update from './routes/api/calendar/update.tsx';
 import * as $api_contacts_add_addressbook from './routes/api/contacts/add-addressbook.tsx';
 import * as $api_contacts_add from './routes/api/contacts/add.tsx';
 import * as $api_contacts_delete_addressbook from './routes/api/contacts/delete-addressbook.tsx';
@@ -55,6 +63,9 @@ import * as $api_news_mark_read from './routes/api/news/mark-read.tsx';
 import * as $api_news_refresh_articles from './routes/api/news/refresh-articles.tsx';
 import * as $api_notes_save from './routes/api/notes/save.tsx';
 import * as $caldav from './routes/caldav.tsx';
+import * as $calendar from './routes/calendar.tsx';
+import * as $calendar_calendarEventId_ from './routes/calendar/[calendarEventId].tsx';
+import * as $calendars from './routes/calendars.tsx';
 import * as $carddav from './routes/carddav.tsx';
 import * as $contacts from './routes/contacts.tsx';
 import * as $contacts_contactId_ from './routes/contacts/[contactId].tsx';
@@ -82,6 +93,9 @@ import * as $signup from './routes/signup.tsx';
 import * as $Settings from './islands/Settings.tsx';
 import * as $auth_MultiFactorAuthSettings from './islands/auth/MultiFactorAuthSettings.tsx';
 import * as $auth_PasswordlessPasskeyLogin from './islands/auth/PasswordlessPasskeyLogin.tsx';
+import * as $calendar_CalendarWrapper from './islands/calendar/CalendarWrapper.tsx';
+import * as $calendar_Calendars from './islands/calendar/Calendars.tsx';
+import * as $calendar_ViewCalendarEvent from './islands/calendar/ViewCalendarEvent.tsx';
 import * as $contacts_Contacts from './islands/contacts/Contacts.tsx';
 import * as $contacts_ViewContact from './islands/contacts/ViewContact.tsx';
 import * as $dashboard_Links from './islands/dashboard/Links.tsx';
@@ -110,6 +124,14 @@ const manifest = {
     './routes/api/auth/multi-factor/passkey/setup-complete.ts': $api_auth_multi_factor_passkey_setup_complete,
     './routes/api/auth/multi-factor/passkey/verify.ts': $api_auth_multi_factor_passkey_verify,
     './routes/api/auth/multi-factor/totp/setup.ts': $api_auth_multi_factor_totp_setup,
+    './routes/api/calendar/add-event.tsx': $api_calendar_add_event,
+    './routes/api/calendar/add.tsx': $api_calendar_add,
+    './routes/api/calendar/delete-event.tsx': $api_calendar_delete_event,
+    './routes/api/calendar/delete.tsx': $api_calendar_delete,
+    './routes/api/calendar/export-events.tsx': $api_calendar_export_events,
+    './routes/api/calendar/import.tsx': $api_calendar_import,
+    './routes/api/calendar/search-events.tsx': $api_calendar_search_events,
+    './routes/api/calendar/update.tsx': $api_calendar_update,
     './routes/api/contacts/add-addressbook.tsx': $api_contacts_add_addressbook,
     './routes/api/contacts/add.tsx': $api_contacts_add,
     './routes/api/contacts/delete-addressbook.tsx': $api_contacts_delete_addressbook,
@@ -150,6 +172,9 @@ const manifest = {
     './routes/api/news/refresh-articles.tsx': $api_news_refresh_articles,
     './routes/api/notes/save.tsx': $api_notes_save,
     './routes/caldav.tsx': $caldav,
+    './routes/calendar.tsx': $calendar,
+    './routes/calendar/[calendarEventId].tsx': $calendar_calendarEventId_,
+    './routes/calendars.tsx': $calendars,
     './routes/carddav.tsx': $carddav,
     './routes/contacts.tsx': $contacts,
     './routes/contacts/[contactId].tsx': $contacts_contactId_,
@@ -179,6 +204,9 @@ const manifest = {
     './islands/Settings.tsx': $Settings,
     './islands/auth/MultiFactorAuthSettings.tsx': $auth_MultiFactorAuthSettings,
     './islands/auth/PasswordlessPasskeyLogin.tsx': $auth_PasswordlessPasskeyLogin,
+    './islands/calendar/CalendarWrapper.tsx': $calendar_CalendarWrapper,
+    './islands/calendar/Calendars.tsx': $calendar_Calendars,
+    './islands/calendar/ViewCalendarEvent.tsx': $calendar_ViewCalendarEvent,
     './islands/contacts/Contacts.tsx': $contacts_Contacts,
     './islands/contacts/ViewContact.tsx': $contacts_ViewContact,
     './islands/dashboard/Links.tsx': $dashboard_Links,

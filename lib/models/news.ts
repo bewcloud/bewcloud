@@ -132,8 +132,14 @@ export class FeedModel {
           continue;
         }
 
-        const url = (feedArticle as JsonFeedArticle).url || getArticleUrl((feedArticle as FeedArticle).links) ||
+        let url = (feedArticle as JsonFeedArticle).url || getArticleUrl((feedArticle as FeedArticle).links) ||
           feedArticle.id;
+
+        // Fix relative URLs in the feeds
+        if (url.startsWith('/')) {
+          const feedUrl = new URL(newsFeed.feed_url);
+          url = `${feedUrl.origin}${url}`;
+        }
 
         const articleIsoDate = (feedArticle as JsonFeedArticle).date_published ||
           (feedArticle as FeedArticle).published?.toISOString() || (feedArticle as JsonFeedArticle).date_modified ||

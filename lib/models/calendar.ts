@@ -99,7 +99,9 @@ export class CalendarModel {
       return {
         ...davCalendar,
         displayName: decodeURIComponent(davCalendar.displayName || '(empty)'),
-        calendarColor: decodeURIComponent(davCalendar.calendarColor || getColorAsHex('bg-gray-700')),
+        calendarColor: decodeURIComponent(
+          typeof davCalendar.calendarColor === 'string' ? davCalendar.calendarColor : getColorAsHex('bg-gray-700'),
+        ),
         isVisible: !user.extra.hidden_calendar_ids?.includes(uid),
         uid,
       };
@@ -131,9 +133,11 @@ export class CalendarModel {
       url: calendarUrl,
       props: {
         displayname: name,
-        calendarColor: color,
       },
     });
+
+    // Cannot properly set color with makeCalendar, so we quickly update it instead
+    await this.update(userId, calendarUrl, name, color);
   }
 
   static async update(

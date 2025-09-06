@@ -278,8 +278,15 @@ export default function Calendars({ initialCalendars }: CalendarsProps) {
                 onChange={(event) =>
                   openCalendar.value = { ...openCalendar.value!, calendarColor: event.currentTarget.value }}
               >
-                {CALENDAR_COLOR_OPTIONS.map((color) => <option key={color} value={getColorAsHex(color)}>{color}
-                </option>)}
+                {CALENDAR_COLOR_OPTIONS.map((color) => (
+                  <option
+                    key={color}
+                    value={getColorAsHex(color)}
+                    selected={openCalendar.value?.calendarColor === getColorAsHex(color)}
+                  >
+                    {color}
+                  </option>
+                ))}
               </select>
               <span
                 class={`w-5 h-5 block rounded-full`}

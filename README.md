@@ -34,6 +34,9 @@ docker compose up -d # makes the app available at http://localhost:8000
 docker compose run --rm website bash -c "cd /app && make migrate-db" # initializes/updates the database (only needs to be executed the first time and on any data updates)
 ```
 
+> [!IMPORTANT]
+> A self-hosted application requires be accessible via a HTTPS. Authentication will not work over plain HTTP — configure TLS/SSL before first login.
+
 > [!NOTE]
 > If you run into permission issues, you can try running `sudo chown -R 1993:1993 data-files` to fix them.
 >

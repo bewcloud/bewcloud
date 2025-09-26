@@ -58,7 +58,7 @@ form {
 }
 
 .notification-success {
-  @apply bg-green-600 rounded text-white px-6 py-8 shadow-md mt-2 mb-6 w-full hover:shadow-lg;
+  @apply bg-emerald-600 rounded text-white px-6 py-8 shadow-md mt-2 mb-6 w-full hover:shadow-lg;
 }
 
 .notification-success h3 {

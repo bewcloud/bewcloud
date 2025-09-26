@@ -179,7 +179,7 @@ export default function Links({ initialLinks }: LinksProps) {
 
         <span
           class={`flex justify-end items-center text-sm mt-1 mx-2 ${
-            hasSaved.value ? 'text-green-600' : 'text-slate-100'
+            hasSaved.value ? 'text-emerald-600' : 'text-slate-100'
           }`}
         >
           {isSaving.value

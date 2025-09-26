@@ -21,9 +21,9 @@ import {
 Deno.test('that getColorAsHex works', () => {
   const tests: { input: string; expected: string | undefined }[] = [
     { input: 'bg-red-700', expected: '#B51E1F' },
-    { input: 'bg-green-700', expected: '#148041' },
+    { input: 'bg-emerald-700', expected: '#148041' },
     { input: 'bg-blue-900', expected: '#1E3A89' },
-    { input: 'bg-purple-800', expected: '#6923A9' },
+    { input: 'bg-violet-800', expected: '#6923A9' },
     { input: 'bg-gray-700', expected: '#384354' },
     { input: 'invalid-color', expected: '#384354' },
   ];

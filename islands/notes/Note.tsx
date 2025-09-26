@@ -90,7 +90,7 @@ export default function Note({ fileName, currentPath, contents }: NoteProps) {
 
       <span
         class={`flex justify-end items-center text-sm mt-1 mx-auto max-w-7xl ${
-          hasSaved.value ? 'text-green-600' : 'text-slate-100'
+          hasSaved.value ? 'text-emerald-600' : 'text-slate-100'
         }`}
       >
         {isSaving.value

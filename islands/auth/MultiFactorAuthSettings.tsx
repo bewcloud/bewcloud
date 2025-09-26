@@ -535,7 +535,7 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
                             method.type === 'totp' && typeof method.backupCodesCount !== 'undefined' ? 'mb-2' : ''
                           }`}
                         >
-                          <span class='inline-block w-3 h-3 bg-green-500 rounded-full mr-2'></span>
+                          <span class='inline-block w-3 h-3 bg-emerald-500 rounded-full mr-2'></span>
                           <span class='font-medium'>{method.name}</span>
                         </section>
                         {method.type === 'totp' && typeof method.backupCodesCount !== 'undefined'

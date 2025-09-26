@@ -91,7 +91,7 @@ export default function ListBudgets(
           <section class='w-full flex flex-wrap gap-4 justify-center items-center'>
             {view.value === 'list'
               ? [totalBudget, ...budgets].map((budget) => {
-                let backgroundColorClass = 'bg-green-600';
+                let backgroundColorClass = 'bg-emerald-600';
                 let usedValuePercentage = Math.ceil(100 * budget.extra.usedValue / budget.value);
 
                 if (usedValuePercentage >= 100) {

@@ -26,7 +26,7 @@ export default function ImportEventsModal(
   return (
     <>
       <section
-        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900 bg-opacity-60`}
+        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900/60`}
       >
       </section>
 

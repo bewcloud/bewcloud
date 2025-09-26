@@ -106,7 +106,7 @@ export default function Header({ route, user, enabledApps }: Data) {
           <div class='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
             <div class='flex h-16 items-center justify-between'>
               <div class='flex items-center'>
-                <div class='flex-shrink-0'>
+                <div class='shrink'>
                   <a href='/'>
                     <img class='h-12 w-12 drop-shadow-md' src='/images/logomark.svg' alt='a stylized blue cloud' />
                   </a>

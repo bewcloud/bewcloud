@@ -241,9 +241,7 @@ export default function Calendars({ initialCalendars }: CalendarsProps) {
       </section>
 
       <section
-        class={`fixed ${
-          openCalendar.value ? 'block' : 'hidden'
-        } z-40 w-screen h-screen inset-0 bg-gray-900 bg-opacity-60`}
+        class={`fixed ${openCalendar.value ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900/60`}
       >
       </section>
 

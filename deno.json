@@ -56,6 +56,5 @@
     "vite": "npm:vite@7.1.7",
     "@preact/signals": "npm:@preact/signals@2.3.1",
     "@tailwindcss/vite": "npm:@tailwindcss/vite@4.1.13"
-  },
-  "lock": false
+  }
 }

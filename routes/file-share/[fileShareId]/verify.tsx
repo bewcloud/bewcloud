@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
@@ -15,8 +15,8 @@ interface Data {
   };
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
     const { fileShareId } = context.params;
 
     if (!fileShareId) {
@@ -39,9 +39,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/file-share/${fileShareId}` } });
     }
 
-    return await context.render({});
+    return { data: {} };
   },
-  async POST(request, context) {
+  async POST(context) {
+    const request = context.req;
     const { fileShareId } = context.params;
 
     if (!fileShareId) {
@@ -84,12 +85,14 @@ export const handler: Handlers<Data, FreshContextState> = {
     } catch (error) {
       console.error('File share verification error:', error);
 
-      return await context.render({
-        error: {
-          title: 'Verification Failed',
-          message: (error as Error).message,
+      return {
+        data: {
+          error: {
+            title: 'Verification Failed',
+            message: (error as Error).message,
+          },
         },
-      });
+      };
     }
   },
 };

@@ -1,4 +1,4 @@
-import { Handler, RouteConfig } from 'fresh/server.ts';
+import { RouteConfig, RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -9,7 +9,9 @@ export const config: RouteConfig = {
   routeOverride: '/carddav/:path*',
 };
 
-export const handler: Handler<Data, FreshContextState> = async (request, context) => {
+export const handler: RouteHandler<Data, FreshContextState> = async (context) => {
+  const request = context.req;
+
   const contactsConfig = await AppConfig.getContactsConfig();
 
   if (!contactsConfig.enableCardDavServer) {

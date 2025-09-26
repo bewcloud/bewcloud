@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { Budget, Expense, FreshContextState, SupportedCurrencySymbol } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -12,8 +12,10 @@ interface Data {
   currency: SupportedCurrencySymbol;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -55,7 +57,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const currency = context.state.user.extra.expenses_currency || '$';
 
-    return await context.render({ userBudgets, userExpenses, initialMonth, currency });
+    return { data: { userBudgets, userExpenses, initialMonth, currency } };
   },
 };
 

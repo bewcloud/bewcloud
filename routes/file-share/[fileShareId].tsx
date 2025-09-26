@@ -1,5 +1,5 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
-import { join } from 'std/path/join.ts';
+import { PageProps, RouteHandler } from 'fresh';
+import { join } from '@std/path';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import {
@@ -19,8 +19,9 @@ interface Data {
   fileShareId?: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
     const { fileShareId } = context.params;
 
     if (!fileShareId) {
@@ -113,7 +114,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const publicCurrentPath = currentPath.replace(fileShare.file_path, '/');
 
-    return await context.render({ shareDirectories, shareFiles, currentPath: publicCurrentPath, baseUrl, fileShareId });
+    return { data: { shareDirectories, shareFiles, currentPath: publicCurrentPath, baseUrl, fileShareId } };
   },
 };
 

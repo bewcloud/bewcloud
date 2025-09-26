@@ -1,4 +1,4 @@
-import { Head } from 'fresh/runtime.ts';
+import { Head } from 'fresh/runtime';
 
 import { OptionalApp, User } from '/lib/types.ts';
 

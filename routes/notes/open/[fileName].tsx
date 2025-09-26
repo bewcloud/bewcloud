@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { FileModel } from '/lib/models/files.ts';
@@ -10,8 +10,10 @@ interface Data {
   contents: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -47,7 +49,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Not Found', { status: 404 });
     }
 
-    return await context.render({ fileName, currentPath, contents: new TextDecoder().decode(fileResult.contents!) });
+    return { data: { fileName, currentPath, contents: new TextDecoder().decode(fileResult.contents!) } };
   },
 };
 

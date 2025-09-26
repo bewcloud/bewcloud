@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { Calendar, CalendarEvent, CalendarEventModel, CalendarModel } from '/lib/models/calendar.ts';
@@ -16,8 +16,10 @@ interface Data {
   timezoneUtcOffset: number;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -54,15 +56,17 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const userCalendarEvents = await CalendarEventModel.list(userId, visibleCalendarIds, dateRange);
 
-    return await context.render({
-      userCalendars,
-      userCalendarEvents,
-      baseUrl,
-      view,
-      startDate,
-      timezoneId,
-      timezoneUtcOffset,
-    });
+    return {
+      data: {
+        userCalendars,
+        userCalendarEvents,
+        baseUrl,
+        view,
+        startDate,
+        timezoneId,
+        timezoneUtcOffset,
+      },
+    };
   },
 };
 

@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { Calendar, CalendarEvent, CalendarEventModel, CalendarModel } from '/lib/models/calendar.ts';
@@ -16,8 +16,10 @@ interface Data {
   formData: Record<string, any>;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -50,9 +52,11 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const calendars = await CalendarModel.list(context.state.user.id);
 
-    return await context.render({ calendarEvent, calendars, formData: {} });
+    return { data: { calendarEvent, calendars, formData: {} } };
   },
-  async POST(request, context) {
+  async POST(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -126,21 +130,25 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       await CalendarEventModel.update(context.state.user.id, calendarEvent.url!, updatedIcs);
 
-      return await context.render({
-        calendarEvent,
-        calendars,
-        notice: 'Event updated successfully!',
-        formData: convertFormDataToObject(formData),
-      });
+      return {
+        data: {
+          calendarEvent,
+          calendars,
+          notice: 'Event updated successfully!',
+          formData: convertFormDataToObject(formData),
+        },
+      };
     } catch (error) {
       console.error(error);
 
-      return await context.render({
-        calendarEvent,
-        calendars,
-        error: (error as Error).toString(),
-        formData: convertFormDataToObject(formData),
-      });
+      return {
+        data: {
+          calendarEvent,
+          calendars,
+          error: (error as Error).toString(),
+          formData: convertFormDataToObject(formData),
+        },
+      };
     }
   },
 };

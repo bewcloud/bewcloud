@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { currencyMap, FreshContextState, SupportedCurrencySymbol, User } from '/lib/types.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
@@ -31,8 +31,8 @@ interface Data {
   };
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -42,18 +42,22 @@ export const handler: Handlers<Data, FreshContextState> = {
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
     const isCalendarAppEnabled = await AppConfig.isAppEnabled('calendar');
 
-    return await context.render({
-      formData: {},
-      currency: context.state.user.extra.expenses_currency,
-      timezoneId: context.state.user.extra.timezone?.id || 'UTC',
-      isExpensesAppEnabled,
-      helpEmail,
-      isMultiFactorAuthEnabled,
-      isCalendarAppEnabled,
-      user: context.state.user,
-    });
+    return {
+      data: {
+        formData: {},
+        currency: context.state.user.extra.expenses_currency,
+        timezoneId: context.state.user.extra.timezone?.id || 'UTC',
+        isExpensesAppEnabled,
+        helpEmail,
+        isMultiFactorAuthEnabled,
+        isCalendarAppEnabled,
+        user: context.state.user,
+      },
+    };
   },
-  async POST(request, context) {
+  async POST(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -217,33 +221,37 @@ export const handler: Handlers<Data, FreshContextState> = {
         }
         : undefined;
 
-      return await context.render({
-        notice,
-        formData: convertFormDataToObject(formData),
-        currency: user.extra.expenses_currency,
-        timezoneId: user.extra.timezone?.id || 'UTC',
-        isExpensesAppEnabled,
-        helpEmail,
-        isMultiFactorAuthEnabled,
-        isCalendarAppEnabled,
-        user: user,
-      });
+      return {
+        data: {
+          notice,
+          formData: convertFormDataToObject(formData),
+          currency: user.extra.expenses_currency,
+          timezoneId: user.extra.timezone?.id || 'UTC',
+          isExpensesAppEnabled,
+          helpEmail,
+          isMultiFactorAuthEnabled,
+          isCalendarAppEnabled,
+          user: user,
+        },
+      };
     } catch (error) {
       console.error(error);
       errorMessage = (error as Error).toString();
       errorTitle = `Failed to ${actionWords.get(action) || action}!`;
 
-      return await context.render({
-        error: { title: errorTitle, message: errorMessage },
-        formData: convertFormDataToObject(formData),
-        currency: user.extra.expenses_currency,
-        timezoneId: user.extra.timezone?.id || 'UTC',
-        isExpensesAppEnabled,
-        helpEmail,
-        isMultiFactorAuthEnabled,
-        isCalendarAppEnabled,
-        user: user,
-      });
+      return {
+        data: {
+          error: { title: errorTitle, message: errorMessage },
+          formData: convertFormDataToObject(formData),
+          currency: user.extra.expenses_currency,
+          timezoneId: user.extra.timezone?.id || 'UTC',
+          isExpensesAppEnabled,
+          helpEmail,
+          isMultiFactorAuthEnabled,
+          isCalendarAppEnabled,
+          user: user,
+        },
+      };
     }
   },
 };

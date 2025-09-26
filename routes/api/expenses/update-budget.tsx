@@ -1,4 +1,4 @@
-import { Handlers } from 'fresh/server.ts';
+import { RouteHandler } from 'fresh';
 
 import { Budget, FreshContextState } from '/lib/types.ts';
 import { BudgetModel } from '/lib/models/expenses.ts';
@@ -18,8 +18,10 @@ export interface ResponseBody {
   newBudgets: Budget[];
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async POST(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async POST(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
     }

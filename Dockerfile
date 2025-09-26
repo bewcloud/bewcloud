@@ -1,4 +1,4 @@
-FROM denoland/deno:ubuntu-2.4.5
+FROM denoland/deno:ubuntu-2.5.1
 
 EXPOSE 8000
 
@@ -21,5 +21,8 @@ USER deno
 
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 RUN deno cache --reload main.ts
+
+# Allow the crons to start
+ENV START_BEWCLOUD_CRONS=true
 
 CMD ["run", "--allow-all", "main.ts"]

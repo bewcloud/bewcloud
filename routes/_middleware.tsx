@@ -1,10 +1,12 @@
-import { FreshContext } from 'fresh/server.ts';
+import { Middleware } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { getDataFromRequest } from '/lib/auth.ts';
 
-export const handler = [
-  async function handleCors(request: Request, context: FreshContext<FreshContextState>) {
+export const handler: Middleware<FreshContextState>[] = [
+  async function handleCors(context) {
+    const request = context.req;
+
     const path = new URL(request.url).pathname;
 
     if (
@@ -51,7 +53,9 @@ export const handler = [
     return response;
   },
 
-  async function handleContextState(request: Request, context: FreshContext<FreshContextState>) {
+  async function handleContextState(context) {
+    const request = context.req;
+
     const { user, session } = (await getDataFromRequest(request)) || {};
 
     if (user) {
@@ -67,7 +71,9 @@ export const handler = [
     return response;
   },
 
-  async function handleLogging(request: Request, context: FreshContext<FreshContextState>) {
+  async function handleLogging(context) {
+    const request = context.req;
+
     const response = await context.next();
 
     console.info(`${new Date().toISOString()} - [${response.status}] ${request.method} ${request.url}`);

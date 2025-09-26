@@ -156,7 +156,7 @@ export type OptionalApp = 'news' | 'notes' | 'photos' | 'expenses' | 'contacts' 
 
 export interface Config {
   auth: {
-    /** The base URL of the application you use to access the app, i.e. "http://localhost:8000" or "https://cloud.example.com" */
+    /** The base URL of the application you use to access the app, i.e. "http://localhost:8000" or "https://cloud.example.com" (note authentication won't work without https:// except for localhost; SSO redirect, if enabled, will be this + /oidc/callback, so "https://cloud.example.com/oidc/callback") */
     baseUrl: string;
     /** If true, anyone can sign up for an account. Note that it's always possible to sign up for the first user, and they will be an admin */
     allowSignups: boolean;
@@ -238,6 +238,7 @@ export interface MultiFactorAuthMethod {
       counter?: number;
       device_type?: string;
       backed_up?: boolean;
+      // @ts-ignore this fails in vite/tests
       transports?: AuthenticatorTransport[];
     };
   };

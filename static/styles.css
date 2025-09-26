@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
 html {
   /* This is needed to ensure that the system color scheme is dark and matches the dark theme of the app */

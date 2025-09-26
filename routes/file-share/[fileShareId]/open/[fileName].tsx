@@ -1,5 +1,5 @@
-import { Handlers } from 'fresh/server.ts';
-import { join } from 'std/path/join.ts';
+import { RouteHandler } from 'fresh';
+import { join } from '@std/path';
 
 import { FreshContextState } from '/lib/types.ts';
 import { ensureFileSharePathIsValidAndSecurelyAccessible, FileModel, FileShareModel } from '/lib/models/files.ts';
@@ -7,8 +7,9 @@ import { AppConfig } from '/lib/config.ts';
 
 interface Data {}
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
     const { fileShareId, fileName } = context.params;
 
     if (!fileShareId || !fileName) {
@@ -70,7 +71,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Not Found', { status: 404 });
     }
 
-    return new Response(fileResult.contents!, {
+    return new Response(fileResult.contents! as BodyInit, {
       status: 200,
       headers: {
         'cache-control': 'no-cache, no-store, must-revalidate',

@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState, MultiFactorAuthMethodType } from '/lib/types.ts';
 import { UserModel } from '/lib/models/user.ts';
@@ -24,8 +24,9 @@ interface Data {
   availableMethods?: MultiFactorAuthMethodType[];
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
 
     if (!isMultiFactorAuthEnabled) {
@@ -50,13 +51,16 @@ export const handler: Handlers<Data, FreshContextState> = {
     const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
     const availableMethods = enabledMethods.map((method) => method.type);
 
-    return await context.render({
-      email: user.email,
-      redirectUrl,
-      availableMethods,
-    });
+    return {
+      data: {
+        email: user.email,
+        redirectUrl,
+        availableMethods,
+      },
+    };
   },
-  async POST(request, context) {
+  async POST(context) {
+    const request = context.req;
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
 
     if (!isMultiFactorAuthEnabled) {
@@ -133,15 +137,17 @@ export const handler: Handlers<Data, FreshContextState> = {
     } catch (error) {
       console.error('Multi-factor authentication verification error:', error);
 
-      return await context.render({
-        error: {
-          title: 'Verification Failed',
-          message: (error as Error).message,
+      return {
+        data: {
+          error: {
+            title: 'Verification Failed',
+            message: (error as Error).message,
+          },
+          email: user.email,
+          redirectUrl,
+          availableMethods,
         },
-        email: user.email,
-        redirectUrl,
-        availableMethods,
-      });
+      };
     }
   },
 };

@@ -59,7 +59,7 @@ export class AppConfig {
     };
 
     try {
-      const configFromFile: Config = (await import(`${Deno.cwd()}/bewcloud.config.ts`)).default;
+      const configFromFile: Config = (await import(/* @vite-ignore */ `${Deno.cwd()}/bewcloud.config.ts`)).default;
 
       this.config = {
         ...config,

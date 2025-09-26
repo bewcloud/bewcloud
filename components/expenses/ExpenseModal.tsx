@@ -191,7 +191,6 @@ export default function ExpenseModal(
               onChange={(event) => {
                 newExpenseBudget.value = event.currentTarget.value;
               }}
-              placeholder='Misc'
             >
               {sortedBudgetNames.map((budget) => (
                 <option value={budget} selected={newExpenseBudget.value === budget}>{budget}</option>

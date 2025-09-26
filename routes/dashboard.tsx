@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { Dashboard, FreshContextState } from '/lib/types.ts';
 import { DashboardModel } from '/lib/models/dashboard.ts';
@@ -9,8 +9,8 @@ interface Data {
   userDashboard: Dashboard;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -21,7 +21,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       userDashboard = await DashboardModel.create(context.state.user.id);
     }
 
-    return await context.render({ userDashboard });
+    return { data: { userDashboard } };
   },
 };
 

@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -8,8 +8,9 @@ interface Data {
   error?: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
     const isSingleSignOnEnabled = await AppConfig.isSingleSignOnEnabled();
 
     if (context.state.user || !isSingleSignOnEnabled) {
@@ -27,9 +28,11 @@ export const handler: Handlers<Data, FreshContextState> = {
       error = (validationError as Error).message;
     }
 
-    return await context.render({
-      error,
-    });
+    return {
+      data: {
+        error,
+      },
+    };
   },
 };
 

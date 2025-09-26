@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -12,8 +12,10 @@ interface Data {
   currentPath: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -46,7 +48,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return PHOTO_EXTENSIONS.some((extension) => lowercaseFileName.endsWith(extension));
     });
 
-    return await context.render({ userDirectories, userPhotos, currentPath });
+    return { data: { userDirectories, userPhotos, currentPath } };
   },
 };
 

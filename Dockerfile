@@ -1,4 +1,4 @@
-FROM denoland/deno:ubuntu-2.5.1
+FROM denoland/deno:ubuntu-2.5.2
 
 EXPOSE 8000
 
@@ -13,6 +13,11 @@ RUN rm -fr node_modules _fresh
 
 # Build fresh
 RUN deno task build
+
+RUN chown -R deno:deno /app
+
+# Prefer not to run as root.
+USER deno
 
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 RUN deno cache _fresh/server.js

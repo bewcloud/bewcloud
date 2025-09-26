@@ -46,7 +46,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64 (currenly disabled because of some Deno bug on arm64)
+          platforms: linux/amd64
           context: .
           file: ./Dockerfile
           push: true

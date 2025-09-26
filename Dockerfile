@@ -9,7 +9,7 @@ WORKDIR /app
 # These steps will be re-run upon each file change in your working directory:
 ADD . /app
 
-RUN rm -fr node_modules _fresh 
+RUN rm -fr node_modules _fresh
 
 # Build fresh
 RUN deno task build

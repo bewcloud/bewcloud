@@ -1,4 +1,4 @@
-import { PageProps } from 'fresh/server.ts';
+import { PageProps } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -7,7 +7,7 @@ import Header from '/components/Header.tsx';
 
 interface Data {}
 
-export default async function App(_request: Request, { route, Component, state }: PageProps<Data, FreshContextState>) {
+export default async function App({ route, Component, state }: PageProps<Data, FreshContextState>) {
   const config = await AppConfig.getConfig();
 
   const defaultTitle = config.visuals.title || 'bewCloud is a modern and simpler alternative to Nextcloud and ownCloud';
@@ -29,7 +29,7 @@ export default async function App(_request: Request, { route, Component, state }
         <link rel='manifest' href='/manifest.json' />
       </head>
       <body class='h-full'>
-        <Header route={route} user={state.user} enabledApps={enabledApps} />
+        <Header route={route || '/'} user={state.user} enabledApps={enabledApps} />
         <Component />
       </body>
     </html>

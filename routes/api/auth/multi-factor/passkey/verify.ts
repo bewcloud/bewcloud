@@ -1,4 +1,4 @@
-import { Handlers } from 'fresh/server.ts';
+import { RouteHandler } from 'fresh';
 import { AuthenticationResponseJSON } from '@simplewebauthn/server';
 
 import { FreshContextState } from '/lib/types.ts';
@@ -19,8 +19,10 @@ export interface ResponseBody {
   error?: string;
 }
 
-export const handler: Handlers<unknown, FreshContextState> = {
-  async POST(request) {
+export const handler: RouteHandler<unknown, FreshContextState> = {
+  async POST(context) {
+    const request = context.req;
+
     const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
 
     if (!isMultiFactorAuthEnabled) {

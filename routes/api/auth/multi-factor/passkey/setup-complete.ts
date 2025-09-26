@@ -1,4 +1,4 @@
-import { Handlers } from 'fresh/server.ts';
+import { RouteHandler } from 'fresh';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import { RegistrationResponseJSON } from '@simplewebauthn/server';
 
@@ -18,8 +18,10 @@ export interface ResponseBody {
   error?: string;
 }
 
-export const handler: Handlers<unknown, FreshContextState> = {
-  async POST(request, context) {
+export const handler: RouteHandler<unknown, FreshContextState> = {
+  async POST(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
     }

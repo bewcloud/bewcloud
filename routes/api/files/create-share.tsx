@@ -1,4 +1,4 @@
-import { Handlers } from 'fresh/server.ts';
+import { RouteHandler } from 'fresh';
 
 import { Directory, DirectoryFile, FileShare, FreshContextState } from '/lib/types.ts';
 import { DirectoryModel, FileModel, FileShareModel, getPathInfo } from '/lib/models/files.ts';
@@ -21,8 +21,10 @@ export interface ResponseBody {
   createdFileShareId: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async POST(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async POST(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
     }

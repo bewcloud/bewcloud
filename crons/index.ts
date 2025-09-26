@@ -1,4 +1,4 @@
-import { Cron } from 'https://deno.land/x/croner@8.1.2/dist/croner.js';
+import { Cron } from '@hexagon/croner';
 
 import { AppConfig } from '/lib/config.ts';
 import { cleanupSessions } from './sessions.ts';

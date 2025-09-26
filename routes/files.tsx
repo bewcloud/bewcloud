@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
@@ -13,8 +13,10 @@ interface Data {
   isFileSharingAllowed: boolean;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -41,13 +43,15 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
 
-    return await context.render({
-      userDirectories,
-      userFiles,
-      currentPath,
-      baseUrl,
-      isFileSharingAllowed: isPublicFileSharingAllowed,
-    });
+    return {
+      data: {
+        userDirectories,
+        userFiles,
+        currentPath,
+        baseUrl,
+        isFileSharingAllowed: isPublicFileSharingAllowed,
+      },
+    };
   },
 };
 

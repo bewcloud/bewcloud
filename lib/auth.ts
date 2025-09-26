@@ -1,7 +1,6 @@
-import { decodeBase64Url, encodeBase64Url } from 'std/encoding/base64url.ts';
-import { decodeBase64 } from 'std/encoding/base64.ts';
-import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
-import 'std/dotenv/load.ts';
+import { decodeBase64, decodeBase64Url, encodeBase64Url } from '@std/encoding';
+import { Cookie, getCookies, setCookie } from '@std/http';
+import '@std/dotenv/load';
 
 import { generateHash, isRunningLocally } from './utils/misc.ts';
 import { User, UserSession } from './types.ts';
@@ -46,7 +45,10 @@ export async function verifyAuthJwt<T = JwtData>(key: CryptoKey, jwt: string): P
   }
 
   const data = textToData(jwtParts[0] + '.' + jwtParts[1]);
-  if (await crypto.subtle.verify({ name: 'HMAC' }, key, decodeBase64Url(jwtParts[2]), data) === true) {
+  if (
+    await crypto.subtle.verify({ name: 'HMAC' }, key, decodeBase64Url(jwtParts[2]) as unknown as ArrayBuffer, data) ===
+      true
+  ) {
     return JSON.parse(dataToText(decodeBase64Url(jwtParts[1]))) as T;
   }
 

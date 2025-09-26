@@ -1,12 +1,14 @@
-import { Handlers } from 'fresh/server.ts';
+import { RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { FileModel } from '/lib/models/files.ts';
 
 interface Data {}
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -37,7 +39,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Not Found', { status: 404 });
     }
 
-    return new Response(fileResult.contents!, {
+    return new Response(fileResult.contents! as BodyInit, {
       status: 200,
       headers: {
         'cache-control': 'no-cache, no-store, must-revalidate',

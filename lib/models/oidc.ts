@@ -1,6 +1,6 @@
-import { decodeBase64Url } from 'std/encoding/base64url.ts';
+import { decodeBase64Url } from '@std/encoding';
 import * as openIdClient from 'openid-client';
-import 'std/dotenv/load.ts';
+import '@std/dotenv/load';
 
 import { createSessionResponse, dataToText } from '/lib/auth.ts';
 import { UserModel } from '/lib/models/user.ts';

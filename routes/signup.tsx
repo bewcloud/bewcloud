@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, PageResponse, RouteHandler } from 'fresh';
 
 import { generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { PASSWORD_SALT } from '/lib/auth.ts';
@@ -20,8 +20,10 @@ interface Data {
   singleSignOnUrl?: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
@@ -43,15 +45,19 @@ export const handler: Handlers<Data, FreshContextState> = {
       notice = `Your account and all its data has been deleted.`;
     }
 
-    return await context.render({
-      notice,
-      helpEmail,
-      isEmailVerificationEnabled,
-      isSingleSignOnEnabled,
-      singleSignOnUrl,
-    });
+    return {
+      data: {
+        notice,
+        helpEmail,
+        isEmailVerificationEnabled,
+        isSingleSignOnEnabled,
+        singleSignOnUrl,
+      },
+    };
   },
-  async POST(request, context) {
+  async POST(context) {
+    const request = context.req;
+
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
@@ -105,15 +111,17 @@ export const handler: Handlers<Data, FreshContextState> = {
       });
     } catch (error) {
       console.error(error);
-      return await context.render({
-        error: (error as Error).toString(),
-        email,
-        formData,
-        helpEmail,
-        isEmailVerificationEnabled,
-        isSingleSignOnEnabled,
-        singleSignOnUrl,
-      });
+      return {
+        data: {
+          error: (error as Error).toString(),
+          email,
+          formData,
+          helpEmail,
+          isEmailVerificationEnabled,
+          isSingleSignOnEnabled,
+          singleSignOnUrl,
+        },
+      };
     }
   },
 };

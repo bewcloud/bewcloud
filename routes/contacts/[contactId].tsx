@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { convertFormDataToObject } from '/lib/utils/misc.ts';
@@ -15,8 +15,10 @@ interface Data {
   addressBookId: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -36,9 +38,11 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Not found', { status: 404 });
     }
 
-    return await context.render({ contact, formData: {}, addressBookId });
+    return { data: { contact, formData: {}, addressBookId } };
   },
-  async POST(request, context) {
+  async POST(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -94,20 +98,24 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       await ContactModel.update(context.state.user.id, contact.url, updatedVCard);
 
-      return await context.render({
-        contact,
-        notice: 'Contact updated successfully!',
-        formData: convertFormDataToObject(formData),
-        addressBookId,
-      });
+      return {
+        data: {
+          contact,
+          notice: 'Contact updated successfully!',
+          formData: convertFormDataToObject(formData),
+          addressBookId,
+        },
+      };
     } catch (error) {
       console.error(error);
-      return await context.render({
-        contact,
-        error: (error as Error).toString(),
-        formData: convertFormDataToObject(formData),
-        addressBookId,
-      });
+      return {
+        data: {
+          contact,
+          error: (error as Error).toString(),
+          formData: convertFormDataToObject(formData),
+          addressBookId,
+        },
+      };
     }
   },
 };

@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState, NewsFeedArticle } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -9,8 +9,8 @@ interface Data {
   userArticles: NewsFeedArticle[];
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -21,7 +21,7 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const userArticles = await ArticleModel.list(context.state.user.id);
 
-    return await context.render({ userArticles });
+    return { data: { userArticles } };
   },
 };
 

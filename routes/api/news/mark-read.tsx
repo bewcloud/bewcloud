@@ -1,4 +1,4 @@
-import { Handlers } from 'fresh/server.ts';
+import { RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { ArticleModel } from '/lib/models/news.ts';
@@ -13,8 +13,10 @@ export interface ResponseBody {
   success: boolean;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async POST(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async POST(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
     }

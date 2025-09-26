@@ -1,6 +1,6 @@
 import { useSignal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
-import { Chart } from 'chart.js';
+import { Chart } from 'chart.js/auto';
 
 import { formatNumber } from '/lib/utils/misc.ts';
 import { Budget, SupportedCurrencySymbol } from '/lib/types.ts';

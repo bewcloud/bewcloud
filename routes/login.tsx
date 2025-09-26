@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { generateHash, validateEmail } from '/lib/utils/misc.ts';
 import { createSessionResponse, PASSWORD_SALT } from '/lib/auth.ts';
@@ -24,8 +24,10 @@ interface Data {
   helpEmail: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
@@ -57,18 +59,22 @@ export const handler: Handlers<Data, FreshContextState> = {
       }
     }
 
-    return await context.render({
-      notice,
-      email,
-      formData,
-      isEmailVerificationEnabled,
-      isMultiFactorAuthEnabled,
-      isSingleSignOnEnabled,
-      helpEmail,
-      singleSignOnUrl,
-    });
+    return {
+      data: {
+        notice,
+        email,
+        formData,
+        isEmailVerificationEnabled,
+        isMultiFactorAuthEnabled,
+        isSingleSignOnEnabled,
+        helpEmail,
+        singleSignOnUrl,
+      },
+    };
   },
-  async POST(request, context) {
+  async POST(context) {
+    const request = context.req;
+
     if (context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
@@ -143,16 +149,18 @@ export const handler: Handlers<Data, FreshContextState> = {
     } catch (error) {
       console.error(error);
 
-      return await context.render({
-        error: (error as Error).toString(),
-        email,
-        formData,
-        isEmailVerificationEnabled,
-        isMultiFactorAuthEnabled,
-        isSingleSignOnEnabled,
-        helpEmail,
-        singleSignOnUrl,
-      });
+      return {
+        data: {
+          error: (error as Error).toString(),
+          email,
+          formData,
+          isEmailVerificationEnabled,
+          isMultiFactorAuthEnabled,
+          isSingleSignOnEnabled,
+          helpEmail,
+          singleSignOnUrl,
+        },
+      };
     }
   },
 };

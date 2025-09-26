@@ -1,5 +1,5 @@
-import { DOMParser, initParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm-noinit.ts';
-import { Feed, parseFeed } from 'https://deno.land/x/rss@1.0.0/mod.ts';
+import { DOMParser, initParser } from '@b-fuze/deno-dom/wasm-noinit';
+import { Feed, parseFeed } from '@mikaelporttila/rss';
 import { fetchUrl, fetchUrlAsGooglebot, fetchUrlWithProxy, fetchUrlWithRetries } from './utils/misc.ts';
 import { NewsFeed, NewsFeedCrawlType, NewsFeedType } from './types.ts';
 

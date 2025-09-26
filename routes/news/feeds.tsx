@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState, NewsFeed } from '/lib/types.ts';
 import { FeedModel } from '/lib/models/news.ts';
@@ -8,15 +8,15 @@ interface Data {
   userFeeds: NewsFeed[];
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
 
     const userFeeds = await FeedModel.list(context.state.user.id);
 
-    return await context.render({ userFeeds });
+    return { data: { userFeeds } };
   },
 };
 

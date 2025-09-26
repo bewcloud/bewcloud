@@ -1,4 +1,4 @@
-import { Handlers, PageProps } from 'fresh/server.ts';
+import { PageProps, RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { AddressBook, Contact, ContactModel } from '/lib/models/contacts.ts';
@@ -15,8 +15,10 @@ interface Data {
   search?: string;
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async GET(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async GET(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
     }
@@ -66,15 +68,17 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const contactsCount = filteredContacts.length;
 
-    return await context.render({
-      addressBookId,
-      userContacts: filteredContacts,
-      userAddressBooks,
-      page,
-      contactsCount,
-      baseUrl,
-      search,
-    });
+    return {
+      data: {
+        addressBookId,
+        userContacts: filteredContacts,
+        userAddressBooks,
+        page,
+        contactsCount,
+        baseUrl,
+        search,
+      },
+    };
   },
 };
 

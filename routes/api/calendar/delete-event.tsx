@@ -1,4 +1,4 @@
-import { Handlers } from 'fresh/server.ts';
+import { RouteHandler } from 'fresh';
 
 import { FreshContextState } from '/lib/types.ts';
 import { CalendarEvent, CalendarEventModel, CalendarModel } from '/lib/models/calendar.ts';
@@ -19,8 +19,10 @@ export interface ResponseBody {
   newCalendarEvents: CalendarEvent[];
 }
 
-export const handler: Handlers<Data, FreshContextState> = {
-  async POST(request, context) {
+export const handler: RouteHandler<Data, FreshContextState> = {
+  async POST(context) {
+    const request = context.req;
+
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
     }

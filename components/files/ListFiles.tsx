@@ -1,4 +1,4 @@
-import { join } from 'std/path/join.ts';
+import { join } from '@std/path';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { humanFileSize, TRASH_PATH } from '/lib/utils/files.ts';

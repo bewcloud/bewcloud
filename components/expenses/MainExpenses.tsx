@@ -5,35 +5,35 @@ import { Budget, Expense, SupportedCurrencySymbol } from '/lib/types.ts';
 import {
   RequestBody as ImportRequestBody,
   ResponseBody as ImportResponseBody,
-} from '/routes/api/expenses/import-expenses.tsx';
+} from '/pages/api/expenses/import-expenses.tsx';
 import {
   RequestBody as ExportRequestBody,
   ResponseBody as ExportResponseBody,
-} from '/routes/api/expenses/export-expenses.tsx';
+} from '/pages/api/expenses/export-expenses.tsx';
 import {
   RequestBody as AddExpenseRequestBody,
   ResponseBody as AddExpenseResponseBody,
-} from '/routes/api/expenses/add-expense.tsx';
+} from '/pages/api/expenses/add-expense.tsx';
 import {
   RequestBody as AddBudgetRequestBody,
   ResponseBody as AddBudgetResponseBody,
-} from '/routes/api/expenses/add-budget.tsx';
+} from '/pages/api/expenses/add-budget.tsx';
 import {
   RequestBody as UpdateExpenseRequestBody,
   ResponseBody as UpdateExpenseResponseBody,
-} from '/routes/api/expenses/update-expense.tsx';
+} from '/pages/api/expenses/update-expense.tsx';
 import {
   RequestBody as UpdateBudgetRequestBody,
   ResponseBody as UpdateBudgetResponseBody,
-} from '/routes/api/expenses/update-budget.tsx';
+} from '/pages/api/expenses/update-budget.tsx';
 import {
   RequestBody as DeleteExpenseRequestBody,
   ResponseBody as DeleteExpenseResponseBody,
-} from '/routes/api/expenses/delete-expense.tsx';
+} from '/pages/api/expenses/delete-expense.tsx';
 import {
   RequestBody as DeleteBudgetRequestBody,
   ResponseBody as DeleteBudgetResponseBody,
-} from '/routes/api/expenses/delete-budget.tsx';
+} from '/pages/api/expenses/delete-budget.tsx';
 import ListBudgets from '/components/expenses/ListBudgets.tsx';
 import ListExpenses from '/components/expenses/ListExpenses.tsx';
 import ExpenseModal from './ExpenseModal.tsx';
@@ -663,7 +663,9 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
               placeholder='Filter expenses...'
               onInput={(event) => searchExpenses(event.currentTarget.value)}
             />
-            {isSearching.value ? <img src='/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
+            {isSearching.value
+              ? <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
+              : null}
           </section>
         </section>
         <section class='flex items-center justify-end w-full'>
@@ -719,7 +721,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
                 onClick={() => toggleNewOptionsDropdown()}
               >
                 <img
-                  src='/images/add.svg'
+                  src='/public/images/add.svg'
                   alt='Add new expense or budget'
                   class={`white ${isSaving.value || isImporting.value ? 'animate-spin' : ''}`}
                   width={20}
@@ -797,21 +799,21 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
           {isSaving.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
               </>
             )
             : null}
           {isImporting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Importing...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Importing...
               </>
             )
             : null}
           {isExporting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Exporting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Exporting...
               </>
             )
             : null}

@@ -1,7 +1,7 @@
 import { Secret, TOTP } from 'otpauth';
 import QRCode from 'qrcode';
-import { encodeBase32 } from 'std/encoding/base32.ts';
-import { decodeBase64, encodeBase64 } from 'std/encoding/base64.ts';
+import { encodeBase32 } from 'std/encoding/base32';
+import { decodeBase64, encodeBase64 } from 'std/encoding/base64';
 
 import { MultiFactorAuthMethod } from '/lib/types.ts';
 import { MFA_KEY, MFA_SALT } from '/lib/auth.ts';

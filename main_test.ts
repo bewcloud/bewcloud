@@ -1,47 +1,40 @@
-import { assert } from 'std/assert/assert.ts';
-import { assertEquals } from 'std/assert/assert_equals.ts';
-import { createHandler, ServeHandlerInfo } from 'fresh/server.ts';
+import { assertEquals } from 'std/assert/assert-equals';
+import { abortController } from './main.ts';
 
-import manifest from './fresh.gen.ts';
-import config from './fresh.config.ts';
+const baseUrl = 'http://localhost:8000';
 
-// @ts-ignore Deno's newer types seem to have messed this up
-const CONN_INFO: ServeHandlerInfo = {
-  remoteAddr: { hostname: '127.0.0.1', port: 53496, transport: 'tcp' },
-};
-
-Deno.test('Basic routes', async (testContext) => {
-  const handler = await createHandler(manifest, config);
-
-  await testContext.step('#1 GET /', async () => {
-    const response = await handler(new Request('http://127.0.0.1/'), CONN_INFO);
-    assertEquals(response.status, 303);
-  });
-
-  await testContext.step('#2 GET /login', async () => {
-    const response = await handler(new Request('http://127.0.0.1/login'), CONN_INFO);
-    const text = await response.text();
-    assert(text.includes('bewCloud'));
+Deno.test({
+  name: 'HTTP Server',
+  fn: async () => {
+    let response = await fetch(`${baseUrl}/login`);
     assertEquals(response.status, 200);
-  });
 
-  await testContext.step('#3 GET /blah', async () => {
-    const response = await handler(new Request('http://127.0.0.1/blah'), CONN_INFO);
-    const text = await response.text();
-    assert(text.includes('404 - Page not found'));
+    let responseText = await response.text();
+    assertEquals(responseText.includes('bewCloud'), true);
+
+    response = await fetch(`${baseUrl}/`);
+    assertEquals(response.status, 303);
+
+    response = await fetch(`${baseUrl}/blah`);
     assertEquals(response.status, 404);
-  });
 
-  await testContext.step('#4 POST /login', async () => {
+    responseText = await response.text();
+    assertEquals(responseText.includes('404 - Page not found'), true);
+
     const formData = new FormData();
     formData.append('email', 'user@example.com');
-    const request = new Request('http://127.0.0.1/login', {
+
+    response = await fetch(`${baseUrl}/login`, {
       method: 'POST',
       body: formData,
     });
-    const response = await handler(request, CONN_INFO);
-    const text = await response.text();
-    assert(text.includes('Error: Password is too short'));
     assertEquals(response.status, 200);
-  });
+
+    responseText = await response.text();
+    assertEquals(responseText.includes('Error: Password is too short'), true);
+
+    abortController.abort('Test finished');
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
 });

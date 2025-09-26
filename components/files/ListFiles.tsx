@@ -1,4 +1,4 @@
-import { join } from 'std/path/join.ts';
+import { join } from 'std/path/join';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { humanFileSize, TRASH_PATH } from '/lib/utils/files.ts';
@@ -171,7 +171,7 @@ export default function ListFiles(
                             onClick={() => onClickOpenRenameDirectory(directory.parent_path, directory.directory_name)}
                           >
                             <img
-                              src='/images/rename.svg'
+                              src='/public/images/rename.svg'
                               class='white drop-shadow-md'
                               width={18}
                               height={18}
@@ -185,7 +185,7 @@ export default function ListFiles(
                               onClickOpenMoveDirectory(directory.parent_path, directory.directory_name)}
                           >
                             <img
-                              src='/images/move.svg'
+                              src='/public/images/move.svg'
                               class='white drop-shadow-md'
                               width={18}
                               height={18}
@@ -199,7 +199,7 @@ export default function ListFiles(
                               onClick={() => onClickDeleteDirectory(directory.parent_path, directory.directory_name)}
                             >
                               <img
-                                src='/images/delete.svg'
+                                src='/public/images/delete.svg'
                                 class='red drop-shadow-md'
                                 width={20}
                                 height={20}
@@ -214,7 +214,7 @@ export default function ListFiles(
                               onClick={() => onClickCreateShare(join(directory.parent_path, directory.directory_name))}
                             >
                               <img
-                                src='/images/share.svg'
+                                src='/public/images/share.svg'
                                 class='white drop-shadow-md'
                                 width={18}
                                 height={18}
@@ -229,7 +229,7 @@ export default function ListFiles(
                               onClick={() => onClickOpenManageShare(directory.file_share_id!)}
                             >
                               <img
-                                src='/images/share.svg'
+                                src='/public/images/share.svg'
                                 class='white drop-shadow-md'
                                 width={18}
                                 height={18}
@@ -271,7 +271,7 @@ export default function ListFiles(
                   rel='noopener noreferrer'
                 >
                   <img
-                    src='/images/file.svg'
+                    src='/public/images/file.svg'
                     class='white drop-shadow-md mr-2'
                     width={18}
                     height={18}
@@ -298,7 +298,7 @@ export default function ListFiles(
                         onClick={() => onClickOpenRenameFile(file.parent_path, file.file_name)}
                       >
                         <img
-                          src='/images/rename.svg'
+                          src='/public/images/rename.svg'
                           class='white drop-shadow-md'
                           width={18}
                           height={18}
@@ -313,7 +313,7 @@ export default function ListFiles(
                         onClick={() => onClickOpenMoveFile(file.parent_path, file.file_name)}
                       >
                         <img
-                          src='/images/move.svg'
+                          src='/public/images/move.svg'
                           class='white drop-shadow-md'
                           width={18}
                           height={18}
@@ -328,7 +328,7 @@ export default function ListFiles(
                         onClick={() => onClickDeleteFile(file.parent_path, file.file_name)}
                       >
                         <img
-                          src='/images/delete.svg'
+                          src='/public/images/delete.svg'
                           class='red drop-shadow-md'
                           width={20}
                           height={20}
@@ -343,7 +343,7 @@ export default function ListFiles(
                         onClick={() => onClickCreateShare(join(file.parent_path, file.file_name))}
                       >
                         <img
-                          src='/images/share.svg'
+                          src='/public/images/share.svg'
                           class='white drop-shadow-md'
                           width={18}
                           height={18}
@@ -358,7 +358,7 @@ export default function ListFiles(
                         onClick={() => onClickOpenManageShare(file.file_share_id!)}
                       >
                         <img
-                          src='/images/share.svg'
+                          src='/public/images/share.svg'
                           class='white drop-shadow-md'
                           width={18}
                           height={18}

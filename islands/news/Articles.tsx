@@ -4,8 +4,8 @@ import { NewsFeedArticle } from '/lib/types.ts';
 import {
   RequestBody as RefreshRequestBody,
   ResponseBody as RefreshResponseBody,
-} from '/routes/api/news/refresh-articles.tsx';
-import { RequestBody as ReadRequestBody, ResponseBody as ReadResponseBody } from '/routes/api/news/mark-read.tsx';
+} from '/pages/api/news/refresh-articles.tsx';
+import { RequestBody as ReadRequestBody, ResponseBody as ReadResponseBody } from '/pages/api/news/mark-read.tsx';
 
 interface ArticlesProps {
   initialArticles: NewsFeedArticle[];
@@ -216,7 +216,7 @@ export default function Articles({ initialArticles }: ArticlesProps) {
             onClick={() => onClickMarkAllRead()}
           >
             <img
-              src='/images/check-all.svg'
+              src='/public/images/check-all.svg'
               alt='Mark all read'
               class={`white`}
               width={20}
@@ -231,7 +231,7 @@ export default function Articles({ initialArticles }: ArticlesProps) {
             onClick={() => refreshArticles()}
           >
             <img
-              src='/images/refresh.svg'
+              src='/public/images/refresh.svg'
               alt='Fetch new articles'
               class={`white ${isRefreshing.value ? 'animate-spin' : ''}`}
               width={20}

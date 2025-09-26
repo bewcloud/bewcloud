@@ -2,7 +2,7 @@
 
 [![](https://github.com/bewcloud/bewcloud/workflows/Run%20Tests/badge.svg)](https://github.com/bewcloud/bewcloud/actions?workflow=Run+Tests)
 
-This is the [bewCloud app](https://bewcloud.com) built using [Fresh](https://fresh.deno.dev) and deployed using [docker compose](https://docs.docker.com/compose/).
+This is the [bewCloud app](https://bewcloud.com) built with [Deno](https://deno.land/) and deployed using [docker compose](https://docs.docker.com/compose/).
 
 If you're looking for the desktop sync app, it's at [`bewcloud-desktop`](https://github.com/bewcloud/bewcloud-desktop).
 
@@ -70,22 +70,23 @@ These are the amazing entities or individuals who are sponsoring this project fo
 ```sh
 docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
 make migrate-db # runs any missing database migrations
-make start # runs the app
+make start # runs the app (on http://localhost:8000), tailwind in watch mode
 make format # formats the code
 make test # runs tests
+make build # generates CSS for production, if you've made changes
 ```
 
 ### Other less-used commands
 
 ```sh
 make exec-db # runs psql inside the postgres container, useful for running direct development queries like `DROP DATABASE "bewcloud"; CREATE DATABASE "bewcloud";`
-make build # generates all static files for production deploy
 ```
 
 ## Structure
 
-- Routes are defined at `routes/`.
-- Static files are defined at `static/`.
+- Backend routes are defined at `routes.ts`
+- Publicly-available files are defined at `public/`
+- Pages are defined at `pages/`.
 - Frontend-only components are defined at `components/`.
 - Isomorphic components are defined at `islands/`.
 - Cron jobs are defined at `crons/`.

@@ -1,10 +1,10 @@
-import { decodeBase64Url } from 'std/encoding/base64url.ts';
+import { decodeBase64Url } from 'std/encoding/base64url';
 import * as openIdClient from 'openid-client';
-import 'std/dotenv/load.ts';
+import 'std/dotenv/load';
 
 import { createSessionResponse, dataToText } from '/lib/auth.ts';
 import { UserModel } from '/lib/models/user.ts';
-import { generateRandomCode } from '/lib/utils/misc.ts';
+import { generateRandomCode } from '../utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 import SimpleCache from '/lib/interfaces/simple-cache.ts';
 

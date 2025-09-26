@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
-import { RequestBody, ResponseBody } from '/routes/api/files/get-share.tsx';
+import { RequestBody, ResponseBody } from '/pages/api/files/get-share.tsx';
 import { FileShare } from '/lib/types.ts';
 
 interface ManageShareModalProps {

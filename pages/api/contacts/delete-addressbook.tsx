@@ -1,0 +1,37 @@
+import { FreshContextState } from '/lib/types.ts';
+import { AddressBook, ContactModel } from '/lib/models/contacts.ts';
+
+interface Data {}
+
+export interface RequestBody {
+  addressBookId: string;
+}
+
+export interface ResponseBody {
+  success: boolean;
+  addressBooks: AddressBook[];
+}
+
+export const handler: Handlers<Data, FreshContextState> = {
+  async POST(request, context) {
+    if (!context.state.user) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const requestBody = await request.clone().json() as RequestBody;
+
+    if (!requestBody.addressBookId) {
+      return new Response('Bad request', { status: 400 });
+    }
+
+    const userId = context.state.user.id;
+
+    await ContactModel.deleteAddressBook(userId, requestBody.addressBookId);
+
+    const addressBooks = await ContactModel.listAddressBooks(userId);
+
+    const responseBody: ResponseBody = { success: true, addressBooks };
+
+    return new Response(JSON.stringify(responseBody));
+  },
+};

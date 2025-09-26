@@ -1,10 +1,8 @@
-import { Head } from 'fresh/runtime.ts';
-
 import { OptionalApp, User } from '/lib/types.ts';
 
 interface Data {
   route: string;
-  user?: User;
+  user?: User | null;
   enabledApps: OptionalApp[];
 }
 
@@ -99,16 +97,17 @@ export default function Header({ route, user, enabledApps }: Data) {
 
     return (
       <>
-        <Head>
-          <title>{pageLabel} - bewCloud</title>
-        </Head>
         <nav class='bg-slate-950'>
           <div class='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
             <div class='flex h-16 items-center justify-between'>
               <div class='flex items-center'>
                 <div class='flex-shrink-0'>
                   <a href='/'>
-                    <img class='h-12 w-12 drop-shadow-md' src='/images/logomark.svg' alt='a stylized blue cloud' />
+                    <img
+                      class='h-12 w-12 drop-shadow-md'
+                      src='/public/images/logomark.svg'
+                      alt='a stylized blue cloud'
+                    />
                   </a>
                 </div>
                 <div class='hidden md:block'>
@@ -116,7 +115,7 @@ export default function Header({ route, user, enabledApps }: Data) {
                     {menuItems.map((menu) => (
                       <a href={menu.url} class={route.startsWith(menu.url) ? activeClass : defaultClass}>
                         <img
-                          src={`/images${menu.url}${'.svg'}`}
+                          src={`/public/images${menu.url}${'.svg'}`}
                           alt={menu.label}
                           title={menu.label}
                           width={iconWidthAndHeightInPixels}
@@ -137,7 +136,7 @@ export default function Header({ route, user, enabledApps }: Data) {
                     class={route.startsWith('/settings') ? activeClass : defaultClass}
                   >
                     <img
-                      src='/images/settings.svg'
+                      src='/public/images/settings.svg'
                       alt='Settings'
                       title='Settings'
                       width={iconWidthAndHeightInPixels}
@@ -150,7 +149,7 @@ export default function Header({ route, user, enabledApps }: Data) {
                     class={defaultClass}
                   >
                     <img
-                      src='/images/logout.svg'
+                      src='/public/images/logout.svg'
                       alt='Logout'
                       title='Logout'
                       width={iconWidthAndHeightInPixels}
@@ -190,7 +189,7 @@ export default function Header({ route, user, enabledApps }: Data) {
       <a href='/'>
         <img
           class='mt-6 mb-2 drop-shadow-md'
-          src='/images/logo-white.svg'
+          src='/public/images/logo-white.svg'
           width='250'
           height='50'
           alt='the bewCloud logo: a stylized logo'

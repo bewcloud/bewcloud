@@ -6,7 +6,7 @@ import { FormField, generateFieldHtml } from '/lib/form-utils.tsx';
 import {
   RequestBody as DeleteRequestBody,
   ResponseBody as DeleteResponseBody,
-} from '/routes/api/calendar/delete-event.tsx';
+} from '/pages/api/calendar/delete-event.tsx';
 
 interface ViewCalendarEventProps {
   initialCalendarEvent: CalendarEvent;
@@ -183,7 +183,7 @@ export default function ViewCalendarEvent(
             onClick={() => onClickDeleteEvent()}
           >
             <img
-              src='/images/delete.svg'
+              src='/public/images/delete.svg'
               alt='Delete event'
               class={`white ${isDeleting.value ? 'animate-spin' : ''}`}
               width={20}
@@ -232,7 +232,7 @@ export default function ViewCalendarEvent(
           <summary class='text-slate-100 flex items-center font-bold cursor-pointer text-center justify-center mx-auto hover:text-sky-400'>
             Edit Raw ICS{' '}
             <span class='ml-2 text-slate-400 group-open:rotate-90 transition-transform duration-200'>
-              <img src='/images/right.svg' alt='Expand' width={16} height={16} class='white' />
+              <img src='/public/images/right.svg' alt='Expand' width={16} height={16} class='white' />
             </span>
           </summary>
 
@@ -251,7 +251,7 @@ export default function ViewCalendarEvent(
           {isDeleting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
               </>
             )
             : null}

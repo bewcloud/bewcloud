@@ -2,7 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Calendar, CalendarEvent } from '/lib/models/calendar.ts';
-import { RequestBody, ResponseBody } from '/routes/api/calendar/search-events.tsx';
+import { RequestBody, ResponseBody } from '/pages/api/calendar/search-events.tsx';
 import { getColorAsHex } from '/lib/utils/calendar.ts';
 interface SearchEventsProps {
   calendars: Calendar[];
@@ -105,7 +105,7 @@ export default function SearchEvents({ calendars, onClickOpenEvent }: SearchEven
         onFocus={() => onFocus()}
         onBlur={() => onBlur()}
       />
-      {isSearching.value ? <img src='/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
+      {isSearching.value ? <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
       {areResultsVisible.value
         ? (
           <section class='relative inline-block text-left ml-2 text-xs'>

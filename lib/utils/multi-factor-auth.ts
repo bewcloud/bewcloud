@@ -1,6 +1,6 @@
 // This file contains some multi-factor authentication utilities that are isomorphic.
 
-import { MultiFactorAuthMethod, MultiFactorAuthMethodType, User } from '/lib/types.ts';
+import { MultiFactorAuthMethod, User } from '/lib/types.ts';
 
 function getMultiFactorAuthMethodsFromUser(
   user: { extra: Pick<User['extra'], 'multi_factor_auth_methods'> },

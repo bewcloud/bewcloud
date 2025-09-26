@@ -1,6 +1,6 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { User, UserSession, VerificationCode } from '/lib/types.ts';
-import { generateRandomCode } from '/lib/utils/misc.ts';
+import { generateRandomCode } from '../utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 
 const db = new Database();

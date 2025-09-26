@@ -4,12 +4,12 @@ import { startAuthentication } from '@simplewebauthn/browser';
 import {
   RequestBody as PasskeyBeginRequestBody,
   ResponseBody as PasskeyBeginResponseBody,
-} from '/routes/api/auth/multi-factor/passkey/begin.ts';
+} from '/pages/api/auth/multi-factor/passkey/begin.ts';
 
 import {
   RequestBody as PasskeyVerifyRequestBody,
   ResponseBody as PasskeyVerifyResponseBody,
-} from '/routes/api/auth/multi-factor/passkey/verify.ts';
+} from '/pages/api/auth/multi-factor/passkey/verify.ts';
 
 interface PasswordlessPasskeyLoginProps {
   email?: string;

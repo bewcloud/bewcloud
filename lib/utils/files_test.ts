@@ -1,4 +1,4 @@
-import { assertEquals } from 'std/assert/assert_equals.ts';
+import { assertEquals } from 'std/assert/assert-equals';
 import { humanFileSize } from './files.ts';
 
 Deno.test('that humanFileSize works', () => {

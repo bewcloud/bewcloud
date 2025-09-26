@@ -7,7 +7,7 @@ import { formatInputToNumber } from '/lib/utils/misc.ts';
 import {
   RequestBody as SuggestionsRequestBody,
   ResponseBody as SuggestionsResponse,
-} from '/routes/api/expenses/auto-complete.tsx';
+} from '/pages/api/expenses/auto-complete.tsx';
 
 interface ExpenseModalProps {
   isOpen: boolean;

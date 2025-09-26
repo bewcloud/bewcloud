@@ -5,27 +5,27 @@ import { MultiFactorAuthMethodType } from '/lib/types.ts';
 import {
   RequestBody as PasskeySetupBeginRequestBody,
   ResponseBody as PasskeySetupBeginResponseBody,
-} from '/routes/api/auth/multi-factor/passkey/setup-begin.ts';
+} from '/pages/api/auth/multi-factor/passkey/setup-begin.ts';
 import {
   RequestBody as PasskeySetupCompleteRequestBody,
   ResponseBody as PasskeySetupCompleteResponseBody,
-} from '/routes/api/auth/multi-factor/passkey/setup-complete.ts';
+} from '/pages/api/auth/multi-factor/passkey/setup-complete.ts';
 import {
   RequestBody as TOTPSetupRequestBody,
   ResponseBody as TOTPSetupResponseBody,
-} from '/routes/api/auth/multi-factor/totp/setup.ts';
+} from '/pages/api/auth/multi-factor/totp/setup.ts';
 import {
   RequestBody as EmailSetupRequestBody,
   ResponseBody as EmailSetupResponseBody,
-} from '/routes/api/auth/multi-factor/email/setup.ts';
+} from '/pages/api/auth/multi-factor/email/setup.ts';
 import {
   RequestBody as MultiFactorAuthEnableRequestBody,
   ResponseBody as MultiFactorAuthEnableResponseBody,
-} from '/routes/api/auth/multi-factor/enable.ts';
+} from '/pages/api/auth/multi-factor/enable.ts';
 import {
   RequestBody as MultiFactorAuthDisableRequestBody,
   ResponseBody as MultiFactorAuthDisableResponseBody,
-} from '/routes/api/auth/multi-factor/disable.ts';
+} from '/pages/api/auth/multi-factor/disable.ts';
 
 interface MultiFactorAuthMethod {
   type: MultiFactorAuthMethodType;

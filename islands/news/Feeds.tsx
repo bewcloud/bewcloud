@@ -2,12 +2,9 @@ import { useSignal } from '@preact/signals';
 
 import { NewsFeed } from '/lib/types.ts';
 import { escapeHtml, validateUrl } from '/lib/utils/misc.ts';
-import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/news/add-feed.tsx';
-import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/news/delete-feed.tsx';
-import {
-  RequestBody as ImportRequestBody,
-  ResponseBody as ImportResponseBody,
-} from '/routes/api/news/import-feeds.tsx';
+import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/pages/api/news/add-feed.tsx';
+import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/pages/api/news/delete-feed.tsx';
+import { RequestBody as ImportRequestBody, ResponseBody as ImportResponseBody } from '/pages/api/news/import-feeds.tsx';
 
 interface FeedsProps {
   initialFeeds: NewsFeed[];
@@ -290,7 +287,7 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
             onClick={() => onClickAddFeed()}
           >
             <img
-              src='/images/add.svg'
+              src='/public/images/add.svg'
               alt='Add new feed'
               class={`white ${isAdding.value ? 'animate-spin' : ''}`}
               width={20}
@@ -333,7 +330,7 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
                     onClick={() => onClickDeleteFeed(newsFeed.id)}
                   >
                     <img
-                      src='/images/delete.svg'
+                      src='/public/images/delete.svg'
                       class='red drop-shadow-md'
                       width={24}
                       height={24}
@@ -364,21 +361,21 @@ export default function Feeds({ initialFeeds }: FeedsProps) {
           {isDeleting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
               </>
             )
             : null}
           {isExporting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Exporting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Exporting...
               </>
             )
             : null}
           {isImporting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Importing...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Importing...
               </>
             )
             : null}

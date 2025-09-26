@@ -2,9 +2,9 @@ import { useSignal } from '@preact/signals';
 
 import { Calendar } from '/lib/models/calendar.ts';
 import { CALENDAR_COLOR_OPTIONS, getColorAsHex } from '/lib/utils/calendar.ts';
-import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/calendar/add.tsx';
-import { RequestBody as UpdateRequestBody, ResponseBody as UpdateResponseBody } from '/routes/api/calendar/update.tsx';
-import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/calendar/delete.tsx';
+import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/pages/api/calendar/add.tsx';
+import { RequestBody as UpdateRequestBody, ResponseBody as UpdateResponseBody } from '/pages/api/calendar/update.tsx';
+import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/pages/api/calendar/delete.tsx';
 
 interface CalendarsProps {
   initialCalendars: Calendar[];
@@ -150,7 +150,7 @@ export default function Calendars({ initialCalendars }: CalendarsProps) {
             onClick={() => onClickAddCalendar()}
           >
             <img
-              src='/images/add.svg'
+              src='/public/images/add.svg'
               alt='Add new calendar'
               class={`white ${isAdding.value ? 'animate-spin' : ''}`}
               width={20}
@@ -194,7 +194,7 @@ export default function Calendars({ initialCalendars }: CalendarsProps) {
                     onClick={() => onClickDeleteCalendar(calendar.uid!)}
                   >
                     <img
-                      src='/images/delete.svg'
+                      src='/public/images/delete.svg'
                       class='red drop-shadow-md'
                       width={24}
                       height={24}
@@ -225,14 +225,14 @@ export default function Calendars({ initialCalendars }: CalendarsProps) {
           {isDeleting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
               </>
             )
             : null}
           {isSaving.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
               </>
             )
             : null}

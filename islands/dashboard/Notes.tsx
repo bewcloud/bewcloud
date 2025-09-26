@@ -1,7 +1,7 @@
 import { useSignal, useSignalEffect } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
-import { RequestBody, ResponseBody } from '/routes/api/dashboard/save-notes.tsx';
+import { RequestBody, ResponseBody } from '/pages/api/dashboard/save-notes.ts';
 
 interface NotesProps {
   initialNotes: string;
@@ -85,14 +85,14 @@ export default function Notes({ initialNotes }: NotesProps) {
         {isSaving.value
           ? (
             <>
-              <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
+              <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
             </>
           )
           : null}
         {hasSaved.value
           ? (
             <>
-              <img src='/images/check.svg' class='green mr-2' width={18} height={18} />Saved!
+              <img src='/public/images/check.svg' class='green mr-2' width={18} height={18} />Saved!
             </>
           )
           : null}

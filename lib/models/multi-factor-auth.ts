@@ -1,4 +1,4 @@
-import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
+import { Cookie, getCookies, setCookie } from 'std/http/cookie';
 
 import { MultiFactorAuthMethod, User } from '/lib/types.ts';
 import {
@@ -14,7 +14,7 @@ import {
   resolveCookieDomain,
   verifyAuthJwt,
 } from '/lib/auth.ts';
-import { isRunningLocally } from '/lib/utils/misc.ts';
+import { isRunningLocally } from '../utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 import { UserModel } from './user.ts';
 import { EmailModel } from './multi-factor-auth/email.ts';

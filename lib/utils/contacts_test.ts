@@ -1,5 +1,5 @@
-import { assertEquals } from 'std/assert/assert_equals.ts';
-import { assertMatch } from 'std/assert/assert_match.ts';
+import { assertEquals } from 'std/assert/assert-equals';
+import { assertMatch } from 'std/assert/assert-match';
 
 import { generateVCard, getIdFromVCard, parseVCard, splitTextIntoVCards, updateVCard } from './contacts.ts';
 

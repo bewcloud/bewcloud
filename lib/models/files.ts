@@ -1,7 +1,7 @@
-import { join } from 'std/path/join.ts';
-import { resolve } from 'std/path/resolve.ts';
+import { join } from 'std/path/join';
+import { resolve } from 'std/path/resolve';
 import { lookup } from 'mrmime';
-import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
+import { Cookie, getCookies, setCookie } from 'std/http/cookie';
 
 import { AppConfig } from '/lib/config.ts';
 import { Directory, DirectoryFile, FileShare } from '/lib/types.ts';
@@ -15,7 +15,7 @@ import {
   resolveCookieDomain,
   verifyAuthJwt,
 } from '/lib/auth.ts';
-import { isRunningLocally } from '/lib/utils/misc.ts';
+import { isRunningLocally } from '../utils/misc.ts';
 
 const COOKIE_NAME = `${AUTH_COOKIE_NAME}-file-share`;
 

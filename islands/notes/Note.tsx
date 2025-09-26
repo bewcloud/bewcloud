@@ -1,7 +1,7 @@
 import { useSignal, useSignalEffect } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
-import { RequestBody, ResponseBody } from '/routes/api/notes/save.tsx';
+import { RequestBody, ResponseBody } from '/pages/api/notes/save.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
 
 interface NoteProps {
@@ -96,14 +96,14 @@ export default function Note({ fileName, currentPath, contents }: NoteProps) {
         {isSaving.value
           ? (
             <>
-              <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
+              <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
             </>
           )
           : null}
         {hasSaved.value
           ? (
             <>
-              <img src='/images/check.svg' class='green mr-2' width={18} height={18} />Saved!
+              <img src='/public/images/check.svg' class='green mr-2' width={18} height={18} />Saved!
             </>
           )
           : null}

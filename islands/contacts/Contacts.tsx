@@ -1,18 +1,18 @@
 import { useSignal } from '@preact/signals';
 
 import { AddressBook, Contact } from '/lib/models/contacts.ts';
-import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/routes/api/contacts/get.tsx';
-import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/contacts/add.tsx';
-import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/contacts/delete.tsx';
-import { RequestBody as ImportRequestBody, ResponseBody as ImportResponseBody } from '/routes/api/contacts/import.tsx';
+import { RequestBody as GetRequestBody, ResponseBody as GetResponseBody } from '/pages/api/contacts/get.tsx';
+import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/pages/api/contacts/add.tsx';
+import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/pages/api/contacts/delete.tsx';
+import { RequestBody as ImportRequestBody, ResponseBody as ImportResponseBody } from '/pages/api/contacts/import.tsx';
 import {
   RequestBody as AddAddressBookRequestBody,
   ResponseBody as AddAddressBookResponseBody,
-} from '/routes/api/contacts/add-addressbook.tsx';
+} from '/pages/api/contacts/add-addressbook.tsx';
 import {
   RequestBody as DeleteAddressBookRequestBody,
   ResponseBody as DeleteAddressBookResponseBody,
-} from '/routes/api/contacts/delete-addressbook.tsx';
+} from '/pages/api/contacts/delete-addressbook.tsx';
 
 interface ContactsProps {
   initialAddressBookId: string;
@@ -457,7 +457,7 @@ export default function Contacts(
             onClick={() => onClickAddContact()}
           >
             <img
-              src='/images/add.svg'
+              src='/public/images/add.svg'
               alt='Add new contact'
               class={`white ${isAdding.value ? 'animate-spin' : ''}`}
               width={20}
@@ -493,7 +493,7 @@ export default function Contacts(
                     onClick={() => onClickDeleteContact(contact.uid!)}
                   >
                     <img
-                      src='/images/delete.svg'
+                      src='/public/images/delete.svg'
                       class='red drop-shadow-md'
                       width={24}
                       height={24}
@@ -524,21 +524,21 @@ export default function Contacts(
           {isDeleting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
               </>
             )
             : null}
           {isExporting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Exporting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Exporting...
               </>
             )
             : null}
           {isImporting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Importing...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Importing...
               </>
             )
             : null}

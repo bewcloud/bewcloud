@@ -1,7 +1,14 @@
-import { Config } from 'tailwindcss';
-
 export default {
   content: [
-    '{routes,islands,components,lib}/**/*.{ts,tsx}',
+    './lib/*.ts',
+    './lib/**/*.ts',
+    './pages/*.ts',
+    './pages/**/*.ts',
+    './components/*.ts',
+    './components/**/*.ts',
+    './islands/*.ts',
+    './islands/**/*.ts',
   ],
-} satisfies Config;
+  plugins: ['forms'],
+  safelist: [],
+};

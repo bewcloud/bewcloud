@@ -2,7 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { RequestBody, ResponseBody } from '/routes/api/files/search.tsx';
+import { RequestBody, ResponseBody } from '/pages/api/files/search.tsx';
 interface SearchFilesProps {}
 
 export default function SearchFiles({}: SearchFilesProps) {
@@ -107,7 +107,7 @@ export default function SearchFiles({}: SearchFilesProps) {
         onFocus={() => onFocus()}
         onBlur={() => onBlur()}
       />
-      {isSearching.value ? <img src='/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
+      {isSearching.value ? <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
       {areResultsVisible.value
         ? (
           <section class='relative inline-block text-left ml-2 text-sm'>

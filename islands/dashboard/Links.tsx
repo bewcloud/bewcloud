@@ -3,7 +3,7 @@ import { useEffect } from 'preact/hooks';
 
 import { DashboardLink } from '/lib/types.ts';
 import { validateUrl } from '/lib/utils/misc.ts';
-import { RequestBody, ResponseBody } from '/routes/api/dashboard/save-links.tsx';
+import { RequestBody, ResponseBody } from '/pages/api/dashboard/save-links.ts';
 
 interface LinksProps {
   initialLinks: DashboardLink[];
@@ -124,7 +124,7 @@ export default function Links({ initialLinks }: LinksProps) {
             onClick={() => onClickAddLink()}
           >
             <img
-              src='/images/add.svg'
+              src='/public/images/add.svg'
               alt='Add new link'
               class={`white`}
               width={20}
@@ -148,7 +148,7 @@ export default function Links({ initialLinks }: LinksProps) {
                 onClick={() => onClickDeleteLink(index)}
               >
                 <img
-                  src='/images/delete.svg'
+                  src='/public/images/delete.svg'
                   class='red drop-shadow-md'
                   width={24}
                   height={24}
@@ -163,7 +163,7 @@ export default function Links({ initialLinks }: LinksProps) {
                     onClick={() => onClickMoveLeftLink(index)}
                   >
                     <img
-                      src='/images/left-circle.svg'
+                      src='/public/images/left-circle.svg'
                       class='gray'
                       width={24}
                       height={24}
@@ -185,14 +185,14 @@ export default function Links({ initialLinks }: LinksProps) {
           {isSaving.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Saving...
               </>
             )
             : null}
           {hasSaved.value
             ? (
               <>
-                <img src='/images/check.svg' class='green mr-2' width={18} height={18} />Saved!
+                <img src='/public/images/check.svg' class='green mr-2' width={18} height={18} />Saved!
               </>
             )
             : null}

@@ -1,4 +1,4 @@
-import { join } from 'std/path/join.ts';
+import { join } from 'std/path/join';
 import { lookup } from 'mrmime';
 
 export function getProperDestinationPath(url: string) {

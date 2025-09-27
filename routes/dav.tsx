@@ -1,6 +1,6 @@
 import { Handler, RouteConfig } from 'fresh/server.ts';
-import { join } from 'std/path/join.ts';
-import { parse, stringify } from 'xml';
+import { join } from '@std/path';
+import { parse, stringify } from '@libs/xml';
 
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -59,7 +59,7 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
         return new Response('Not Found', { status: 404 });
       }
 
-      return new Response(fileResult.contents!, {
+      return new Response(fileResult.contents! as BodyInit, {
         status: 200,
         headers: {
           'cache-control': 'no-cache, no-store, must-revalidate',

@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import 'std/dotenv/load.ts';
+import '@std/dotenv/load';
 
 import { escapeHtml } from '/lib/utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';

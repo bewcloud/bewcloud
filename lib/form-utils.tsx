@@ -124,7 +124,7 @@ function generateInputHtml(
 
   if (type === 'select') {
     return (
-      <select class='mt-1 input-field' id={`field_${name}`} name={name} type={type} {...additionalAttributes}>
+      <select class='mt-1 input-field' id={`field_${name}`} name={name} {...additionalAttributes}>
         {options?.map((option) => (
           <option
             value={option.value}

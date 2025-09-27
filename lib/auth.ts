@@ -1,7 +1,6 @@
-import { decodeBase64Url, encodeBase64Url } from 'std/encoding/base64url.ts';
-import { decodeBase64 } from 'std/encoding/base64.ts';
-import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
-import 'std/dotenv/load.ts';
+import { decodeBase64, decodeBase64Url, encodeBase64Url } from '@std/encoding';
+import { Cookie, getCookies, setCookie } from '@std/http';
+import '@std/dotenv/load';
 
 import { generateHash, isRunningLocally } from './utils/misc.ts';
 import { User, UserSession } from './types.ts';

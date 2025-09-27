@@ -1,5 +1,4 @@
-import { createDAVClient } from 'tsdav';
-
+import { createDAVClient } from '/lib/models/dav.js';
 import { AppConfig } from '/lib/config.ts';
 import { parseVCard } from '/lib/utils/contacts.ts';
 

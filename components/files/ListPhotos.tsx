@@ -1,7 +1,7 @@
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { humanFileSize, TRASH_PATH } from '/lib/utils/files.ts';
 
-interface ListFilesProps {
+interface ListPhotosProps {
   directories: Directory[];
   files: DirectoryFile[];
   onClickOpenRenameDirectory?: (parentPath: string, name: string) => void;
@@ -13,7 +13,7 @@ interface ListFilesProps {
   isShowingNotes?: boolean;
 }
 
-export default function ListFiles(
+export default function ListPhotos(
   {
     directories,
     files,
@@ -24,7 +24,7 @@ export default function ListFiles(
     onClickDeleteDirectory,
     onClickDeleteFile,
     isShowingNotes,
-  }: ListFilesProps,
+  }: ListPhotosProps,
 ) {
   const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',

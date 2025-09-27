@@ -1,5 +1,5 @@
 import { Handlers, PageProps } from 'fresh/server.ts';
-import { join } from 'std/path/join.ts';
+import { join } from '@std/path';
 
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import {

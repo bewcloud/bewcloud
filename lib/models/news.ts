@@ -1,4 +1,4 @@
-import { Feed } from 'https://deno.land/x/rss@1.0.0/mod.ts';
+import { Feed } from '@mikaelporttila/rss';
 
 import Database, { sql } from '/lib/interfaces/database.ts';
 import Locker from '/lib/interfaces/locker.ts';
@@ -136,7 +136,7 @@ export class FeedModel {
           feedArticle.id;
 
         // Fix relative URLs in the feeds
-        if (url.startsWith('/')) {
+        if (url!.startsWith('/')) {
           const feedUrl = new URL(newsFeed.feed_url);
           url = `${feedUrl.origin}${url}`;
         }

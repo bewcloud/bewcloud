@@ -1,4 +1,4 @@
-FROM denoland/deno:ubuntu-2.4.5
+FROM denoland/deno:ubuntu-2.5.2
 
 EXPOSE 8000
 
@@ -8,8 +8,6 @@ WORKDIR /app
 
 # These steps will be re-run upon each file change in your working directory:
 ADD . /app
-
-RUN rm -fr node_modules _fresh 
 
 # Build fresh
 RUN deno task build

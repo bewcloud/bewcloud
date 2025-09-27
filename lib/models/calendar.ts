@@ -1,5 +1,4 @@
-import { createDAVClient } from 'tsdav';
-
+import { createDAVClient } from '/lib/models/dav.js';
 import { AppConfig } from '/lib/config.ts';
 import { getColorAsHex, parseVCalendar } from '/lib/utils/calendar.ts';
 import { concurrentPromises } from '/lib/utils/misc.ts';
@@ -146,7 +145,7 @@ export class CalendarModel {
     displayName: string,
     color?: string,
   ): Promise<void> {
-    // Make "manual" request (https://www.rfc-editor.org/rfc/rfc4791.html#page-20) because tsdav doesn't have PROPPATCH
+    // Make "manual" request (https://www.rfc-editor.org/rfc/rfc4791.html#page-20) because the dav client doesn't have PROPPATCH
     const xmlBody = `<?xml version="1.0" encoding="utf-8"?>
 <d:proppatch xmlns:d="DAV:" xmlns:a="http://apple.com/ns/ical/">
   <d:set>
@@ -195,15 +194,25 @@ export class CalendarEventModel {
       },
     };
 
+    const davCalendarEvents: DAVObject[] = await client.fetchCalendarObjects(fetchOptions);
+
     if (dateRange) {
       fetchOptions.timeRange = {
         start: dateRange.start.toISOString(),
         end: dateRange.end.toISOString(),
       };
       fetchOptions.expand = true;
-    }
 
-    const davCalendarEvents: DAVObject[] = await client.fetchCalendarObjects(fetchOptions);
+      // Sometimes the expand option doesn't return anything, so we we fetch with and without it, when queried for a date range
+      const davCalendarEventsWithExpansion = await client.fetchCalendarObjects(fetchOptions);
+
+      for (const davCalendarEvent of davCalendarEventsWithExpansion) {
+        // Only add the events that are not already in the list
+        if (!davCalendarEvents.some((davCalendarEvent) => davCalendarEvent.url === davCalendarEvent.url)) {
+          davCalendarEvents.push(davCalendarEvent);
+        }
+      }
+    }
 
     const calendarEvents: CalendarEvent[] = [];
 

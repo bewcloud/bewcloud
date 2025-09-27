@@ -1,5 +1,4 @@
-import { assert } from 'std/assert/assert.ts';
-import { assertEquals } from 'std/assert/assert_equals.ts';
+import { assertEquals } from '@std/assert';
 import { createHandler, ServeHandlerInfo } from 'fresh/server.ts';
 
 import manifest from './fresh.gen.ts';
@@ -21,14 +20,14 @@ Deno.test('Basic routes', async (testContext) => {
   await testContext.step('#2 GET /login', async () => {
     const response = await handler(new Request('http://127.0.0.1/login'), CONN_INFO);
     const text = await response.text();
-    assert(text.includes('bewCloud'));
+    assertEquals(text.includes('bewCloud'), true);
     assertEquals(response.status, 200);
   });
 
   await testContext.step('#3 GET /blah', async () => {
     const response = await handler(new Request('http://127.0.0.1/blah'), CONN_INFO);
     const text = await response.text();
-    assert(text.includes('404 - Page not found'));
+    assertEquals(text.includes('404 - Page not found'), true);
     assertEquals(response.status, 404);
   });
 
@@ -41,7 +40,7 @@ Deno.test('Basic routes', async (testContext) => {
     });
     const response = await handler(request, CONN_INFO);
     const text = await response.text();
-    assert(text.includes('Error: Password is too short'));
+    assertEquals(text.includes('Error: Password is too short'), true);
     assertEquals(response.status, 200);
   });
 });

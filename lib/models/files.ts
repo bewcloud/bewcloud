@@ -1,7 +1,6 @@
-import { join } from 'std/path/join.ts';
-import { resolve } from 'std/path/resolve.ts';
+import { join, resolve } from '@std/path';
 import { lookup } from 'mrmime';
-import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
+import { Cookie, getCookies, setCookie } from '@std/http';
 
 import { AppConfig } from '/lib/config.ts';
 import { Directory, DirectoryFile, FileShare } from '/lib/types.ts';

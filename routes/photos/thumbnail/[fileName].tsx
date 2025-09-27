@@ -1,5 +1,5 @@
 import { Handlers } from 'fresh/server.ts';
-import { resize } from 'https://deno.land/x/deno_image@0.0.4/mod.ts';
+import sharp from 'sharp';
 
 import { FreshContextState } from '/lib/types.ts';
 import { FileModel } from '/lib/models/files.ts';
@@ -53,15 +53,36 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const resizedImageContents = await resize(fileResult.contents!, { width, height, aspectRatio: true });
+    try {
+      const image = sharp(fileResult.contents! as unknown as ArrayBuffer).resize({
+        width,
+        height,
+        fit: 'cover',
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      }).png();
 
-    return new Response(resizedImageContents, {
-      status: 200,
-      headers: {
-        'cache-control': `max-age=${604_800}`, // Tell browsers to cache for 1 week (60 * 60 * 24 * 7 = 604_800)
-        'content-type': fileResult.contentType!,
-        'content-length': resizedImageContents.byteLength.toString(),
-      },
-    });
+      const resizedImageContents = await image.toBuffer();
+
+      return new Response(Uint8Array.from(resizedImageContents), {
+        status: 200,
+        headers: {
+          'cache-control': `max-age=${604_800}`, // Tell browsers to cache for 1 week (60 * 60 * 24 * 7 = 604_800)
+          'content-type': fileResult.contentType!,
+          'content-length': resizedImageContents.byteLength.toString(),
+        },
+      });
+    } catch (error) {
+      console.error(error);
+
+      // Serve original if we can't make a thumbnail
+      return new Response(fileResult.contents! as BodyInit, {
+        status: 200,
+        headers: {
+          'cache-control': `max-age=${604_800}`, // Tell browsers to cache for 1 week (60 * 60 * 24 * 7 = 604_800)
+          'content-type': fileResult.contentType!,
+          'content-length': fileResult.contents!.byteLength.toString(),
+        },
+      });
+    }
   },
 };

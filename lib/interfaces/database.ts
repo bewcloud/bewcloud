@@ -1,5 +1,5 @@
 import { Client } from 'postgres';
-import 'std/dotenv/load.ts';
+import '@std/dotenv/load';
 
 const POSTGRESQL_HOST = Deno.env.get('POSTGRESQL_HOST') || '';
 const POSTGRESQL_USER = Deno.env.get('POSTGRESQL_USER') || '';

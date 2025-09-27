@@ -391,8 +391,8 @@ export default function MultiFactorAuthSettings({ methods }: MultiFactorAuthSett
                 <p class='mb-4'>
                   1. Scan this QR code with your authenticator app (Aegis Authenticator, Google Authenticator, etc.):
                 </p>
-                <section class='flex justify-center mb-4'>
-                  <img src={setupData.value.qrCodeUrl} alt='TOTP QR Code' class='border' />
+                <section class='flex justify-center mb-4 max-w-sm mx-auto'>
+                  <img src={setupData.value.qrCodeUrl} alt='TOTP QR Code' class='border-8 border-white' />
                 </section>
                 <p class='text-sm text-gray-400 mb-4'>
                   Or manually enter this secret:{' '}

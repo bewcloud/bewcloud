@@ -1,7 +1,6 @@
 import { Secret, TOTP } from 'otpauth';
-import QRCode from 'qrcode';
-import { encodeBase32 } from 'std/encoding/base32.ts';
-import { decodeBase64, encodeBase64 } from 'std/encoding/base64.ts';
+import { qrcode } from '@libs/qrcode';
+import { decodeBase64, encodeBase32, encodeBase64 } from '@std/encoding';
 
 import { MultiFactorAuthMethod } from '/lib/types.ts';
 import { MFA_KEY, MFA_SALT } from '/lib/auth.ts';
@@ -133,7 +132,8 @@ export class TOTPModel {
   private static async generateQRCodeDataURL(secret: string, issuer: string, accountName: string): Promise<string> {
     const totp = this.createTOTP(secret, issuer, accountName);
     const uri = totp.toString();
-    return await QRCode.toDataURL(uri);
+    const svgString = await qrcode(uri, { output: 'svg', border: 0 });
+    return `data:image/svg+xml;base64,${encodeBase64(svgString)}`;
   }
 
   private static verifyTOTPToken(secret: string, token: string, window = 1): boolean {

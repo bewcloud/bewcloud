@@ -1,4 +1,4 @@
-import { Cookie, getCookies, setCookie } from 'std/http/cookie.ts';
+import { Cookie, getCookies, setCookie } from '@std/http';
 
 import { MultiFactorAuthMethod, User } from '/lib/types.ts';
 import {

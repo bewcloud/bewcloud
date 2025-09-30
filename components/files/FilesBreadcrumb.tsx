@@ -1,11 +1,22 @@
+import { SortColumn, SortOrder } from '/lib/utils/files.ts';
+
 interface FilesBreadcrumbProps {
   path: string;
   isShowingNotes?: boolean;
   isShowingPhotos?: boolean;
   fileShareId?: string;
+  sortBy?: SortColumn;
+  sortOrder?: SortOrder;
 }
 
-export default function FilesBreadcrumb({ path, isShowingNotes, isShowingPhotos, fileShareId }: FilesBreadcrumbProps) {
+export default function FilesBreadcrumb({ 
+  path, 
+  isShowingNotes, 
+  isShowingPhotos, 
+  fileShareId, 
+  sortBy = 'name',
+  sortOrder = 'asc' 
+}: FilesBreadcrumbProps) {
   let routePath = fileShareId ? `file-share/${fileShareId}` : 'files';
   let rootPath = '/';
   let itemPluralLabel = 'files';
@@ -29,12 +40,13 @@ export default function FilesBreadcrumb({ path, isShowingNotes, isShowingPhotos,
   }
 
   const pathParts = path.slice(1, -1).split('/');
+  const sortParams = `&sortBy=${sortBy}&sortOrder=${sortOrder}`;
 
   return (
     <h3 class='text-base font-semibold text-white whitespace-nowrap mr-2'>
-      {!isShowingNotes && !isShowingPhotos ? <a href={`/${routePath}?path=/`}>All files</a> : null}
-      {isShowingNotes ? <a href={`/notes?path=/Notes/`}>All notes</a> : null}
-      {isShowingPhotos ? <a href={`/photos?path=/Photos/`}>All photos</a> : null}
+      {!isShowingNotes && !isShowingPhotos ? <a href={`/${routePath}?path=/${sortParams}`}>All files</a> : null}
+      {isShowingNotes ? <a href={`/notes?path=/Notes/${sortParams}`}>All notes</a> : null}
+      {isShowingPhotos ? <a href={`/photos?path=/Photos/${sortParams}`}>All photos</a> : null}
       {pathParts.map((part, index) => {
         // Ignore the first directory in special ones
         if (index === 0 && (isShowingNotes || isShowingPhotos)) {
@@ -59,7 +71,7 @@ export default function FilesBreadcrumb({ path, isShowingNotes, isShowingPhotos,
         return (
           <>
             <span class='ml-2 text-xs'>/</span>
-            <a href={`/${routePath}?path=/${encodeURIComponent(fullPathForPart.join('/'))}/`} class='ml-2'>
+            <a href={`/${routePath}?path=/${encodeURIComponent(fullPathForPart.join('/'))}/${sortParams}`} class='ml-2'>
               {decodeURIComponent(part)}
             </a>
           </>

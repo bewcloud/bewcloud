@@ -20,6 +20,14 @@ export function humanFileSize(bytes: number) {
   return `${bytes.toFixed(2)} ${units[unitIndex]}`;
 }
 
+export type SortColumn = 'name' | 'updated_at' | 'size_in_bytes';
+export type SortOrder = 'asc' | 'desc';
+
+export interface SortOptions {
+  sortBy: SortColumn;
+  sortOrder: SortOrder;
+}
+
 export function sortEntriesByName(entryA: Deno.DirEntry, entryB: Deno.DirEntry) {
   const nameA = entryA.name.toLowerCase();
   const nameB = entryB.name.toLowerCase();
@@ -63,4 +71,48 @@ export function sortFilesByName(fileA: DirectoryFile, fileB: DirectoryFile) {
   }
 
   return 0;
+}
+
+export function sortDirectories(directories: Directory[], options: SortOptions): Directory[] {
+  const sorted = [...directories].sort((a, b) => {
+    let result = 0;
+    
+    switch (options.sortBy) {
+      case 'name':
+        result = a.directory_name.toLowerCase().localeCompare(b.directory_name.toLowerCase());
+        break;
+      case 'updated_at':
+        result = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+        break;
+      case 'size_in_bytes':
+        result = a.size_in_bytes - b.size_in_bytes;
+        break;
+    }
+    
+    return options.sortOrder === 'desc' ? -result : result;
+  });
+  
+  return sorted;
+}
+
+export function sortFiles(files: DirectoryFile[], options: SortOptions): DirectoryFile[] {
+  const sorted = [...files].sort((a, b) => {
+    let result = 0;
+    
+    switch (options.sortBy) {
+      case 'name':
+        result = a.file_name.toLowerCase().localeCompare(b.file_name.toLowerCase());
+        break;
+      case 'updated_at':
+        result = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+        break;
+      case 'size_in_bytes':
+        result = a.size_in_bytes - b.size_in_bytes;
+        break;
+    }
+    
+    return options.sortOrder === 'desc' ? -result : result;
+  });
+  
+  return sorted;
 }

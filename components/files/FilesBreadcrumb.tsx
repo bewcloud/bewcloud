@@ -9,13 +9,13 @@ interface FilesBreadcrumbProps {
   sortOrder?: SortOrder;
 }
 
-export default function FilesBreadcrumb({ 
-  path, 
-  isShowingNotes, 
-  isShowingPhotos, 
-  fileShareId, 
+export default function FilesBreadcrumb({
+  path,
+  isShowingNotes,
+  isShowingPhotos,
+  fileShareId,
   sortBy = 'name',
-  sortOrder = 'asc' 
+  sortOrder = 'asc',
 }: FilesBreadcrumbProps) {
   let routePath = fileShareId ? `file-share/${fileShareId}` : 'files';
   let rootPath = '/';

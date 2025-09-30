@@ -75,15 +75,17 @@ export default function ListFiles(
   ): ComponentChildren {
     const isActive = sortBy === column;
     const iconClass = isActive ? 'text-blue-400' : 'text-slate-400';
-    
+
     if (!onClickSort) {
       return <th scope='col' class={`px-6 py-4 font-medium text-white ${className || ''}`}>{label}</th>;
     }
-    
+
     return (
       <th scope='col' class={`px-6 py-4 font-medium text-white ${className || ''}`}>
         <button
-          class={`flex items-center justify-between w-full text-left hover:text-blue-300 ${isActive ? 'text-blue-400' : ''}`}
+          class={`flex items-center justify-between w-full text-left hover:text-blue-300 ${
+            isActive ? 'text-blue-400' : ''
+          }`}
           onClick={() => onClickSort(column)}
           type='button'
         >
@@ -147,9 +149,7 @@ export default function ListFiles(
               )}
             {renderSortableHeader('Name', 'name')}
             {renderSortableHeader('Last update', 'updated_at', 'w-64')}
-            {isShowingNotes || isShowingPhotos
-              ? null
-              : renderSortableHeader('Size', 'size_in_bytes', 'w-32')}
+            {isShowingNotes || isShowingPhotos ? null : renderSortableHeader('Size', 'size_in_bytes', 'w-32')}
             {isShowingPhotos || fileShareId
               ? null
               : <th scope='col' class='px-6 py-4 font-medium text-white w-24'></th>}

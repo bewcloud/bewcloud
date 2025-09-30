@@ -41,14 +41,14 @@ export const handler: Handlers<Data, FreshContextState> = {
     // Get sort parameters
     const sortBy = (searchParams.get('sortBy') as SortColumn) || 'name';
     const sortOrder = (searchParams.get('sortOrder') as SortOrder) || 'asc';
-    
+
     // Validate sort parameters
     const validSortColumns: SortColumn[] = ['name', 'updated_at', 'size_in_bytes'];
     const validSortOrders: SortOrder[] = ['asc', 'desc'];
-    
+
     const finalSortBy = validSortColumns.includes(sortBy) ? sortBy : 'name';
     const finalSortOrder = validSortOrders.includes(sortOrder) ? sortOrder : 'asc';
-    
+
     const sortOptions = { sortBy: finalSortBy, sortOrder: finalSortOrder };
 
     const userDirectories = await DirectoryModel.list(context.state.user.id, currentPath, sortOptions);

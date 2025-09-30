@@ -31,7 +31,7 @@ export interface SortOptions {
 export function sortEntriesByName(entryA: Deno.DirEntry, entryB: Deno.DirEntry) {
   const nameA = entryA.name.toLocaleLowerCase();
   const nameB = entryB.name.toLocaleLowerCase();
-  
+
   if (nameA > nameB) {
     return 1;
   }
@@ -47,17 +47,17 @@ export function sortDirectoriesByName(directoryA: Directory, directoryB: Directo
   // Always put .Trash directory first
   const fullPathA = `${directoryA.parent_path}${directoryA.directory_name}/`;
   const fullPathB = `${directoryB.parent_path}${directoryB.directory_name}/`;
-  
+
   if (fullPathA === TRASH_PATH || directoryA.directory_name === '.Trash') {
     return -1;
   }
   if (fullPathB === TRASH_PATH || directoryB.directory_name === '.Trash') {
     return 1;
   }
-  
+
   const nameA = directoryA.directory_name.toLocaleLowerCase();
   const nameB = directoryB.directory_name.toLocaleLowerCase();
-  
+
   if (nameA > nameB) {
     return 1;
   }
@@ -77,10 +77,10 @@ export function sortFilesByName(fileA: DirectoryFile, fileB: DirectoryFile) {
   if (fileB.file_name === '.Trash') {
     return 1;
   }
-  
+
   const nameA = fileA.file_name.toLocaleLowerCase();
   const nameB = fileB.file_name.toLocaleLowerCase();
-  
+
   if (nameA > nameB) {
     return 1;
   }
@@ -94,19 +94,19 @@ export function sortFilesByName(fileA: DirectoryFile, fileB: DirectoryFile) {
 
 export function sortDirectories(directories: Directory[], options: SortOptions): Directory[] {
   // Separate .Trash folder from other directories
-  const trashDir = directories.find(dir => 
-    `${dir.parent_path}${dir.directory_name}/` === TRASH_PATH || 
+  const trashDir = directories.find((dir) =>
+    `${dir.parent_path}${dir.directory_name}/` === TRASH_PATH ||
     dir.directory_name === '.Trash'
   );
-  const otherDirs = directories.filter(dir => 
-    `${dir.parent_path}${dir.directory_name}/` !== TRASH_PATH && 
+  const otherDirs = directories.filter((dir) =>
+    `${dir.parent_path}${dir.directory_name}/` !== TRASH_PATH &&
     dir.directory_name !== '.Trash'
   );
-  
+
   // Sort the non-trash directories
   const sorted = [...otherDirs].sort((a, b) => {
     let result = 0;
-    
+
     switch (options.sortBy) {
       case 'name':
         result = a.directory_name.toLowerCase().localeCompare(b.directory_name.toLowerCase());
@@ -118,23 +118,23 @@ export function sortDirectories(directories: Directory[], options: SortOptions):
         result = a.size_in_bytes - b.size_in_bytes;
         break;
     }
-    
+
     return options.sortOrder === 'desc' ? -result : result;
   });
-  
+
   // Return with .Trash folder first (if it exists), followed by sorted directories
   return trashDir ? [trashDir, ...sorted] : sorted;
 }
 
 export function sortFiles(files: DirectoryFile[], options: SortOptions): DirectoryFile[] {
   // Separate .Trash file from other files (if it exists)
-  const trashFile = files.find(file => file.file_name === '.Trash');
-  const otherFiles = files.filter(file => file.file_name !== '.Trash');
-  
+  const trashFile = files.find((file) => file.file_name === '.Trash');
+  const otherFiles = files.filter((file) => file.file_name !== '.Trash');
+
   // Sort the non-trash files
   const sorted = [...otherFiles].sort((a, b) => {
     let result = 0;
-    
+
     switch (options.sortBy) {
       case 'name':
         result = a.file_name.toLowerCase().localeCompare(b.file_name.toLowerCase());
@@ -146,10 +146,10 @@ export function sortFiles(files: DirectoryFile[], options: SortOptions): Directo
         result = a.size_in_bytes - b.size_in_bytes;
         break;
     }
-    
+
     return options.sortOrder === 'desc' ? -result : result;
   });
-  
+
   // Return with .Trash file first (if it exists), followed by sorted files
   return trashFile ? [trashFile, ...sorted] : sorted;
 }

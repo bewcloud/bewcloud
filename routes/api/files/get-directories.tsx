@@ -32,7 +32,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const sortOptions = (requestBody.sortBy && requestBody.sortOrder) 
+    const sortOptions = (requestBody.sortBy && requestBody.sortOrder)
       ? { sortBy: requestBody.sortBy, sortOrder: requestBody.sortOrder }
       : undefined;
 

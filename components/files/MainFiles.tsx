@@ -100,7 +100,7 @@ export default function MainFiles(
     if (typeof window === 'undefined') {
       return { sortBy: initialSortBy, sortOrder: initialSortOrder };
     }
-    
+
     try {
       const saved = localStorage.getItem(getSortingKey(path));
       if (saved) {
@@ -122,7 +122,7 @@ export default function MainFiles(
 
   function saveSortingPreference(path: string, sortBy: SortColumn, sortOrder: SortOrder) {
     if (typeof window === 'undefined') return;
-    
+
     try {
       localStorage.setItem(getSortingKey(path), JSON.stringify({ sortBy, sortOrder }));
     } catch (error) {
@@ -132,7 +132,7 @@ export default function MainFiles(
 
   function onClickSort(column: SortColumn) {
     let newSortOrder: SortOrder = 'asc';
-    
+
     if (sortBy.value === column) {
       // Toggle sort order if clicking the same column
       newSortOrder = sortOrder.value === 'asc' ? 'desc' : 'asc';
@@ -140,10 +140,10 @@ export default function MainFiles(
       // Default to ascending for new columns
       newSortOrder = 'asc';
     }
-    
+
     // Save to localStorage
     saveSortingPreference(path.value, column, newSortOrder);
-    
+
     // Update URL and navigate to trigger re-render with new sorting
     const url = new URL(window.location.href);
     url.searchParams.set('sortBy', column);
@@ -826,8 +826,8 @@ export default function MainFiles(
         </section>
 
         <section class='flex items-center justify-end'>
-          <FilesBreadcrumb 
-            path={path.value} 
+          <FilesBreadcrumb
+            path={path.value}
             fileShareId={fileShareId}
             sortBy={sortBy.value}
             sortOrder={sortOrder.value}

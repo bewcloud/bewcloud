@@ -4,7 +4,15 @@ import { Cookie, getCookies, setCookie } from '@std/http';
 
 import { AppConfig } from '/lib/config.ts';
 import { Directory, DirectoryFile, FileShare } from '/lib/types.ts';
-import { sortDirectoriesByName, sortEntriesByName, sortFilesByName, sortDirectories, sortFiles, SortOptions, TRASH_PATH } from '/lib/utils/files.ts';
+import {
+  sortDirectories,
+  sortDirectoriesByName,
+  sortEntriesByName,
+  sortFiles,
+  sortFilesByName,
+  SortOptions,
+  TRASH_PATH,
+} from '/lib/utils/files.ts';
 import Database, { sql } from '/lib/interfaces/database.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
@@ -605,11 +613,11 @@ export async function ensureUserPathIsValidAndSecurelyAccessible(userId: string,
   const resolvedFullPath = `${resolve(fullPath)}/`;
 
   console.log({ userRootPath, fullPath, resolvedFullPath });
-  
+
   // Normalize path separators for consistent comparison on Windows
   const normalizedUserRootPath = userRootPath.replace(/\\/g, '/');
   const normalizedResolvedFullPath = resolvedFullPath.replace(/\\/g, '/');
-  
+
   if (!normalizedResolvedFullPath.startsWith(normalizedUserRootPath)) {
     throw new Error('Invalid file path');
   }

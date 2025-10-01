@@ -21,11 +21,14 @@ export function humanFileSize(bytes: number) {
 }
 
 export function sortEntriesByName(entryA: Deno.DirEntry, entryB: Deno.DirEntry) {
-  if (entryA.name > entryB.name) {
+  const nameA = entryA.name.toLocaleLowerCase();
+  const nameB = entryB.name.toLocaleLowerCase();
+  
+  if (nameA > nameB) {
     return 1;
   }
 
-  if (entryA.name < entryB.name) {
+  if (nameA < nameB) {
     return -1;
   }
 
@@ -33,11 +36,14 @@ export function sortEntriesByName(entryA: Deno.DirEntry, entryB: Deno.DirEntry) 
 }
 
 export function sortDirectoriesByName(directoryA: Directory, directoryB: Directory) {
-  if (directoryA.directory_name > directoryB.directory_name) {
+  const nameA = directoryA.directory_name.toLocaleLowerCase();
+  const nameB = directoryB.directory_name.toLocaleLowerCase();
+  
+  if (nameA > nameB) {
     return 1;
   }
 
-  if (directoryA.directory_name < directoryB.directory_name) {
+  if (nameA < nameB) {
     return -1;
   }
 
@@ -45,11 +51,14 @@ export function sortDirectoriesByName(directoryA: Directory, directoryB: Directo
 }
 
 export function sortFilesByName(fileA: DirectoryFile, fileB: DirectoryFile) {
-  if (fileA.file_name > fileB.file_name) {
+  const nameA = fileA.file_name.toLocaleLowerCase();
+  const nameB = fileB.file_name.toLocaleLowerCase();
+  
+  if (nameA > nameB) {
     return 1;
   }
 
-  if (fileA.file_name < fileB.file_name) {
+  if (nameA < nameB) {
     return -1;
   }
 

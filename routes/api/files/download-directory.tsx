@@ -133,11 +133,6 @@ async function createZipArchive(entries: FileEntry[], basePath: string): Promise
   let offset = 0;
 
   for (const entry of entries) {
-    if (entry.isDirectory) {
-      // Skip empty directories for now
-      continue;
-    }
-
     const fileName = encoder.encode(entry.path);
     const fileData = entry.content;
 

@@ -48,6 +48,7 @@ interface MainFilesProps {
   initialPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
+  isDirectoryDownloadsAllowed: boolean;
   fileShareId?: string;
 }
 
@@ -58,6 +59,7 @@ export default function MainFiles(
     initialPath,
     baseUrl,
     isFileSharingAllowed,
+    isDirectoryDownloadsAllowed,
     fileShareId,
   }: MainFilesProps,
 ) {
@@ -409,6 +411,20 @@ export default function MainFiles(
 
     isUpdating.value = false;
     moveDirectoryOrFileModal.value = null;
+  }
+
+  function onClickDownloadDirectory(parentPath: string, name: string) {
+    // Create download URL with proper path encoding
+    const fullPath = parentPath + name + '/';
+    const downloadUrl = `/api/files/download-directory?path=${encodeURIComponent(fullPath)}`;
+
+    // Create a temporary anchor element to trigger download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `${name}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   async function onClickDeleteDirectory(parentPath: string, name: string, isBulkDeleting = false) {
@@ -839,6 +855,7 @@ export default function MainFiles(
           onClickDeleteFile={onClickDeleteFile}
           onClickCreateShare={isFileSharingAllowed ? onClickCreateShare : undefined}
           onClickOpenManageShare={isFileSharingAllowed ? onClickOpenManageShare : undefined}
+          onClickDownloadDirectory={isDirectoryDownloadsAllowed ? onClickDownloadDirectory : undefined}
           fileShareId={fileShareId}
         />
 

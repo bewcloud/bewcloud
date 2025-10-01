@@ -46,6 +46,7 @@ import * as $api_files_create_share from './routes/api/files/create-share.tsx';
 import * as $api_files_delete_directory from './routes/api/files/delete-directory.tsx';
 import * as $api_files_delete_share from './routes/api/files/delete-share.tsx';
 import * as $api_files_delete from './routes/api/files/delete.tsx';
+import * as $api_files_download_directory from './routes/api/files/download-directory.tsx';
 import * as $api_files_get_directories from './routes/api/files/get-directories.tsx';
 import * as $api_files_get_share from './routes/api/files/get-share.tsx';
 import * as $api_files_get from './routes/api/files/get.tsx';
@@ -155,6 +156,7 @@ const manifest = {
     './routes/api/files/delete-directory.tsx': $api_files_delete_directory,
     './routes/api/files/delete-share.tsx': $api_files_delete_share,
     './routes/api/files/delete.tsx': $api_files_delete,
+    './routes/api/files/download-directory.tsx': $api_files_download_directory,
     './routes/api/files/get-directories.tsx': $api_files_get_directories,
     './routes/api/files/get-share.tsx': $api_files_get_share,
     './routes/api/files/get.tsx': $api_files_get,

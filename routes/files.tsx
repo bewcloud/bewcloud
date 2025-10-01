@@ -11,6 +11,7 @@ interface Data {
   currentPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
+  isDirectoryDownloadsAllowed: boolean;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -40,6 +41,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const userFiles = await FileModel.list(context.state.user.id, currentPath);
 
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
+    const isDirectoryDownloadsAllowed = await AppConfig.isDirectoryDownloadsAllowed();
 
     return await context.render({
       userDirectories,
@@ -47,6 +49,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath,
       baseUrl,
       isFileSharingAllowed: isPublicFileSharingAllowed,
+      isDirectoryDownloadsAllowed,
     });
   },
 };
@@ -60,6 +63,7 @@ export default function FilesPage({ data }: PageProps<Data, FreshContextState>) 
         initialPath={data.currentPath}
         baseUrl={data.baseUrl}
         isFileSharingAllowed={data.isFileSharingAllowed}
+        isDirectoryDownloadsAllowed={data.isDirectoryDownloadsAllowed}
       />
     </main>
   );

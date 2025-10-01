@@ -23,7 +23,7 @@ export function humanFileSize(bytes: number) {
 export function sortEntriesByName(entryA: Deno.DirEntry, entryB: Deno.DirEntry) {
   const nameA = entryA.name.toLocaleLowerCase();
   const nameB = entryB.name.toLocaleLowerCase();
-  
+
   if (nameA > nameB) {
     return 1;
   }
@@ -38,7 +38,7 @@ export function sortEntriesByName(entryA: Deno.DirEntry, entryB: Deno.DirEntry) 
 export function sortDirectoriesByName(directoryA: Directory, directoryB: Directory) {
   const nameA = directoryA.directory_name.toLocaleLowerCase();
   const nameB = directoryB.directory_name.toLocaleLowerCase();
-  
+
   if (nameA > nameB) {
     return 1;
   }
@@ -53,7 +53,7 @@ export function sortDirectoriesByName(directoryA: Directory, directoryB: Directo
 export function sortFilesByName(fileA: DirectoryFile, fileB: DirectoryFile) {
   const nameA = fileA.file_name.toLocaleLowerCase();
   const nameB = fileB.file_name.toLocaleLowerCase();
-  
+
   if (nameA > nameB) {
     return 1;
   }

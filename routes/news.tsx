@@ -19,7 +19,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/dashboard` } });
     }
 
-    const userArticles = await ArticleModel.list(context.state.user.id);
+    const userArticles = await ArticleModel.listUnread(context.state.user.id);
 
     return await context.render({ userArticles });
   },

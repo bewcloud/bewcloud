@@ -18,7 +18,7 @@ const config: PartialDeep<Config> = {
   // files: {
   //   rootPath: 'data-files',
   //   allowPublicSharing: false, // If true, public file sharing will be allowed (still requires a user to enable sharing for a given file or directory)
-  //   allowDirectoryDownloads: true, // If true, directories can be downloaded as zip files
+  //   allowDirectoryDownloads: false, // If true, directories can be downloaded as zip files
   // },
   // core: {
   //   enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'], // dashboard and files cannot be disabled

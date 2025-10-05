@@ -1,9 +1,9 @@
 import { Handlers } from 'fresh/server.ts';
-import { join, resolve } from '@std/path';
+import { join } from '@std/path';
 
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
-import { DirectoryModel, FileModel } from '/lib/models/files.ts';
+import { ensureUserPathIsValidAndSecurelyAccessible } from '/lib/models/files.ts';
 
 interface Data {}
 
@@ -21,47 +21,53 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     const searchParams = new URL(request.url).searchParams;
-    let directoryPath = searchParams.get('path') || '/';
+    const parentPath = searchParams.get('parentPath') || '/';
+    const name = searchParams.get('name');
 
-    // Send invalid paths back to root
-    if (!directoryPath.startsWith('/') || directoryPath.includes('../')) {
-      return new Response('Invalid path', { status: 400 });
+    if (!name) {
+      return new Response('Directory name is required', { status: 400 });
     }
 
-    // Always append a trailing slash
-    if (!directoryPath.endsWith('/')) {
-      directoryPath = `${directoryPath}/`;
-    }
+    // Construct the full directory path
+    const directoryPath = join(parentPath, name) + '/';
 
     try {
-      // Get all files and subdirectories recursively
-      const filesAndDirectories = await getDirectoryContentsRecursively(
-        context.state.user.id,
-        directoryPath,
-      );
+      await ensureUserPathIsValidAndSecurelyAccessible(context.state.user.id, directoryPath);
 
-      if (filesAndDirectories.length === 0) {
-        return new Response('Directory not found or empty', { status: 404 });
+      // Get the actual filesystem path
+      const filesRootPath = config.files?.rootPath || 'data-files';
+      const userRootPath = join(filesRootPath, context.state.user.id);
+      const fullDirectoryPath = join(userRootPath, directoryPath);
+
+      // Use the zip command to create the archive
+      const zipProcess = new Deno.Command('zip', {
+        args: ['-r', '-', '.'],
+        cwd: fullDirectoryPath,
+        stdout: 'piped',
+        stderr: 'piped',
+      });
+
+      const { code, stdout, stderr } = await zipProcess.output();
+
+      if (code !== 0) {
+        const errorText = new TextDecoder().decode(stderr);
+        console.error('Zip command failed:', errorText);
+        return new Response('Error creating zip archive', { status: 500 });
       }
 
-      // Create zip archive
-      const zipData = await createZipArchive(filesAndDirectories, directoryPath);
-
-      // Get directory name for filename
-      const directoryName = directoryPath === '/'
-        ? 'root'
-        : directoryPath.split('/').filter(Boolean).pop() || 'directory';
-
-      return new Response(zipData as BodyInit, {
+      return new Response(stdout, {
         status: 200,
         headers: {
           'content-type': 'application/zip',
-          'content-disposition': `attachment; filename="${directoryName}.zip"`,
+          'content-disposition': `attachment; filename="${name}.zip"`,
           'cache-control': 'no-cache, no-store, must-revalidate',
         },
       });
     } catch (error) {
       console.error('Error creating directory zip:', error);
+      if (error.message === 'Invalid file path') {
+        return new Response('Invalid directory path', { status: 400 });
+      }
       return new Response('Error creating zip archive', { status: 500 });
     }
   },

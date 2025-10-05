@@ -180,7 +180,7 @@ export class AppConfig {
     return this.config.files.allowPublicSharing;
   }
 
-  static async isDirectoryDownloadsAllowed(): Promise<boolean> {
+  static async areDirectoryDownloadsAllowed(): Promise<boolean> {
     await this.loadConfig();
 
     return this.config.files.allowDirectoryDownloads;

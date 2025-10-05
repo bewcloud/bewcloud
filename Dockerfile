@@ -2,7 +2,6 @@ FROM denoland/deno:ubuntu-2.5.2
 
 EXPOSE 8000
 
-RUN apt-get update && apt-get install -y make
 
 WORKDIR /app
 
@@ -21,3 +20,4 @@ USER deno
 RUN deno cache --reload main.ts
 
 CMD ["run", "--allow-all", "main.ts"]
+RUN apt-get update && apt-get install -y make zip

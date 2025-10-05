@@ -7,7 +7,7 @@ interface FilesWrapperProps {
   initialPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
-  isDirectoryDownloadsAllowed: boolean;
+  areDirectoryDownloadsAllowed: boolean;
   fileShareId?: string;
 }
 
@@ -19,7 +19,7 @@ export default function FilesWrapper(
     initialPath,
     baseUrl,
     isFileSharingAllowed,
-    isDirectoryDownloadsAllowed,
+    areDirectoryDownloadsAllowed,
     fileShareId,
   }: FilesWrapperProps,
 ) {
@@ -30,7 +30,7 @@ export default function FilesWrapper(
       initialPath={initialPath}
       baseUrl={baseUrl}
       isFileSharingAllowed={isFileSharingAllowed}
-      isDirectoryDownloadsAllowed={isDirectoryDownloadsAllowed}
+      areDirectoryDownloadsAllowed={areDirectoryDownloadsAllowed}
       fileShareId={fileShareId}
     />
   );

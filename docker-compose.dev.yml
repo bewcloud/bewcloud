@@ -18,7 +18,7 @@ services:
 
   # NOTE: If you don't want to use the CardDav/CalDav servers, you can comment/remove this service.
   radicale:
-    image: tomsquest/docker-radicale:3.5.6.0
+    image: tomsquest/docker-radicale:3.5.7.0
     ports:
       - 5232:5232
     init: true

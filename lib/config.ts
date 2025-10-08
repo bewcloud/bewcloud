@@ -22,7 +22,7 @@ export class AppConfig {
       files: {
         rootPath: 'data-files',
         allowPublicSharing: false,
-        allowDirectoryDownloads: true,
+        allowDirectoryDownloads: false,
       },
       core: {
         enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'],

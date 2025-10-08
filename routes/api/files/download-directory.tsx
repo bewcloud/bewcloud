@@ -51,7 +51,9 @@ export const handler: Handlers<Data, FreshContextState> = {
 
       if (code !== 0) {
         const errorText = new TextDecoder().decode(stderr);
+
         console.error('Zip command failed:', errorText);
+
         return new Response('Error creating zip archive', { status: 500 });
       }
 
@@ -65,9 +67,11 @@ export const handler: Handlers<Data, FreshContextState> = {
       });
     } catch (error) {
       console.error('Error creating directory zip:', error);
-      if (error.message === 'Invalid file path') {
+
+      if ((error as Error).message === 'Invalid file path') {
         return new Response('Invalid directory path', { status: 400 });
       }
+
       return new Response('Error creating zip archive', { status: 500 });
     }
   },

@@ -598,7 +598,11 @@ export async function ensureUserPathIsValidAndSecurelyAccessible(userId: string,
 
   const resolvedFullPath = `${resolve(fullPath)}/`;
 
-  if (!resolvedFullPath.startsWith(userRootPath)) {
+  // Normalize path separators for consistent comparison on Windows
+  const normalizedUserRootPath = userRootPath.replaceAll('\\', '/');
+  const normalizedResolvedFullPath = resolvedFullPath.replaceAll('\\', '/');
+
+  if (!normalizedResolvedFullPath.startsWith(normalizedUserRootPath)) {
     throw new Error('Invalid file path');
   }
 }

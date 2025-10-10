@@ -63,9 +63,33 @@ export default function ListFiles(
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
 
-  function getSortIcon(column: SortColumn): string | null {
-    if (sortBy !== column) return '↕'; // neutral sort icon
-    return sortOrder === 'asc' ? '↑' : '↓';
+  function renderSortIcon(column: SortColumn): ComponentChildren {
+    const isActive = sortBy === column;
+
+    if (isActive) {
+      // Show active sort icon with rotation
+      const rotation = sortOrder === 'asc' ? '' : 'rotate-180';
+      return (
+        <img
+          src='/images/sort-up.svg'
+          class={`white drop-shadow-md w-4 h-4 ${rotation}`}
+          width={16}
+          height={16}
+          alt={`Sort ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+        />
+      );
+    } else {
+      // Show neutral sort icon only on hover
+      return (
+        <img
+          src='/images/sort-none.svg'
+          class='white drop-shadow-md w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity'
+          width={16}
+          height={16}
+          alt='Sort'
+        />
+      );
+    }
   }
 
   function renderSortableHeader(
@@ -74,7 +98,6 @@ export default function ListFiles(
     className?: string,
   ): ComponentChildren {
     const isActive = sortBy === column;
-    const iconClass = isActive ? 'text-blue-400' : 'text-slate-400';
 
     if (!onClickSort) {
       return <th scope='col' class={`px-6 py-4 font-medium text-white ${className || ''}`}>{label}</th>;
@@ -83,15 +106,15 @@ export default function ListFiles(
     return (
       <th scope='col' class={`px-6 py-4 font-medium text-white ${className || ''}`}>
         <button
-          class={`flex items-center justify-between w-full text-left hover:text-blue-300 ${
+          class={`group flex items-center justify-between w-full text-left hover:text-blue-300 ${
             isActive ? 'text-blue-400' : ''
           }`}
           onClick={() => onClickSort(column)}
           type='button'
         >
           <span>{label}</span>
-          <span class={`ml-1 text-xs ${iconClass}`}>
-            {getSortIcon(column)}
+          <span class='ml-1'>
+            {renderSortIcon(column)}
           </span>
         </button>
       </th>

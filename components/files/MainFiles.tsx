@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { SortColumn, SortOrder } from '/lib/utils/files.ts';
+import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/lib/utils/files.ts';
 import { ResponseBody as UploadResponseBody } from '/routes/api/files/upload.tsx';
 import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/routes/api/files/rename.tsx';
 import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/routes/api/files/move.tsx';
@@ -141,14 +141,23 @@ export default function MainFiles(
       newSortOrder = 'asc';
     }
 
+    // Update the state
+    sortBy.value = column;
+    sortOrder.value = newSortOrder;
+
+    // Apply sorting to current data
+    const sortOptions = { sortBy: column, sortOrder: newSortOrder };
+    directories.value = sortDirectories(directories.value, sortOptions);
+    files.value = sortFiles(files.value, sortOptions);
+
     // Save to localStorage
     saveSortingPreference(path.value, column, newSortOrder);
 
-    // Update URL and navigate to trigger re-render with new sorting
+    // Update URL without navigating (for bookmark/refresh support)
     const url = new URL(window.location.href);
     url.searchParams.set('sortBy', column);
     url.searchParams.set('sortOrder', newSortOrder);
-    window.location.href = url.toString();
+    window.history.replaceState({}, '', url.toString());
   }
 
   function onClickUploadFile(uploadDirectory = false) {

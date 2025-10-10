@@ -49,6 +49,7 @@ interface MainFilesProps {
   initialPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
+  areDirectoryDownloadsAllowed: boolean;
   fileShareId?: string;
   initialSortBy?: SortColumn;
   initialSortOrder?: SortOrder;
@@ -61,6 +62,7 @@ export default function MainFiles(
     initialPath,
     baseUrl,
     isFileSharingAllowed,
+    areDirectoryDownloadsAllowed,
     fileShareId,
     initialSortBy = 'name',
     initialSortOrder = 'asc',
@@ -485,6 +487,21 @@ export default function MainFiles(
 
     isUpdating.value = false;
     moveDirectoryOrFileModal.value = null;
+  }
+
+  function onClickDownloadDirectory(parentPath: string, name: string) {
+    // Create download URL with proper path encoding
+    const downloadUrl = `/api/files/download-directory?parentPath=${encodeURIComponent(parentPath)}&name=${
+      encodeURIComponent(name)
+    }`;
+
+    // Create a temporary anchor element to trigger download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `${name}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   async function onClickDeleteDirectory(parentPath: string, name: string, isBulkDeleting = false) {
@@ -920,6 +937,7 @@ export default function MainFiles(
           onClickDeleteFile={onClickDeleteFile}
           onClickCreateShare={isFileSharingAllowed ? onClickCreateShare : undefined}
           onClickOpenManageShare={isFileSharingAllowed ? onClickOpenManageShare : undefined}
+          onClickDownloadDirectory={areDirectoryDownloadsAllowed ? onClickDownloadDirectory : undefined}
           fileShareId={fileShareId}
           sortBy={sortBy.value}
           sortOrder={sortOrder.value}

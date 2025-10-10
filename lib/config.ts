@@ -22,6 +22,7 @@ export class AppConfig {
       files: {
         rootPath: 'data-files',
         allowPublicSharing: false,
+        allowDirectoryDownloads: false,
       },
       core: {
         enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'],
@@ -177,6 +178,12 @@ export class AppConfig {
     await this.loadConfig();
 
     return this.config.files.allowPublicSharing;
+  }
+
+  static async areDirectoryDownloadsAllowed(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.files.allowDirectoryDownloads;
   }
 
   static async getFilesRootPath(): Promise<string> {

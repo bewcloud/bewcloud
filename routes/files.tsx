@@ -12,6 +12,7 @@ interface Data {
   currentPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
+  areDirectoryDownloadsAllowed: boolean;
   sortBy: SortColumn;
   sortOrder: SortOrder;
 }
@@ -56,6 +57,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const userFiles = await FileModel.list(context.state.user.id, currentPath, sortOptions);
 
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
+    const areDirectoryDownloadsAllowed = await AppConfig.areDirectoryDownloadsAllowed();
 
     return await context.render({
       userDirectories,
@@ -63,6 +65,7 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath,
       baseUrl,
       isFileSharingAllowed: isPublicFileSharingAllowed,
+      areDirectoryDownloadsAllowed,
       sortBy: finalSortBy,
       sortOrder: finalSortOrder,
     });
@@ -78,6 +81,7 @@ export default function FilesPage({ data }: PageProps<Data, FreshContextState>) 
         initialPath={data.currentPath}
         baseUrl={data.baseUrl}
         isFileSharingAllowed={data.isFileSharingAllowed}
+        areDirectoryDownloadsAllowed={data.areDirectoryDownloadsAllowed}
         initialSortBy={data.sortBy}
         initialSortOrder={data.sortOrder}
       />

@@ -214,6 +214,17 @@ export class ArticleModel {
     return articles;
   }
 
+  static async listUnread(userId: string) {
+    const articles = await db.query<NewsFeedArticle>(
+      sql`SELECT * FROM "bewcloud_news_feed_articles" WHERE "user_id" = $1 AND "is_read" = FALSE ORDER BY "article_date" DESC`,
+      [
+        userId,
+      ],
+    );
+
+    return articles;
+  }
+
   static async listByFeedId(feedId: string) {
     const articles = await db.query<NewsFeedArticle>(
       sql`SELECT * FROM "bewcloud_news_feed_articles" WHERE "feed_id" = $1 ORDER BY "article_date" DESC`,

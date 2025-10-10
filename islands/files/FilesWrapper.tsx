@@ -8,6 +8,7 @@ interface FilesWrapperProps {
   initialPath: string;
   baseUrl: string;
   isFileSharingAllowed: boolean;
+  areDirectoryDownloadsAllowed: boolean;
   fileShareId?: string;
   initialSortBy?: SortColumn;
   initialSortOrder?: SortOrder;
@@ -21,6 +22,7 @@ export default function FilesWrapper(
     initialPath,
     baseUrl,
     isFileSharingAllowed,
+    areDirectoryDownloadsAllowed,
     fileShareId,
     initialSortBy = 'name',
     initialSortOrder = 'asc',
@@ -33,6 +35,7 @@ export default function FilesWrapper(
       initialPath={initialPath}
       baseUrl={baseUrl}
       isFileSharingAllowed={isFileSharingAllowed}
+      areDirectoryDownloadsAllowed={areDirectoryDownloadsAllowed}
       fileShareId={fileShareId}
       initialSortBy={initialSortBy}
       initialSortOrder={initialSortOrder}

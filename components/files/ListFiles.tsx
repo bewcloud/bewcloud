@@ -20,6 +20,7 @@ interface ListFilesProps {
   onClickDeleteFile?: (parentPath: string, name: string) => Promise<void>;
   onClickCreateShare?: (filePath: string) => void;
   onClickOpenManageShare?: (fileShareId: string) => void;
+  onClickDownloadDirectory?: (parentPath: string, name: string) => void;
   isShowingNotes?: boolean;
   isShowingPhotos?: boolean;
   fileShareId?: string;
@@ -44,6 +45,7 @@ export default function ListFiles(
     onClickDeleteFile,
     onClickCreateShare,
     onClickOpenManageShare,
+    onClickDownloadDirectory,
     isShowingNotes,
     isShowingPhotos,
     fileShareId,
@@ -229,10 +231,26 @@ export default function ListFiles(
                         typeof onClickOpenMoveDirectory === 'undefined')
                       ? null
                       : (
-                        <section class='flex items-center justify-end w-24'>
+                        <section class='flex items-center justify-end w-32'>
+                          {typeof onClickDownloadDirectory === 'undefined' ? null : (
+                            <span
+                              class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
+                              onClick={() => onClickDownloadDirectory(directory.parent_path, directory.directory_name)}
+                            >
+                              <img
+                                src='/images/download.svg'
+                                class='white drop-shadow-md'
+                                width={18}
+                                height={18}
+                                alt='Download directory as zip'
+                                title='Download directory as zip'
+                              />
+                            </span>
+                          )}
                           <span
                             class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
-                            onClick={() => onClickOpenRenameDirectory(directory.parent_path, directory.directory_name)}
+                            onClick={() =>
+                              onClickOpenRenameDirectory(directory.parent_path, directory.directory_name)}
                           >
                             <img
                               src='/images/rename.svg'
@@ -245,8 +263,7 @@ export default function ListFiles(
                           </span>
                           <span
                             class='invisible cursor-pointer group-hover:visible opacity-50 hover:opacity-100 mr-2'
-                            onClick={() =>
-                              onClickOpenMoveDirectory(directory.parent_path, directory.directory_name)}
+                            onClick={() => onClickOpenMoveDirectory(directory.parent_path, directory.directory_name)}
                           >
                             <img
                               src='/images/move.svg'

@@ -15,6 +15,8 @@ interface Filter {
   status: 'all' | 'unread';
 }
 
+let hasFetchedAllArticlesOnce = false;
+
 export default function Articles({ initialArticles }: ArticlesProps) {
   const isRefreshing = useSignal<boolean>(false);
   const articles = useSignal<NewsFeedArticle[]>(initialArticles);
@@ -147,6 +149,11 @@ export default function Articles({ initialArticles }: ArticlesProps) {
 
   function setNewFilter(newFilter: Partial<Filter>) {
     filter.value = { ...filter.value, ...newFilter };
+
+    if (newFilter.status === 'all' && !hasFetchedAllArticlesOnce) {
+      refreshArticles();
+      hasFetchedAllArticlesOnce = true;
+    }
 
     isFilterDropdownOpen.value = false;
   }

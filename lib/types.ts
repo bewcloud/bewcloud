@@ -184,6 +184,8 @@ export interface Config {
     rootPath: string;
     /** If true, public file sharing will be allowed (still requires a user to enable sharing for a given file or directory) */
     allowPublicSharing: boolean;
+    /** If true, directories can be downloaded as zip files */
+    allowDirectoryDownloads: boolean;
   };
   core: {
     /** dashboard and files cannot be disabled */

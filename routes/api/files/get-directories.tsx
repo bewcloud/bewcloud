@@ -2,15 +2,12 @@ import { Handlers } from 'fresh/server.ts';
 
 import { Directory, FreshContextState } from '/lib/types.ts';
 import { DirectoryModel } from '/lib/models/files.ts';
-import { SortColumn, SortOrder } from '/lib/utils/files.ts';
 
 interface Data {}
 
 export interface RequestBody {
   parentPath: string;
   directoryPathToExclude?: string;
-  sortBy?: SortColumn;
-  sortOrder?: SortOrder;
 }
 
 export interface ResponseBody {
@@ -32,14 +29,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const sortOptions = (requestBody.sortBy && requestBody.sortOrder)
-      ? { sortBy: requestBody.sortBy, sortOrder: requestBody.sortOrder }
-      : undefined;
-
     const directories = await DirectoryModel.list(
       context.state.user.id,
       requestBody.parentPath,
-      sortOptions,
     );
 
     const filteredDirectories = requestBody.directoryPathToExclude

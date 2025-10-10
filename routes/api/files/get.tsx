@@ -2,14 +2,11 @@ import { Handlers } from 'fresh/server.ts';
 
 import { DirectoryFile, FreshContextState } from '/lib/types.ts';
 import { FileModel } from '/lib/models/files.ts';
-import { SortColumn, SortOrder } from '/lib/utils/files.ts';
 
 interface Data {}
 
 export interface RequestBody {
   parentPath: string;
-  sortBy?: SortColumn;
-  sortOrder?: SortOrder;
 }
 
 export interface ResponseBody {
@@ -31,14 +28,9 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const sortOptions = (requestBody.sortBy && requestBody.sortOrder)
-      ? { sortBy: requestBody.sortBy, sortOrder: requestBody.sortOrder }
-      : undefined;
-
     const files = await FileModel.list(
       context.state.user.id,
       requestBody.parentPath,
-      sortOptions,
     );
 
     const responseBody: ResponseBody = { success: true, files };

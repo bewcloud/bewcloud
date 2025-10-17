@@ -168,8 +168,10 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     await lock.acquire();
 
     const responseXml: Record<string, any> = {
-      '@version': '1.0',
-      '@encoding': 'UTF-8',
+      xml: {
+        '@version': '1.0',
+        '@encoding': 'UTF-8',
+      },
       prop: {
         '@xmlns:D': 'DAV:',
         lockdiscovery: {

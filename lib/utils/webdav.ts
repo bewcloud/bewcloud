@@ -12,7 +12,7 @@ export function addDavPrefixToKeys(object: Record<string, any>, prefix = 'D:'): 
 
   if (typeof object === 'object' && object !== null) {
     return Object.entries(object).reduce((reducedObject, [key, value]) => {
-      const prefixedKey = key.startsWith('#') || key.startsWith('@') ? key : `${prefix}${key}`;
+      const prefixedKey = key === 'xml' || key.startsWith('#') || key.startsWith('@') ? key : `${prefix}${key}`;
       reducedObject[prefixedKey] = addDavPrefixToKeys(value);
       return reducedObject;
     }, {} as Record<string, any>);
@@ -105,8 +105,10 @@ export async function buildPropFindResponse(
   const filePaths = await getFilePaths(join(rootPath, queryPath), depth);
 
   const response: Record<string, any> = {
-    '@version': '1.0',
-    '@encoding': 'UTF-8',
+    xml: {
+      '@version': '1.0',
+      '@encoding': 'UTF-8',
+    },
     multistatus: {
       '@xmlns:D': 'DAV:',
       response: [],

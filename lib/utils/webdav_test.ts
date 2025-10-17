@@ -135,8 +135,10 @@ Deno.test('that @libs/xml.parse works', () => {
   </prop>
 </propfind>`,
       expected: {
-        '@version': '1.0',
-        '@encoding': 'UTF-8',
+        xml: {
+          '@version': 1,
+          '@encoding': 'UTF-8',
+        },
         propfind: {
           '@xmlns': 'DAV:',
           prop: {
@@ -153,8 +155,10 @@ Deno.test('that @libs/xml.parse works', () => {
   </D:prop>
 </D:propfind>`,
       expected: {
-        '@version': '1.0',
-        '@encoding': 'UTF-8',
+        xml: {
+          '@version': 1,
+          '@encoding': 'UTF-8',
+        },
         'D:propfind': {
           '@xmlns:D': 'DAV:',
           'D:prop': {
@@ -175,8 +179,10 @@ Deno.test('that @libs/xml.stringify works', () => {
   const tests: { input: Record<string, any>; expected: string }[] = [
     {
       input: {
-        '@version': '1.0',
-        '@encoding': 'UTF-8',
+        xml: {
+          '@version': '1.0',
+          '@encoding': 'UTF-8',
+        },
         'D:propfind': {
           'D:prop': {
             'D:displayname': 'test',
@@ -192,8 +198,10 @@ Deno.test('that @libs/xml.stringify works', () => {
     },
     {
       input: {
-        '@version': '1.0',
-        '@encoding': 'UTF-8',
+        xml: {
+          '@version': '1.0',
+          '@encoding': 'UTF-8',
+        },
         'D:propfind': {
           '@xmlns:D': 'DAV:',
           'D:prop': {

@@ -168,10 +168,8 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     await lock.acquire();
 
     const responseXml: Record<string, any> = {
-      xml: {
-        '@version': '1.0',
-        '@encoding': 'UTF-8',
-      },
+      '@version': '1.0',
+      '@encoding': 'UTF-8',
       prop: {
         '@xmlns:D': 'DAV:',
         lockdiscovery: {
@@ -218,10 +216,17 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     const depthString = request.headers.get('depth');
     const depth = depthString ? parseInt(depthString, 10) : null;
     const xml = await request.clone().text();
+    let properties: string[] = [];
 
-    const parsedXml = parse(xml);
+    try {
+      const parsedXml = parse(xml) as Record<string, any>;
 
-    const properties = getPropertyNames(parsedXml);
+      properties = getPropertyNames(parsedXml);
+    } catch (error) {
+      console.error('Error parsing XML: ', error);
+
+      properties = ['allprop'];
+    }
 
     await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 

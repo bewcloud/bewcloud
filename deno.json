@@ -1,5 +1,5 @@
 {
-  "lock": false,
+  "lock": true,
   "tasks": {
     "check": "deno fmt --check && deno lint && deno check .",
     "cli": "echo \"import '\\$fresh/src/dev/cli.ts'\" | deno run --unstable -A -",

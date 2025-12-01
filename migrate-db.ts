@@ -72,7 +72,7 @@ async function runMigrations(missingMigrations: string[]): Promise<void> {
 
       await db.query(migrationSql);
 
-      await db.query(sql`INSERT INTO "public"."bewcloud_migrations" ("name", "executed_at") VALUES ($1, NOW())`, [
+      await db.query(sql`INSERT INTO "bewcloud_migrations" ("name", "executed_at") VALUES ($1, NOW())`, [
         missingMigration,
       ]);
 

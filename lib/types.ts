@@ -190,6 +190,10 @@ export interface Config {
   core: {
     /** dashboard and files cannot be disabled */
     enabledApps: OptionalApp[];
+    /** The database engine to use. Currently only 'postgresql' and 'sqlite' are supported. */
+    databaseEngine: 'postgresql' | 'sqlite';
+    /** The path to the SQLite database file. Only used if databaseEngine is 'sqlite'. */
+    sqliteFilePath: string;
   };
   visuals: {
     /** An override title of the application. Empty shows the default title. */

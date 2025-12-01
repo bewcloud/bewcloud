@@ -1,5 +1,10 @@
 import { Client } from 'postgres';
+import { DatabaseSync } from 'node:sqlite';
+
 import '@std/dotenv/load';
+
+import { Config } from '/lib/types.ts';
+import { AppConfig } from '/lib/config.ts';
 
 const POSTGRESQL_HOST = Deno.env.get('POSTGRESQL_HOST') || '';
 const POSTGRESQL_USER = Deno.env.get('POSTGRESQL_USER') || '';
@@ -20,8 +25,9 @@ const tls = POSTGRESQL_CAFILE
   };
 
 export default class Database {
-  protected db?: Client;
-  protected throwOnConnectionError?: boolean;
+  protected db?: Client | DatabaseSync;
+  private databaseEngine: Config['core']['databaseEngine'] = 'postgresql';
+  private throwOnConnectionError?: boolean;
 
   constructor(
     { connectNow = false, throwOnConnectionError = false }: { connectNow?: boolean; throwOnConnectionError?: boolean } =
@@ -30,11 +36,43 @@ export default class Database {
     this.throwOnConnectionError = throwOnConnectionError;
 
     if (connectNow) {
-      this.connectToPostgres();
+      this.connectToDatabase();
     }
   }
 
-  protected async connectToPostgres() {
+  private async connectToDatabase() {
+    if (this.db) {
+      return this.db;
+    }
+
+    const config = await AppConfig.getConfig();
+
+    this.databaseEngine = config.core.databaseEngine;
+
+    if (this.databaseEngine === 'postgresql') {
+      await this.connectToPostgres();
+    } else {
+      await this.connectToSQLite();
+    }
+  }
+
+  private async disconnectFromDatabase() {
+    if (!this.db) {
+      return;
+    }
+
+    const config = await AppConfig.getConfig();
+
+    this.databaseEngine = config.core.databaseEngine;
+
+    if (this.databaseEngine === 'postgresql') {
+      await this.disconnectFromPostgres();
+    } else {
+      this.disconnectFromSQLite();
+    }
+  }
+
+  private async connectToPostgres() {
     if (this.db) {
       return this.db;
     }
@@ -88,28 +126,54 @@ export default class Database {
     }
   }
 
-  protected async disconnectFromPostgres() {
+  private async connectToSQLite() {
+    if (this.db) {
+      return this.db;
+    }
+
+    const config = await AppConfig.getConfig();
+
+    const sqliteDatabase = new DatabaseSync(config.core.sqliteFilePath);
+
+    this.db = sqliteDatabase;
+  }
+
+  private disconnectFromSQLite() {
     if (!this.db) {
       return;
     }
 
-    await this.db.end();
+    (this.db as DatabaseSync).close();
+  }
+
+  private async disconnectFromPostgres() {
+    if (!this.db) {
+      return;
+    }
+
+    await (this.db as Client).end();
 
     this.db = undefined;
   }
 
   public close() {
-    this.disconnectFromPostgres();
+    this.disconnectFromDatabase();
   }
 
-  public async query<T>(sql: string, args?: any[]) {
+  public async query<T>(sql: string, args?: any[]): Promise<T[]> {
     if (!this.db) {
-      await this.connectToPostgres();
+      await this.connectToDatabase();
     }
 
-    const result = await this.db!.queryObject<T>(sql, args);
+    if (this.databaseEngine === 'postgresql') {
+      const result = await (this.db as Client).queryObject<T>(sql, args);
 
-    return result.rows;
+      return result.rows;
+    }
+
+    const result = (this.db as DatabaseSync).prepare(sql).all(...(args || [])) as T[];
+
+    return result;
   }
 }
 

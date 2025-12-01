@@ -26,6 +26,8 @@ export class AppConfig {
       },
       core: {
         enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'],
+        databaseEngine: 'postgresql',
+        sqliteFilePath: '',
       },
       visuals: {
         title: '',

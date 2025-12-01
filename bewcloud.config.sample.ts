@@ -22,6 +22,8 @@ const config: PartialDeep<Config> = {
   // },
   // core: {
   //   enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'], // dashboard and files cannot be disabled
+  //   databaseEngine: 'postgresql', // The database engine to use. Currently only 'postgresql' and 'sqlite' are supported.
+  //   sqliteFilePath: '', // The path to the SQLite database file. Only used if databaseEngine is 'sqlite'.
   // },
   // visuals: {
   //   title: 'My own cloud',

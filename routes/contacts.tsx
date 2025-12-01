@@ -28,6 +28,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       throw new Error('CardDAV server is not enabled');
     }
 
+    if (!(await AppConfig.isAppEnabled('contacts'))) {
+      throw new Error('Contacts app is not enabled');
+    }
+
     const userId = context.state.user.id;
 
     const searchParams = new URL(request.url).searchParams;

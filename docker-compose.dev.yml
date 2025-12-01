@@ -1,13 +1,13 @@
 services:
   postgresql:
-    image: postgres:17
+    image: postgres:18.1
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=fake
       - POSTGRES_DB=bewcloud
     restart: on-failure
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/18/docker
     ports:
       - 5432:5432
     ulimits:
@@ -18,7 +18,7 @@ services:
 
   # NOTE: If you don't want to use the CardDav/CalDav servers, you can comment/remove this service.
   radicale:
-    image: tomsquest/docker-radicale:3.5.7.0
+    image: tomsquest/docker-radicale:3.5.8.2
     ports:
       - 5232:5232
     init: true

@@ -27,6 +27,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    if (!(await AppConfig.isAppEnabled('files'))) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
 
     if (!isPublicFileSharingAllowed) {

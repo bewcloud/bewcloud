@@ -3,6 +3,7 @@ import { Handlers } from 'fresh/server.ts';
 import { FreshContextState, NewsFeedArticle } from '/lib/types.ts';
 import { ArticleModel, FeedModel } from '/lib/models/news.ts';
 import { fetchNewArticles } from '/crons/news.ts';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {}
 
@@ -17,6 +18,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async POST(request, context) {
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
+    }
+
+    if (!(await AppConfig.isAppEnabled('news'))) {
+      return new Response('Forbidden', { status: 403 });
     }
 
     const newsFeeds = await FeedModel.list(context.state.user.id);

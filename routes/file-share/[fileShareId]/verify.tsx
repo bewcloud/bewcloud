@@ -29,6 +29,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Not Found', { status: 404 });
     }
 
+    if (!(await AppConfig.isAppEnabled('files'))) {
+      return new Response('Not Found', { status: 404 });
+    }
+
     const fileShare = await FileShareModel.getById(fileShareId);
 
     if (!fileShare) {
@@ -51,6 +55,10 @@ export const handler: Handlers<Data, FreshContextState> = {
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
 
     if (!isPublicFileSharingAllowed) {
+      return new Response('Not Found', { status: 404 });
+    }
+
+    if (!(await AppConfig.isAppEnabled('files'))) {
       return new Response('Not Found', { status: 404 });
     }
 

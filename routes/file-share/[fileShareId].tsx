@@ -35,6 +35,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const baseUrl = (await AppConfig.getConfig()).auth.baseUrl;
 
+    if (!(await AppConfig.isAppEnabled('files'))) {
+      return new Response('Not Found', { status: 404 });
+    }
+
     const fileShare = await FileShareModel.getById(fileShareId);
 
     if (!fileShare) {

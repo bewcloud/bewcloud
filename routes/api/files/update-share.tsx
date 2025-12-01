@@ -32,6 +32,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Forbidden', { status: 403 });
     }
 
+    if (!(await AppConfig.isAppEnabled('files'))) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     const requestBody = await request.clone().json() as RequestBody;
 
     if (

@@ -152,7 +152,7 @@ export const currencyMap = new Map<SupportedCurrencySymbol, SupportedCurrency>([
 
 export type PartialDeep<T> = (T extends (infer U)[] ? PartialDeep<U>[] : { [P in keyof T]?: PartialDeep<T[P]> }) | T;
 
-export type OptionalApp = 'news' | 'notes' | 'photos' | 'expenses' | 'contacts' | 'calendar';
+export type OptionalApp = 'dashboard' | 'files' | 'news' | 'notes' | 'photos' | 'expenses' | 'contacts' | 'calendar';
 
 export interface Config {
   auth: {
@@ -188,7 +188,7 @@ export interface Config {
     allowDirectoryDownloads: boolean;
   };
   core: {
-    /** dashboard and files cannot be disabled */
+    /** The apps to show, in order of appearance in the header. The first app will be the default one shown after logging in. At least one is required. */
     enabledApps: OptionalApp[];
   };
   visuals: {

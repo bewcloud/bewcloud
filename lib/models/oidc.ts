@@ -184,7 +184,9 @@ export class OidcModel {
       throw new Error('There was a problem signing up or logging in!');
     }
 
-    let urlToRedirectTo = '/dashboard';
+    const firstEnabledApp = config.core.enabledApps[0];
+
+    let urlToRedirectTo = `/${firstEnabledApp}`;
 
     if (urlSearchParams.has('state')) {
       const state = this.parseState(urlSearchParams.get('state')!);

@@ -3,6 +3,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 import { FreshContextState } from '/lib/types.ts';
 import { FileModel } from '/lib/models/files.ts';
 import Note from '/islands/notes/Note.tsx';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {
   fileName: string;
@@ -20,6 +21,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     if (!fileName) {
       return new Response('Not Found', { status: 404 });
+    }
+
+    if (!(await AppConfig.isAppEnabled('notes'))) {
+      throw new Error('Notes app is not enabled');
     }
 
     const searchParams = new URL(request.url).searchParams;

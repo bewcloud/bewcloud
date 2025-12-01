@@ -1,6 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
+import { AppConfig } from '/lib/config.ts';
 import { DashboardModel } from '/lib/models/dashboard.ts';
 
 interface Data {}
@@ -17,6 +18,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async POST(request, context) {
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
+    }
+
+    if (!(await AppConfig.isAppEnabled('dashboard'))) {
+      return new Response('Forbidden', { status: 403 });
     }
 
     const userDashboard = await DashboardModel.getByUserId(context.state.user.id);

@@ -21,6 +21,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       throw new Error('CalDAV server is not enabled');
     }
 
+    if (!(await AppConfig.isAppEnabled('calendar'))) {
+      throw new Error('Calendar app is not enabled');
+    }
+
     const userCalendars = await CalendarModel.list(context.state.user.id);
 
     return await context.render({ userCalendars });

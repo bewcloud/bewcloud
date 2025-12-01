@@ -16,7 +16,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     if (!(await AppConfig.isAppEnabled('news'))) {
-      return new Response('Redirect', { status: 303, headers: { 'Location': `/dashboard` } });
+      return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
 
     const userArticles = await ArticleModel.listUnread(context.state.user.id);

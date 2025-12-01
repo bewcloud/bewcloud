@@ -1,6 +1,7 @@
 import { Head } from 'fresh/runtime.ts';
 
 import { OptionalApp, User } from '/lib/types.ts';
+import { capitalizeWord } from '/lib/utils/misc.ts';
 
 interface Data {
   route: string;
@@ -23,52 +24,10 @@ export default function Header({ route, user, enabledApps }: Data) {
 
   const iconWidthAndHeightInPixels = 20;
 
-  const potentialMenuItems: (MenuItem | null)[] = [
-    {
-      url: '/dashboard',
-      label: 'Dashboard',
-    },
-    enabledApps.includes('news')
-      ? {
-        url: '/news',
-        label: 'News',
-      }
-      : null,
-    {
-      url: '/files',
-      label: 'Files',
-    },
-    enabledApps.includes('notes')
-      ? {
-        url: '/notes',
-        label: 'Notes',
-      }
-      : null,
-    enabledApps.includes('photos')
-      ? {
-        url: '/photos',
-        label: 'Photos',
-      }
-      : null,
-    enabledApps.includes('expenses')
-      ? {
-        url: '/expenses',
-        label: 'Expenses',
-      }
-      : null,
-    enabledApps.includes('contacts')
-      ? {
-        url: '/contacts',
-        label: 'Contacts',
-      }
-      : null,
-    enabledApps.includes('calendar')
-      ? {
-        url: '/calendar',
-        label: 'Calendar',
-      }
-      : null,
-  ];
+  const potentialMenuItems: (MenuItem | null)[] = enabledApps.map((app) => ({
+    url: `/${app}`,
+    label: capitalizeWord(app),
+  }));
 
   const menuItems = potentialMenuItems.filter(Boolean) as MenuItem[];
 

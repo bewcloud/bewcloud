@@ -1,6 +1,7 @@
 import { Handlers } from 'fresh/server.ts';
 
 import { FreshContextState } from '/lib/types.ts';
+import { AppConfig } from '/lib/config.ts';
 import { FileModel } from '/lib/models/files.ts';
 
 interface Data {}
@@ -15,6 +16,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     if (!fileName) {
       return new Response('Not Found', { status: 404 });
+    }
+
+    if (!(await AppConfig.isAppEnabled('files'))) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
 
     const searchParams = new URL(request.url).searchParams;

@@ -2,6 +2,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { FreshContextState, NewsFeed } from '/lib/types.ts';
 import { FeedModel } from '/lib/models/news.ts';
+import { AppConfig } from '/lib/config.ts';
 import Feeds from '/islands/news/Feeds.tsx';
 
 interface Data {
@@ -12,6 +13,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
+    }
+
+    if (!(await AppConfig.isAppEnabled('news'))) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
 
     const userFeeds = await FeedModel.list(context.state.user.id);

@@ -27,6 +27,13 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     });
   }
 
+  if (
+    !(await AppConfig.isAppEnabled('files')) && !(await AppConfig.isAppEnabled('photos')) &&
+    !(await AppConfig.isAppEnabled('notes'))
+  ) {
+    return new Response('Forbidden', { status: 403 });
+  }
+
   let { filePath } = context.params;
 
   if (!filePath) {

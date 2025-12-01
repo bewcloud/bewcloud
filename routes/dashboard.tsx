@@ -2,6 +2,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 
 import { Dashboard, FreshContextState } from '/lib/types.ts';
 import { DashboardModel } from '/lib/models/dashboard.ts';
+import { AppConfig } from '/lib/config.ts';
 import Notes from '/islands/dashboard/Notes.tsx';
 import Links from '/islands/dashboard/Links.tsx';
 
@@ -13,6 +14,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
+    }
+
+    if (!(await AppConfig.isAppEnabled('dashboard'))) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
 
     let userDashboard = await DashboardModel.getByUserId(context.state.user.id);

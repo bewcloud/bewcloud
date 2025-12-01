@@ -6,6 +6,7 @@ import { Contact, ContactModel } from '/lib/models/contacts.ts';
 import { getFormDataField } from '/lib/form-utils.tsx';
 import ViewContact, { formFields } from '/islands/contacts/ViewContact.tsx';
 import { updateVCard } from '/lib/utils/contacts.ts';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {
   contact: Contact;
@@ -19,6 +20,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
+    }
+
+    if (!(await AppConfig.isAppEnabled('contacts'))) {
+      throw new Error('Contacts app is not enabled');
     }
 
     const { contactId } = context.params;
@@ -41,6 +46,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async POST(request, context) {
     if (!context.state.user) {
       return new Response('Redirect', { status: 303, headers: { 'Location': `/login` } });
+    }
+
+    if (!(await AppConfig.isAppEnabled('contacts'))) {
+      throw new Error('Contacts app is not enabled');
     }
 
     const { contactId } = context.params;

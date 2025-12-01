@@ -3,6 +3,7 @@ import sharp from 'sharp';
 
 import { FreshContextState } from '/lib/types.ts';
 import { FileModel } from '/lib/models/files.ts';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {}
 
@@ -21,6 +22,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     if (!fileName) {
       return new Response('Not Found', { status: 404 });
+    }
+
+    if (!(await AppConfig.isAppEnabled('photos'))) {
+      throw new Error('Photos app is not enabled');
     }
 
     const searchParams = new URL(request.url).searchParams;

@@ -4,6 +4,7 @@ import { FreshContextState, NewsFeed } from '/lib/types.ts';
 import { concurrentPromises } from '/lib/utils/misc.ts';
 import { FeedModel } from '/lib/models/news.ts';
 import { fetchNewArticles } from '/crons/news.ts';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {}
 
@@ -20,6 +21,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async POST(request, context) {
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
+    }
+
+    if (!(await AppConfig.isAppEnabled('news'))) {
+      return new Response('Forbidden', { status: 403 });
     }
 
     const requestBody = await request.clone().json() as RequestBody;

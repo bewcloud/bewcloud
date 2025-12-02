@@ -95,18 +95,47 @@ export const handler: Handlers<Data, FreshContextState> = {
       // Convert Node.js stream to Web ReadableStream
       const readableStream = new ReadableStream({
         async start(controller) {
+          let isCancelled = false;
+
           zipStream.on('data', (chunk: Buffer) => {
-            controller.enqueue(new Uint8Array(chunk));
+            try {
+              if (!isCancelled) {
+                controller.enqueue(new Uint8Array(chunk));
+              }
+            } catch (error) {
+              // Stream already closed/cancelled, ignore
+              isCancelled = true;
+            }
           });
 
           zipStream.on('end', () => {
-            controller.close();
+            try {
+              if (!isCancelled) {
+                controller.close();
+              }
+            } catch (error) {
+              // Stream already closed, ignore
+            }
           });
 
           zipStream.on('error', (error: Error) => {
-            console.error('Zip stream error:', error);
-            controller.error(error);
+            if (!isCancelled) {
+              console.error('Zip stream error:', error);
+              try {
+                controller.error(error);
+              } catch {
+                // Stream already closed, ignore
+              }
+            }
           });
+        },
+        cancel() {
+          // Clean up when client cancels the download
+          try {
+            zipStream.destroy();
+          } catch {
+            // Ignore cleanup errors
+          }
         },
       });
 

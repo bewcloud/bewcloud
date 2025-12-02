@@ -1,5 +1,6 @@
 import { Handlers } from 'fresh/server.ts';
 import { join } from '@std/path';
+import { Buffer } from 'node:buffer';
 import JSZip from 'jszip';
 
 import { FreshContextState } from '/lib/types.ts';
@@ -7,6 +8,42 @@ import { AppConfig } from '/lib/config.ts';
 import { ensureUserPathIsValidAndSecurelyAccessible } from '/lib/models/files.ts';
 
 interface Data {}
+
+// Recursively add files to the zip with optimizations
+async function addFilesToZip(currentPath: string, zipFolder: JSZip, basePath = '') {
+  const entries = [];
+  for await (const entry of Deno.readDir(currentPath)) {
+    entries.push(entry);
+  }
+
+  // Process files in parallel batches
+  const batchSize = 10;
+  for (let i = 0; i < entries.length; i += batchSize) {
+    const batch = entries.slice(i, i + batchSize);
+
+    await Promise.all(
+      batch.map(async (entry) => {
+        const entryPath = join(currentPath, entry.name);
+        const relativePath = basePath ? `${basePath}/${entry.name}` : entry.name;
+
+        if (entry.isFile) {
+          // Use async file reading with streaming hint
+          const fileContent = await Deno.readFile(entryPath);
+          zipFolder.file(entry.name, fileContent, {
+            binary: true,
+            createFolders: false,
+          });
+        } else if (entry.isDirectory) {
+          // Create a folder in the zip and recursively add its contents
+          const subFolder = zipFolder.folder(entry.name);
+          if (subFolder) {
+            await addFilesToZip(entryPath, subFolder, relativePath);
+          }
+        }
+      }),
+    );
+  }
+}
 
 export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
@@ -43,42 +80,6 @@ export const handler: Handlers<Data, FreshContextState> = {
       // Create a JSZip instance
       const zip = new JSZip();
 
-      // Recursively add files to the zip with optimizations
-      async function addFilesToZip(currentPath: string, zipFolder: JSZip, basePath = '') {
-        const entries = [];
-        for await (const entry of Deno.readDir(currentPath)) {
-          entries.push(entry);
-        }
-
-        // Process files in parallel batches
-        const batchSize = 10;
-        for (let i = 0; i < entries.length; i += batchSize) {
-          const batch = entries.slice(i, i + batchSize);
-          
-          await Promise.all(
-            batch.map(async (entry) => {
-              const entryPath = join(currentPath, entry.name);
-              const relativePath = basePath ? `${basePath}/${entry.name}` : entry.name;
-
-              if (entry.isFile) {
-                // Use async file reading with streaming hint
-                const fileContent = await Deno.readFile(entryPath);
-                zipFolder.file(entry.name, fileContent, {
-                  binary: true,
-                  createFolders: false,
-                });
-              } else if (entry.isDirectory) {
-                // Create a folder in the zip and recursively add its contents
-                const subFolder = zipFolder.folder(entry.name);
-                if (subFolder) {
-                  await addFilesToZip(entryPath, subFolder, relativePath);
-                }
-              }
-            })
-          );
-        }
-      }
-
       // Add all files from the directory
       await addFilesToZip(fullDirectoryPath, zip);
 
@@ -87,14 +88,14 @@ export const handler: Handlers<Data, FreshContextState> = {
         type: 'nodebuffer',
         streamFiles: true,
         compression: 'DEFLATE',
-        compressionOptions: { 
+        compressionOptions: {
           level: 1,
         },
       });
 
       // Convert Node.js stream to Web ReadableStream
       const readableStream = new ReadableStream({
-        async start(controller) {
+        start(controller) {
           let isCancelled = false;
 
           zipStream.on('data', (chunk: Buffer) => {

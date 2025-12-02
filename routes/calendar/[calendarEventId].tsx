@@ -28,6 +28,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       throw new Error('CalDAV server is not enabled');
     }
 
+    if (!(await AppConfig.isAppEnabled('calendar'))) {
+      throw new Error('Calendar app is not enabled');
+    }
+
     let { calendarEventId } = context.params;
 
     const searchParams = new URL(request.url).searchParams;
@@ -61,6 +65,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     if (!calendarConfig.enableCalDavServer) {
       throw new Error('CalDAV server is not enabled');
+    }
+
+    if (!(await AppConfig.isAppEnabled('calendar'))) {
+      throw new Error('Calendar app is not enabled');
     }
 
     const { calendarEventId } = context.params;

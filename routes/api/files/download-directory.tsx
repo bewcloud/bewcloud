@@ -58,6 +58,13 @@ export const handler: Handlers<Data, FreshContextState> = {
       return new Response('Directory downloads are not enabled', { status: 403 });
     }
 
+    if (
+      !(await AppConfig.isAppEnabled('files')) && !(await AppConfig.isAppEnabled('photos')) &&
+      !(await AppConfig.isAppEnabled('notes'))
+    ) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     const searchParams = new URL(request.url).searchParams;
     const parentPath = searchParams.get('parentPath') || '/';
     const name = searchParams.get('name');

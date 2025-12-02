@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:v2.7.0
+    image: ghcr.io/bewcloud/bewcloud:v3.0.0
     restart: always
     ports:
       - 127.0.0.1:8000:8000
@@ -13,14 +13,14 @@ services:
       - ./bewcloud.config.ts:/app/bewcloud.config.ts
 
   postgresql:
-    image: postgres:17
+    image: postgres:18.1
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=fake
       - POSTGRES_DB=bewcloud
     restart: always
     volumes:
-      - bewcloud-db:/var/lib/postgresql/data
+      - bewcloud-db:/var/lib/postgresql/18/docker
     # NOTE: uncomment below only if you need to connect to the database from outside the container
     # ports:
     #   - 127.0.0.1:5432:5432
@@ -32,7 +32,7 @@ services:
 
   # NOTE: If you don't want to use the CardDav/CalDav servers, you can comment/remove this service.
   radicale:
-    image: tomsquest/docker-radicale:3.5.7.0
+    image: tomsquest/docker-radicale:3.5.8.2
     # NOTE: uncomment below only if you need to connect to the CardDav/CalDav servers from outside the container
     # ports:
     #   - 127.0.0.1:5232:5232

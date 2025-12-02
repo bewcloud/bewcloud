@@ -22,6 +22,10 @@ export const handler: Handlers<Data, FreshContextState> = {
 
     const baseUrl = (await AppConfig.getConfig()).auth.baseUrl;
 
+    if (!(await AppConfig.isAppEnabled('files'))) {
+      return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
+    }
+
     const searchParams = new URL(request.url).searchParams;
 
     let currentPath = searchParams.get('path') || '/';

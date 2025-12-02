@@ -27,6 +27,13 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     });
   }
 
+  if (
+    !(await AppConfig.isAppEnabled('files')) && !(await AppConfig.isAppEnabled('photos')) &&
+    !(await AppConfig.isAppEnabled('notes'))
+  ) {
+    return new Response('Forbidden', { status: 403 });
+  }
+
   let { filePath } = context.params;
 
   if (!filePath) {
@@ -218,10 +225,17 @@ export const handler: Handler<Data, FreshContextState> = async (request, context
     const depthString = request.headers.get('depth');
     const depth = depthString ? parseInt(depthString, 10) : null;
     const xml = await request.clone().text();
+    let properties: string[] = [];
 
-    const parsedXml = parse(xml);
+    try {
+      const parsedXml = parse(xml) as Record<string, any>;
 
-    const properties = getPropertyNames(parsedXml);
+      properties = getPropertyNames(parsedXml);
+    } catch (error) {
+      console.error('Error parsing XML: ', error);
+
+      properties = ['allprop'];
+    }
 
     await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 

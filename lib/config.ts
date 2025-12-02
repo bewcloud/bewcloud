@@ -26,7 +26,7 @@ export class AppConfig {
         allowDirectoryDownloads: false,
       },
       core: {
-        enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'],
+        enabledApps: ['dashboard', 'files', 'news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'],
       },
       visuals: {
         title: '',
@@ -97,6 +97,10 @@ export class AppConfig {
       };
 
       console.info('\nConfig loaded from bewcloud.config.ts', JSON.stringify(this.config, null, 2), '\n');
+
+      if (this.config.core.enabledApps.length === 0) {
+        throw new Error('At least one app must be enabled. Please check the config.core.enabledApps array.');
+      }
 
       return;
     } catch (error) {

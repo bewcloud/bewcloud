@@ -4,6 +4,7 @@ import { FreshContextState } from '/lib/types.ts';
 import { CalendarEvent, CalendarEventModel, CalendarModel } from '/lib/models/calendar.ts';
 import { concurrentPromises } from '/lib/utils/misc.ts';
 import { getDateRangeForCalendarView, getIdFromVEvent, splitTextIntoVEvents } from '/lib/utils/calendar.ts';
+import { AppConfig } from '/lib/config.ts';
 
 interface Data {}
 
@@ -24,6 +25,10 @@ export const handler: Handlers<Data, FreshContextState> = {
   async POST(request, context) {
     if (!context.state.user) {
       return new Response('Unauthorized', { status: 401 });
+    }
+
+    if (!(await AppConfig.isAppEnabled('calendar'))) {
+      return new Response('Forbidden', { status: 403 });
     }
 
     const requestBody = await request.clone().json() as RequestBody;

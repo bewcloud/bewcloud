@@ -29,6 +29,10 @@ export const handler: Handlers<Data, FreshContextState> = {
       throw new Error('CalDAV server is not enabled');
     }
 
+    if (!(await AppConfig.isAppEnabled('calendar'))) {
+      throw new Error('Calendar app is not enabled');
+    }
+
     const userId = context.state.user.id;
     const timezoneId = context.state.user.extra.timezone?.id || 'UTC';
     const timezoneUtcOffset = context.state.user.extra.timezone?.utcOffset || 0;

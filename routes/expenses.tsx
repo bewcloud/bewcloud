@@ -19,7 +19,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     if (!(await AppConfig.isAppEnabled('expenses'))) {
-      return new Response('Redirect', { status: 303, headers: { 'Location': `/files` } });
+      return new Response('Redirect', { status: 303, headers: { 'Location': `/` } });
     }
 
     const searchParams = new URL(request.url).searchParams;

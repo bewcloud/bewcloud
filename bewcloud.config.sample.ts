@@ -21,7 +21,7 @@ const config: PartialDeep<Config> = {
   //   allowDirectoryDownloads: false, // If true, directories can be downloaded as zip files
   // },
   // core: {
-  //   enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'], // dashboard and files cannot be disabled
+  //   enabledApps: ['dashboard', 'files', 'news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'], // The apps to show, in order of appearance in the header. The first app will be the default one shown after logging in. At least one is required.
   // },
   // visuals: {
   //   title: 'My own cloud',

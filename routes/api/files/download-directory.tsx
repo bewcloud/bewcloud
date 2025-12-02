@@ -43,22 +43,39 @@ export const handler: Handlers<Data, FreshContextState> = {
       // Create a JSZip instance
       const zip = new JSZip();
 
-      // Recursively add files to the zip
-      async function addFilesToZip(currentPath: string, zipFolder: JSZip) {
+      // Recursively add files to the zip with optimizations
+      async function addFilesToZip(currentPath: string, zipFolder: JSZip, basePath = '') {
+        const entries = [];
         for await (const entry of Deno.readDir(currentPath)) {
-          const entryPath = join(currentPath, entry.name);
+          entries.push(entry);
+        }
 
-          if (entry.isFile) {
-            // Read file and add to zip
-            const fileContent = await Deno.readFile(entryPath);
-            zipFolder.file(entry.name, fileContent);
-          } else if (entry.isDirectory) {
-            // Create a folder in the zip and recursively add its contents
-            const subFolder = zipFolder.folder(entry.name);
-            if (subFolder) {
-              await addFilesToZip(entryPath, subFolder);
-            }
-          }
+        // Process files in parallel batches
+        const batchSize = 10;
+        for (let i = 0; i < entries.length; i += batchSize) {
+          const batch = entries.slice(i, i + batchSize);
+          
+          await Promise.all(
+            batch.map(async (entry) => {
+              const entryPath = join(currentPath, entry.name);
+              const relativePath = basePath ? `${basePath}/${entry.name}` : entry.name;
+
+              if (entry.isFile) {
+                // Use async file reading with streaming hint
+                const fileContent = await Deno.readFile(entryPath);
+                zipFolder.file(entry.name, fileContent, {
+                  binary: true,
+                  createFolders: false,
+                });
+              } else if (entry.isDirectory) {
+                // Create a folder in the zip and recursively add its contents
+                const subFolder = zipFolder.folder(entry.name);
+                if (subFolder) {
+                  await addFilesToZip(entryPath, subFolder, relativePath);
+                }
+              }
+            })
+          );
         }
       }
 
@@ -70,7 +87,9 @@ export const handler: Handlers<Data, FreshContextState> = {
         type: 'nodebuffer',
         streamFiles: true,
         compression: 'DEFLATE',
-        compressionOptions: { level: 6 },
+        compressionOptions: { 
+          level: 1,
+        },
       });
 
       // Convert Node.js stream to Web ReadableStream

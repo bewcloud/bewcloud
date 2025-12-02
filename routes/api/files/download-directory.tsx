@@ -1,11 +1,49 @@
 import { Handlers } from 'fresh/server.ts';
 import { join } from '@std/path';
+import { Buffer } from 'node:buffer';
+import JSZip from 'jszip';
 
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
 import { ensureUserPathIsValidAndSecurelyAccessible } from '/lib/models/files.ts';
 
 interface Data {}
+
+// Recursively add files to the zip with optimizations
+async function addFilesToZip(currentPath: string, zipFolder: JSZip, basePath = '') {
+  const entries = [];
+  for await (const entry of Deno.readDir(currentPath)) {
+    entries.push(entry);
+  }
+
+  // Process files in parallel batches
+  const batchSize = 10;
+  for (let i = 0; i < entries.length; i += batchSize) {
+    const batch = entries.slice(i, i + batchSize);
+
+    await Promise.all(
+      batch.map(async (entry) => {
+        const entryPath = join(currentPath, entry.name);
+        const relativePath = basePath ? `${basePath}/${entry.name}` : entry.name;
+
+        if (entry.isFile) {
+          // Use async file reading with streaming hint
+          const fileContent = await Deno.readFile(entryPath);
+          zipFolder.file(entry.name, fileContent, {
+            binary: true,
+            createFolders: false,
+          });
+        } else if (entry.isDirectory) {
+          // Create a folder in the zip and recursively add its contents
+          const subFolder = zipFolder.folder(entry.name);
+          if (subFolder) {
+            await addFilesToZip(entryPath, subFolder, relativePath);
+          }
+        }
+      }),
+    );
+  }
+}
 
 export const handler: Handlers<Data, FreshContextState> = {
   async GET(request, context) {
@@ -46,25 +84,70 @@ export const handler: Handlers<Data, FreshContextState> = {
       const userRootPath = join(filesRootPath, context.state.user.id);
       const fullDirectoryPath = join(userRootPath, directoryPath);
 
-      // Use the zip command to create the archive
-      const zipProcess = new Deno.Command('zip', {
-        args: ['-r', '-', '.'],
-        cwd: fullDirectoryPath,
-        stdout: 'piped',
-        stderr: 'piped',
+      // Create a JSZip instance
+      const zip = new JSZip();
+
+      // Add all files from the directory
+      await addFilesToZip(fullDirectoryPath, zip);
+
+      // Generate the zip file as a stream
+      const zipStream = zip.generateNodeStream({
+        type: 'nodebuffer',
+        streamFiles: true,
+        compression: 'DEFLATE',
+        compressionOptions: {
+          level: 1,
+        },
       });
 
-      const { code, stdout, stderr } = await zipProcess.output();
+      // Convert Node.js stream to Web ReadableStream
+      const readableStream = new ReadableStream({
+        start(controller) {
+          let isCancelled = false;
 
-      if (code !== 0) {
-        const errorText = new TextDecoder().decode(stderr);
+          zipStream.on('data', (chunk: Buffer) => {
+            try {
+              if (!isCancelled) {
+                controller.enqueue(new Uint8Array(chunk));
+              }
+            } catch (error) {
+              // Stream already closed/cancelled, ignore
+              isCancelled = true;
+            }
+          });
 
-        console.error('Zip command failed:', errorText);
+          zipStream.on('end', () => {
+            try {
+              if (!isCancelled) {
+                controller.close();
+              }
+            } catch (error) {
+              // Stream already closed, ignore
+            }
+          });
 
-        return new Response('Error creating zip archive', { status: 500 });
-      }
+          zipStream.on('error', (error: Error) => {
+            if (!isCancelled) {
+              console.error('Zip stream error:', error);
+              try {
+                controller.error(error);
+              } catch {
+                // Stream already closed, ignore
+              }
+            }
+          });
+        },
+        cancel() {
+          // Clean up when client cancels the download
+          try {
+            zipStream.destroy();
+          } catch {
+            // Ignore cleanup errors
+          }
+        },
+      });
 
-      return new Response(stdout, {
+      return new Response(readableStream, {
         status: 200,
         headers: {
           'content-type': 'application/zip',

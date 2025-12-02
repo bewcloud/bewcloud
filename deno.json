@@ -50,6 +50,7 @@
     "@std/path": "jsr:@std/path@1.1.2",
 
     "chart.js": "npm:chart.js@4.5.0",
+    "jszip": "npm:jszip@3.10.1",
     "mrmime": "npm:mrmime@2.0.1",
     "nodemailer": "npm:nodemailer@7.0.6",
     "openid-client": "npm:openid-client@6.8.0",

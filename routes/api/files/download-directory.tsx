@@ -1,5 +1,6 @@
 import { Handlers } from 'fresh/server.ts';
 import { join } from '@std/path';
+import JSZip from 'jszip';
 
 import { FreshContextState } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -39,55 +40,58 @@ export const handler: Handlers<Data, FreshContextState> = {
       const userRootPath = join(filesRootPath, context.state.user.id);
       const fullDirectoryPath = join(userRootPath, directoryPath);
 
-      // Use the zip command to create the archive with streaming
-      const zipProcess = new Deno.Command('zip', {
-        args: ['-r', '-', '.'],
-        cwd: fullDirectoryPath,
-        stdout: 'piped',
-        stderr: 'piped',
-      }).spawn();
+      // Create a JSZip instance
+      const zip = new JSZip();
 
-      // Get the zip stream from the process stdout
-      const zipStream = zipProcess.stdout;
+      // Recursively add files to the zip
+      async function addFilesToZip(currentPath: string, zipFolder: JSZip) {
+        for await (const entry of Deno.readDir(currentPath)) {
+          const entryPath = join(currentPath, entry.name);
 
-      // Monitor process errors and log them (stream will end on error)
-      zipProcess.status.then(async (status) => {
-        if (status.code !== 0) {
-          console.error('Zip command failed with code:', status.code);
-          // Read and log stderr for error details
-          try {
-            const stderrReader = zipProcess.stderr.getReader();
-            try {
-              const chunks: Uint8Array[] = [];
-              while (true) {
-                const { done, value } = await stderrReader.read();
-                if (done) break;
-                if (value) chunks.push(value);
-              }
-              if (chunks.length > 0) {
-                // Concatenate chunks
-                const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-                const combined = new Uint8Array(totalLength);
-                let offset = 0;
-                for (const chunk of chunks) {
-                  combined.set(chunk, offset);
-                  offset += chunk.length;
-                }
-                const errorText = new TextDecoder().decode(combined);
-                console.error('Zip stderr:', errorText);
-              }
-            } finally {
-              stderrReader.releaseLock();
+          if (entry.isFile) {
+            // Read file and add to zip
+            const fileContent = await Deno.readFile(entryPath);
+            zipFolder.file(entry.name, fileContent);
+          } else if (entry.isDirectory) {
+            // Create a folder in the zip and recursively add its contents
+            const subFolder = zipFolder.folder(entry.name);
+            if (subFolder) {
+              await addFilesToZip(entryPath, subFolder);
             }
-          } catch (error) {
-            console.error('Error reading stderr:', error);
           }
         }
-      }).catch((error) => {
-        console.error('Zip process error:', error);
+      }
+
+      // Add all files from the directory
+      await addFilesToZip(fullDirectoryPath, zip);
+
+      // Generate the zip file as a stream
+      const zipStream = zip.generateNodeStream({
+        type: 'nodebuffer',
+        streamFiles: true,
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
       });
 
-      return new Response(zipStream, {
+      // Convert Node.js stream to Web ReadableStream
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          zipStream.on('data', (chunk: Buffer) => {
+            controller.enqueue(new Uint8Array(chunk));
+          });
+
+          zipStream.on('end', () => {
+            controller.close();
+          });
+
+          zipStream.on('error', (error: Error) => {
+            console.error('Zip stream error:', error);
+            controller.error(error);
+          });
+        },
+      });
+
+      return new Response(readableStream, {
         status: 200,
         headers: {
           'content-type': 'application/zip',

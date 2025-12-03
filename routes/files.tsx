@@ -3,6 +3,7 @@ import { Handlers, PageProps } from 'fresh/server.ts';
 import { Directory, DirectoryFile, FreshContextState } from '/lib/types.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
+import { SortColumn, SortOrder } from '/lib/utils/files.ts';
 import FilesWrapper from '/islands/files/FilesWrapper.tsx';
 
 interface Data {
@@ -12,6 +13,8 @@ interface Data {
   baseUrl: string;
   isFileSharingAllowed: boolean;
   areDirectoryDownloadsAllowed: boolean;
+  sortBy: SortColumn;
+  sortOrder: SortOrder;
 }
 
 export const handler: Handlers<Data, FreshContextState> = {
@@ -40,9 +43,22 @@ export const handler: Handlers<Data, FreshContextState> = {
       currentPath = `${currentPath}/`;
     }
 
-    const userDirectories = await DirectoryModel.list(context.state.user.id, currentPath);
+    // Get sort parameters
+    const sortBy = (searchParams.get('sortBy') as SortColumn) || 'name';
+    const sortOrder = (searchParams.get('sortOrder') as SortOrder) || 'asc';
 
-    const userFiles = await FileModel.list(context.state.user.id, currentPath);
+    // Validate sort parameters
+    const validSortColumns: SortColumn[] = ['name', 'updated_at', 'size_in_bytes'];
+    const validSortOrders: SortOrder[] = ['asc', 'desc'];
+
+    const finalSortBy = validSortColumns.includes(sortBy) ? sortBy : 'name';
+    const finalSortOrder = validSortOrders.includes(sortOrder) ? sortOrder : 'asc';
+
+    const sortOptions = { sortBy: finalSortBy, sortOrder: finalSortOrder };
+
+    const userDirectories = await DirectoryModel.list(context.state.user.id, currentPath, sortOptions);
+
+    const userFiles = await FileModel.list(context.state.user.id, currentPath, sortOptions);
 
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
     const areDirectoryDownloadsAllowed = await AppConfig.areDirectoryDownloadsAllowed();
@@ -54,6 +70,8 @@ export const handler: Handlers<Data, FreshContextState> = {
       baseUrl,
       isFileSharingAllowed: isPublicFileSharingAllowed,
       areDirectoryDownloadsAllowed,
+      sortBy: finalSortBy,
+      sortOrder: finalSortOrder,
     });
   },
 };
@@ -68,6 +86,8 @@ export default function FilesPage({ data }: PageProps<Data, FreshContextState>) 
         baseUrl={data.baseUrl}
         isFileSharingAllowed={data.isFileSharingAllowed}
         areDirectoryDownloadsAllowed={data.areDirectoryDownloadsAllowed}
+        initialSortBy={data.sortBy}
+        initialSortOrder={data.sortOrder}
       />
     </main>
   );

@@ -1,3 +1,4 @@
+import { join, isAbsolute } from '@std/path';
 import { UserModel } from './models/user.ts';
 import { Config, OptionalApp } from './types.ts';
 
@@ -193,9 +194,11 @@ export class AppConfig {
   static async getFilesRootPath(): Promise<string> {
     await this.loadConfig();
 
-    const filesRootPath = `${Deno.cwd()}/${this.config.files.rootPath}`;
-
-    return filesRootPath;
+    if (isAbsolute(this.config.files.rootPath)) {
+      return this.config.files.rootPath;
+    } else {
+      return join(Deno.cwd(), this.config.files.rootPath);
+    }
   }
 
   static async getEmailConfig(): Promise<Config['email']> {

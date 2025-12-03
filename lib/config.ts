@@ -1,4 +1,4 @@
-import { join, isAbsolute } from '@std/path';
+import { isAbsolute, join } from '@std/path';
 import { UserModel } from './models/user.ts';
 import { Config, OptionalApp } from './types.ts';
 

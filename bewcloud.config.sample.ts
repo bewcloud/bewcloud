@@ -30,8 +30,10 @@ const config: PartialDeep<Config> = {
   // },
   // email: {
   //   from: 'help@bewcloud.com',
-  //   host: 'localhost',
-  //   port: 465,
+  //   transportConfig: {  // Specify any needed options listed at https://nodemailer.com/smtp here; authentication data will automatically be added if specify using the `SMTP_USERNAME` and `SMTP_PASSWORD` environment variables
+  //     host: 'localhost',
+  //     port: 465,
+  //   },
   // },
   // contacts: {
   //   enableCardDavServer: true,

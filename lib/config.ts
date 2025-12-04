@@ -35,8 +35,10 @@ export class AppConfig {
       },
       email: {
         from: 'help@bewcloud.com',
-        host: 'localhost',
-        port: 465,
+        transportConfig: {
+          host: 'localhost',
+          port: 465,
+        },
       },
       contacts: {
         enableCardDavServer: true,
@@ -94,6 +96,16 @@ export class AppConfig {
           ...configFromFile.calendar,
         },
       };
+
+      // Support for older transport configuration settings
+      if (typeof(this.config.email.host) !== "undefined") {
+        console.warn('Config entry “email.host” has been renamed to “email.transportConfig.host”');
+        this.config.email.transportConfig.host = this.config.email.host;
+      }
+      if (typeof(this.config.email.port) !== "undefined") {
+        console.warn('Config entry “email.port” has been renamed to “email.transportConfig.port”');
+        this.config.email.transportConfig.port = this.config.email.port;
+      }
 
       console.info('\nConfig loaded from bewcloud.config.ts', JSON.stringify(this.config, null, 2), '\n');
 

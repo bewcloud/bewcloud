@@ -202,10 +202,21 @@ export interface Config {
   email: {
     /** The email address to send emails from */
     from: string;
-    /** The SMTP host to send emails from */
+    /** Deprecated alias for .transportConfig.host */
     host: string;
-    /** The SMTP port to send emails from */
+    /** Deprecated alias for .transportConfig.host */
     port: number;
+    /** Transport options to pass to nodemailer (see https://nodemailer.com/smtp) */
+    transportConfig: {
+      /** The SMTP host to send emails from */
+      host: string;
+      /** The SMTP port to send emails from */
+      port: number;
+      /** Whether to use immediate TLS or not (defaults to `true` if port is 465, `false` otherwise) */
+      secure?: boolean;
+      /** Other transport properties */
+      [_: string]: string|number|boolean|object;
+    };
   };
   contacts: {
     /** If true, the CardDAV server will be enabled (proxied) */

@@ -122,5 +122,5 @@ You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-
 
 ## Community Links
 
- * [`bewcloud-nixos`](https://gitlab.com/ntninja/bewcloud-nixos/) by @ntninja exposes bewCloud as a NixOS integration as an alternative to using Docker.
+ * [`bewcloud-nixos`](https://gitlab.com/ntninja/bewcloud-nixos/) by @ntninja exposes bewCloud as a NixOS integration as an alternative to using Docker or running the app locally.
     * For installation and known limitations, please see its [README](https://gitlab.com/ntninja/bewcloud-nixos/-/blob/main/README.md).

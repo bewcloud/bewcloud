@@ -14,7 +14,7 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 [![Buy managed cloud (1 month)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20month)-51a4fb?style=for-the-badge)](https://buy.stripe.com/fZu8wOb5RfIydj56FA1gs0J)
 
-Or on your own machine, start with these commands:
+Or, to run on your own machine using Docker, start with these commands:
 
 ```sh
 mkdir data-files data-radicale radicale-config # local directories for storing user-uploaded files, radicale data, and radicale config (these last two are necessary only if you're using CalDav/CardDav/Contacts)
@@ -38,6 +38,8 @@ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializ
 > If you run into permission issues, you can try running `sudo chown -R 1993:1993 data-files` to fix them.
 >
 > `1993:1993` above comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
+
+See the [Community Links](#community-links) section for alternative way of running bewCloud yourself; please be aware that bewCloud developers only test it using Docker though.
 
 If you're interested in building/contributing, check the [Development section below](#development).
 
@@ -117,3 +119,8 @@ You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-
 ## How does it look?
 
 [Check the website](https://bewcloud.com) for screenshots or [the YouTube channel](https://www.youtube.com/@bewCloud) for 1-minute demos.
+
+## Community Links
+
+ * [`bewcloud-nixos`](https://gitlab.com/ntninja/bewcloud-nixos/) by @ntninja exposes bewCloud as a NixOS integration as an alternative to using Docker.
+    * For installation and known limitations, please see its [README](https://gitlab.com/ntninja/bewcloud-nixos/-/blob/main/README.md).

@@ -39,7 +39,7 @@ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializ
 >
 > `1993:1993` above comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
 
-See the [Community Links](#community-links) section for alternative way of running bewCloud yourself; please be aware that bewCloud developers only test it using Docker though.
+See the [Community Links](#community-links) section for alternative ways of running bewCloud yourself; please be aware these are not officially endorsed.
 
 If you're interested in building/contributing, check the [Development section below](#development).
 

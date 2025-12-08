@@ -15,7 +15,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const { fileName } = context.params;
 
     if (!fileName) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     if (!(await AppConfig.isAppEnabled('files'))) {
@@ -39,7 +39,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const fileResult = await FileModel.get(context.state.user.id, currentPath, decodeURIComponent(fileName));
 
     if (!fileResult.success) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     return new Response(fileResult.contents! as BodyInit, {

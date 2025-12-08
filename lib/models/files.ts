@@ -701,12 +701,25 @@ async function deleteDirectoryOrFile(userId: string, path: string, name: string)
 
   const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
 
+  const fileShares = (await AppConfig.isPublicFileSharingAllowed())
+    ? await FileShareModel.getByParentFilePath(userId, path)
+    : [];
+
+  const fileSharesForPath = fileShares.filter((fileShare) =>
+    fileShare.file_path === `${join(path, name)}/` || fileShare.file_path === join(path, name)
+  );
+
   try {
     if (path.startsWith(TRASH_PATH)) {
       await Deno.remove(join(rootPath, name), { recursive: true });
     } else {
       const trashPath = join(await AppConfig.getFilesRootPath(), userId, TRASH_PATH);
       await Deno.rename(join(rootPath, name), join(trashPath, name));
+    }
+
+    // Delete all file shares for this path
+    for (const fileShare of fileSharesForPath) {
+      await FileShareModel.delete(fileShare.id);
     }
   } catch (error) {
     console.error(error);

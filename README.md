@@ -14,7 +14,7 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 [![Buy managed cloud (1 month)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20month)-51a4fb?style=for-the-badge)](https://buy.stripe.com/fZu8wOb5RfIydj56FA1gs0J)
 
-Or, to run on your own machine using Docker, start with these commands:
+Or, to run on your own machine, start with these commands:
 
 ```sh
 mkdir data-files data-radicale radicale-config # local directories for storing user-uploaded files, radicale data, and radicale config (these last two are necessary only if you're using CalDav/CardDav/Contacts)
@@ -39,9 +39,9 @@ docker compose run --rm website bash -c "cd /app && make migrate-db" # initializ
 >
 > `1993:1993` above comes from deno's [docker image](https://github.com/denoland/deno_docker/blob/2abfe921484bdc79d11c7187a9d7b59537457c31/ubuntu.dockerfile#L20-L22) where `1993` is the default user id in it. It might change in the future since I don't control it.
 
-See the [Community Links](#community-links) section for alternative ways of running bewCloud yourself; please be aware these are not officially endorsed.
+If you're interested in building/contributing (or just running the app locally), check the [Development section below](#development).
 
-If you're interested in building/contributing, check the [Development section below](#development).
+See the [Community Links](#community-links) section for alternative ways of running bewCloud yourself.
 
 > [!IMPORTANT]
 > Even with signups disabled (`config.auth.allowSignups=false`), the first signup will work and become an admin.
@@ -73,18 +73,18 @@ These are the amazing entities or individuals who are sponsoring this project fo
 docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
 make migrate-db # runs any missing database migrations
 make start # runs the app
-make format # formats the code
-make test # runs tests
+make format # (optional) formats the code (if you're interested in contributing)
+make test # (optional) runs tests (if you're interested in contributing)
 ```
 
-### Other less-used commands
+### Other less-used commands (mostly for development)
 
 ```sh
 make exec-db # runs psql inside the postgres container, useful for running direct development queries like `DROP DATABASE "bewcloud"; CREATE DATABASE "bewcloud";`
 make build # generates all static files for production deploy
 ```
 
-## Structure
+## File/Directory Structure
 
 - Routes are defined at `routes/`.
 - Static files are defined at `static/`.
@@ -98,23 +98,9 @@ make build # generates all static files for production deploy
 
 Just push to the `main` branch.
 
-## How does Contacts/CardDav and Calendar/CalDav work?
+## FAQ (Frequently Asked Questions)
 
-CalDav/CardDav is now available since [v2.3.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0), using [Radicale](https://radicale.org/v3.html) via Docker, which is already _very_ efficient (and battle-tested). The "Contacts" client for CardDav is available since [v2.4.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.3.0) and the "Calendar" client for CalDav is available since [v2.5.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.5.0). [Check this tag/release for custom-made server code where it was all mostly working, except for many edge cases, if you're interested](https://github.com/bewcloud/bewcloud/releases/tag/v0.0.1-self-made-carddav-caldav).
-
-In order to share a calendar, you can either have a shared user, or you can symlink the calendar to the user's own calendar (simply `ln -s /<absolute-path-to-data-radicale>/collections/collection-root/<owner-user-id>/<calendar-to-share> /<absolute-path-to-data-radicale>/collections/collection-root/<user-id-to-share-with>/`).
-
-> [!NOTE]
-> If you're running radicale with docker, the symlink needs to point to the container's directory, usually starting with `/data` if you didn't change the `radicale-config/config`, otherwise the container will fail to load the linked directory.
-
-## How does private file sharing work?
-
-Public file sharing is now possible since [v2.2.0](https://github.com/bewcloud/bewcloud/releases/tag/v2.2.0). [Check this PR for advanced sharing with internal and external users, with read and write access that was being done and almost working, if you're interested](https://github.com/bewcloud/bewcloud/pull/4). I ditched all that complexity for simply using [symlinks](https://en.wikipedia.org/wiki/Symbolic_link) for internal sharing, as it served my use case (I have multiple data backups and trust the people I provide accounts to, with the symlinks).
-
-You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-to-share> /<absolute-path-to-data-files>/<user-id-to-share-with>/` to create a shared directory between two users, and the same directory can have different names, now.
-
-> [!NOTE]
-> If you're running the app with docker, the symlink needs to point to the container's directory, usually starting with `/app` if you didn't change the `Dockerfile`, otherwise the container will fail to load the linked directory.
+[Check the FAQ](/FAQ.md) for answers to common questions, like private calendar and file sharing, or `.env`-based configuration.
 
 ## How does it look?
 
@@ -122,5 +108,7 @@ You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-
 
 ## Community Links
 
- * [`bewcloud-nixos`](https://gitlab.com/ntninja/bewcloud-nixos/) by @ntninja exposes bewCloud as a NixOS integration as an alternative to using Docker or running the app locally.
-    * For installation and known limitations, please see its [README](https://gitlab.com/ntninja/bewcloud-nixos/-/blob/main/README.md).
+These are not officially endorsed, but are alternative ways of running bewCloud.
+
+- [`bewcloud-nixos`](https://gitlab.com/ntninja/bewcloud-nixos/) by [@ntninja](https://github.com/ntninja) exposes bewCloud as a NixOS integration as an alternative to using Docker or running the app locally.
+  - For installation and known limitations, please see its [README](https://gitlab.com/ntninja/bewcloud-nixos/-/blob/main/README.md).

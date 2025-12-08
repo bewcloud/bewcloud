@@ -20,23 +20,23 @@ export const handler: Handlers<Data, FreshContextState> = {
     const { fileShareId } = context.params;
 
     if (!fileShareId) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
 
     if (!isPublicFileSharingAllowed) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     if (!(await AppConfig.isAppEnabled('files'))) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const fileShare = await FileShareModel.getById(fileShareId);
 
     if (!fileShare) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     if (!fileShare.extra.hashed_password) {
@@ -49,23 +49,23 @@ export const handler: Handlers<Data, FreshContextState> = {
     const { fileShareId } = context.params;
 
     if (!fileShareId) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
 
     if (!isPublicFileSharingAllowed) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     if (!(await AppConfig.isAppEnabled('files'))) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const fileShare = await FileShareModel.getById(fileShareId);
 
     if (!fileShare) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     if (!fileShare.extra.hashed_password) {

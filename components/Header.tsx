@@ -31,7 +31,7 @@ export default function Header({ route, user, enabledApps }: Data) {
 
   const menuItems = potentialMenuItems.filter(Boolean) as MenuItem[];
 
-  if (user) {
+  if (user && !route.startsWith('/file-share')) {
     const activeMenu = menuItems.find((menu) => route.startsWith(menu.url));
 
     let pageLabel = activeMenu?.label || '404 - Page not found';

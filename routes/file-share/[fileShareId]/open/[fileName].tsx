@@ -12,23 +12,23 @@ export const handler: Handlers<Data, FreshContextState> = {
     const { fileShareId, fileName } = context.params;
 
     if (!fileShareId || !fileName) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
 
     if (!isPublicFileSharingAllowed) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     if (!(await AppConfig.isAppEnabled('files'))) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const fileShare = await FileShareModel.getById(fileShareId);
 
     if (!fileShare) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     if (fileShare.extra.hashed_password) {
@@ -71,7 +71,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const fileResult = await FileModel.get(fileShare.user_id, currentPath, decodeURIComponent(fileName));
 
     if (!fileResult.success) {
-      return new Response('Not Found', { status: 404 });
+      return context.renderNotFound();
     }
 
     return new Response(fileResult.contents! as BodyInit, {

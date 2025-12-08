@@ -38,7 +38,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const contact = await ContactModel.get(context.state.user.id, addressBookId, contactId);
 
     if (!contact) {
-      return new Response('Not found', { status: 404 });
+      return context.renderNotFound();
     }
 
     return await context.render({ contact, formData: {}, addressBookId });
@@ -64,7 +64,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const contact = await ContactModel.get(context.state.user.id, addressBookId, contactId);
 
     if (!contact) {
-      return new Response('Not found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const formData = await request.formData();

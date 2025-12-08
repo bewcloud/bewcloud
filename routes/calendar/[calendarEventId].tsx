@@ -49,7 +49,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const calendarEvent = await CalendarEventModel.get(context.state.user.id, calendarId, calendarEventId);
 
     if (!calendarEvent) {
-      return new Response('Not found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const calendars = await CalendarModel.list(context.state.user.id);
@@ -83,7 +83,7 @@ export const handler: Handlers<Data, FreshContextState> = {
     const calendarEvent = await CalendarEventModel.get(context.state.user.id, calendarId, calendarEventId);
 
     if (!calendarEvent) {
-      return new Response('Not found', { status: 404 });
+      return context.renderNotFound();
     }
 
     const calendars = await CalendarModel.list(context.state.user.id);

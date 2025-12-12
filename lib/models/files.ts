@@ -4,7 +4,15 @@ import { Cookie, getCookies, setCookie } from '@std/http';
 
 import { AppConfig } from '/lib/config.ts';
 import { Directory, DirectoryFile, FileShare } from '/lib/types.ts';
-import { sortDirectoriesByName, sortEntriesByName, sortFilesByName, TRASH_PATH } from '/lib/utils/files.ts';
+import {
+  sortDirectories,
+  sortDirectoriesByName,
+  sortEntriesByName,
+  sortFiles,
+  sortFilesByName,
+  SortOptions,
+  TRASH_PATH,
+} from '/lib/utils/files.ts';
 import Database, { sql } from '/lib/interfaces/database.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
@@ -21,7 +29,7 @@ const COOKIE_NAME = `${AUTH_COOKIE_NAME}-file-share`;
 const db = new Database();
 
 export class DirectoryModel {
-  static async list(userId: string, path: string): Promise<Directory[]> {
+  static async list(userId: string, path: string, sortOptions?: SortOptions): Promise<Directory[]> {
     await ensureUserPathIsValidAndSecurelyAccessible(userId, path);
 
     const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
@@ -53,9 +61,12 @@ export class DirectoryModel {
       directories.push(directory);
     }
 
-    directories.sort(sortDirectoriesByName);
-
-    return directories;
+    if (sortOptions) {
+      return sortDirectories(directories, sortOptions);
+    } else {
+      directories.sort(sortDirectoriesByName);
+      return directories;
+    }
   }
 
   static async create(userId: string, path: string, name: string): Promise<boolean> {
@@ -167,7 +178,7 @@ export class DirectoryModel {
 }
 
 export class FileModel {
-  static async list(userId: string, path: string): Promise<DirectoryFile[]> {
+  static async list(userId: string, path: string, sortOptions?: SortOptions): Promise<DirectoryFile[]> {
     await ensureUserPathIsValidAndSecurelyAccessible(userId, path);
 
     const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
@@ -197,9 +208,12 @@ export class FileModel {
       files.push(file);
     }
 
-    files.sort(sortFilesByName);
-
-    return files;
+    if (sortOptions) {
+      return sortFiles(files, sortOptions);
+    } else {
+      files.sort(sortFilesByName);
+      return files;
+    }
   }
 
   static async create(
@@ -630,7 +644,11 @@ export async function ensureFileSharePathIsValidAndSecurelyAccessible(
 
   const resolvedFullPath = `${resolve(fullPath)}/`;
 
-  if (!resolvedFullPath.startsWith(fileShareRootPath)) {
+  // Normalize path separators for consistent comparison on Windows
+  const normalizedFileShareRootPath = fileShareRootPath.replace(/\\/g, '/');
+  const normalizedResolvedFullPath = resolvedFullPath.replace(/\\/g, '/');
+
+  if (!normalizedResolvedFullPath.startsWith(normalizedFileShareRootPath)) {
     throw new Error('Invalid file path');
   }
 }

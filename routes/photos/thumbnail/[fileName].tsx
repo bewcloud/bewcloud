@@ -1,5 +1,5 @@
 import { Handlers } from 'fresh/server.ts';
-import sharp from 'sharp';
+import { Jimp } from 'jimp';
 
 import { FreshContextState } from '/lib/types.ts';
 import { FileModel } from '/lib/models/files.ts';
@@ -59,14 +59,16 @@ export const handler: Handlers<Data, FreshContextState> = {
     }
 
     try {
-      const image = sharp(fileResult.contents! as unknown as ArrayBuffer).resize({
-        width,
-        height,
-        fit: 'cover',
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      }).png();
+      const image = await Jimp.read(
+        fileResult.contents!.buffer.slice(
+          fileResult.contents!.byteOffset,
+          fileResult.contents!.byteLength + fileResult.contents!.byteOffset,
+        ) as ArrayBuffer,
+      );
 
-      const resizedImageContents = await image.toBuffer();
+      image.scaleToFit({ w: width, h: height });
+
+      const resizedImageContents = await image.getBuffer(fileResult.contentType! as 'image/jpeg' | 'image/png');
 
       return new Response(Uint8Array.from(resizedImageContents), {
         status: 200,

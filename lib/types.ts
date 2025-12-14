@@ -206,6 +206,10 @@ export interface Config {
     host: string;
     /** The SMTP port to send emails from */
     port: number;
+    /** How to use TLS when connecting: default is “immediate” on port 465, “starttls” otherwise */
+    tlsMode: null | "immediate" | "starttls" | "none";
+    /** Whether to verify the TLS certificate, if a string is used the hostname will be verified using that name */
+    tlsVerify: boolean | string;
   };
   contacts: {
     /** If true, the CardDAV server will be enabled (proxied) */

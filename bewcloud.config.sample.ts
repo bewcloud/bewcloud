@@ -32,6 +32,8 @@ const config: PartialDeep<Config> = {
   //   from: 'help@bewcloud.com',
   //   host: 'localhost',
   //   port: 465,
+  //   tlsMode: null,  // May be "immediate", "starttls" or "none", defaults to immediate TLS if port is 465, StartTLS otherwise
+  //   tlsVerify: true,  // Whether to verify the TLS certificate, if a string is used the hostname will be verified using that name
   // },
   // contacts: {
   //   enableCardDavServer: true,

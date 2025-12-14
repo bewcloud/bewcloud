@@ -37,6 +37,8 @@ export class AppConfig {
         from: 'help@bewcloud.com',
         host: 'localhost',
         port: 465,
+        tlsMode: null,  // Depends on the port number above
+        tlsVerify: true,
       },
       contacts: {
         enableCardDavServer: true,

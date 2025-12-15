@@ -86,7 +86,7 @@ export default function ViewEventModal(
           ? (
             <section class='py-5 my-0 border-b border-slate-500'>
               <a
-                href={`https://maps.google.com/maps?q=${encodeURIComponent(calendarEvent.location)}`}
+                href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(calendarEvent.location)}`}
                 target='_blank'
                 rel='noopener noreferrer'
               >

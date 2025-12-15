@@ -59,7 +59,6 @@ export class EmailModel {
     <style type="text/css" rel="stylesheet" media="all">
     /* Base ------------------------------ */
     
-    @import url("https://fonts.googleapis.com/css?family=Nunito+Sans:400,700&display=swap");
     body {
       width: 100% !important;
       height: 100%;
@@ -95,7 +94,8 @@ export class EmailModel {
     body,
     td,
     th {
-      font-family: "Nunito Sans", Helvetica, Arial, sans-serif;
+      /* Source: https://fontsarena.com/blog/operating-systems-default-sans-serif-fonts/ */
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Oxygen, Cantarell, sans-serif;
     }
     
     h1 {

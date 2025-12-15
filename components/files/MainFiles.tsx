@@ -1,6 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
+import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/lib/utils/files.ts';
 import { ResponseBody as UploadResponseBody } from '/routes/api/files/upload.tsx';
 import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/routes/api/files/rename.tsx';
 import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/routes/api/files/move.tsx';
@@ -50,6 +51,8 @@ interface MainFilesProps {
   isFileSharingAllowed: boolean;
   areDirectoryDownloadsAllowed: boolean;
   fileShareId?: string;
+  initialSortBy?: SortColumn;
+  initialSortOrder?: SortOrder;
 }
 
 export default function MainFiles(
@@ -61,6 +64,8 @@ export default function MainFiles(
     isFileSharingAllowed,
     areDirectoryDownloadsAllowed,
     fileShareId,
+    initialSortBy = 'name',
+    initialSortOrder = 'asc',
   }: MainFilesProps,
 ) {
   const isAdding = useSignal<boolean>(false);
@@ -70,6 +75,8 @@ export default function MainFiles(
   const directories = useSignal<Directory[]>(initialDirectories);
   const files = useSignal<DirectoryFile[]>(initialFiles);
   const path = useSignal<string>(initialPath);
+  const sortBy = useSignal<SortColumn>(initialSortBy);
+  const sortOrder = useSignal<SortOrder>(initialSortOrder);
   const chosenDirectories = useSignal<Pick<Directory, 'parent_path' | 'directory_name'>[]>([]);
   const chosenFiles = useSignal<Pick<DirectoryFile, 'parent_path' | 'file_name'>[]>([]);
   const isAnyItemChosen = chosenDirectories.value.length > 0 || chosenFiles.value.length > 0;
@@ -85,6 +92,75 @@ export default function MainFiles(
   >(null);
   const createShareModal = useSignal<{ isOpen: boolean; filePath: string; password?: string } | null>(null);
   const manageShareModal = useSignal<{ isOpen: boolean; fileShareId: string } | null>(null);
+
+  // Helper functions for sorting persistence
+  function getSortingKey(path: string): string {
+    return `file-sort-${path}`;
+  }
+
+  function loadSortingPreference(path: string): { sortBy: SortColumn; sortOrder: SortOrder } {
+    if (typeof window === 'undefined') {
+      return { sortBy: initialSortBy, sortOrder: initialSortOrder };
+    }
+
+    try {
+      const saved = localStorage.getItem(getSortingKey(path));
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.sortBy && parsed.sortOrder) {
+          return { sortBy: parsed.sortBy, sortOrder: parsed.sortOrder };
+        }
+      }
+    } catch (error) {
+      console.error('Error loading sorting preference:', error);
+    }
+    return { sortBy: initialSortBy, sortOrder: initialSortOrder };
+  }
+
+  // Initialize sorting from localStorage (prefer saved, fallback to URL params)
+  const savedPreference = loadSortingPreference(initialPath);
+  sortBy.value = savedPreference.sortBy;
+  sortOrder.value = savedPreference.sortOrder;
+
+  function saveSortingPreference(path: string, sortBy: SortColumn, sortOrder: SortOrder) {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem(getSortingKey(path), JSON.stringify({ sortBy, sortOrder }));
+    } catch (error) {
+      console.error('Error saving sorting preference:', error);
+    }
+  }
+
+  function onClickSort(column: SortColumn) {
+    let newSortOrder: SortOrder = 'asc';
+
+    if (sortBy.value === column) {
+      // Toggle sort order if clicking the same column
+      newSortOrder = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    } else {
+      // Default to ascending for new columns
+      newSortOrder = 'asc';
+    }
+
+    // Update the state
+    sortBy.value = column;
+    sortOrder.value = newSortOrder;
+
+    // Apply sorting to current data
+    const sortOptions = { sortBy: column, sortOrder: newSortOrder };
+    directories.value = sortDirectories(directories.value, sortOptions);
+    files.value = sortFiles(files.value, sortOptions);
+
+    // Save to localStorage
+    saveSortingPreference(path.value, column, newSortOrder);
+
+    // Update URL without navigating (for bookmark/refresh support)
+    const url = new URL(window.location.href);
+    url.searchParams.set('sortBy', column);
+    url.searchParams.set('sortOrder', newSortOrder);
+    window.history.replaceState({}, '', url.toString());
+  }
 
   function onClickUploadFile(uploadDirectory = false) {
     const fileInput = document.createElement('input');
@@ -776,7 +852,12 @@ export default function MainFiles(
         </section>
 
         <section class='flex items-center justify-end'>
-          <FilesBreadcrumb path={path.value} fileShareId={fileShareId} />
+          <FilesBreadcrumb
+            path={path.value}
+            fileShareId={fileShareId}
+            sortBy={sortBy.value}
+            sortOrder={sortOrder.value}
+          />
 
           {!fileShareId
             ? (
@@ -858,6 +939,9 @@ export default function MainFiles(
           onClickOpenManageShare={isFileSharingAllowed ? onClickOpenManageShare : undefined}
           onClickDownloadDirectory={areDirectoryDownloadsAllowed ? onClickDownloadDirectory : undefined}
           fileShareId={fileShareId}
+          sortBy={sortBy.value}
+          sortOrder={sortOrder.value}
+          onClickSort={onClickSort}
         />
 
         <span

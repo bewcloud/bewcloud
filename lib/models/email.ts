@@ -16,7 +16,10 @@ export class EmailModel {
     }
 
     let tlsMode = emailConfig.tlsMode;
-    if (!["immediate", "starttls", "none"].includes(tlsMode)) {
+    if (tlsMode === null) {
+      // Value “default” will be ignored below causing the nodemailer default behaviour of using opportunistic StartTLS
+      tlsMode = Number(emailConfig.port) === 465 ? "immediate" : "default";
+    } else if (!["immediate", "starttls", "none"].includes(tlsMode)) {
       tlsMode = Number(emailConfig.port) === 465 ? "immediate" : "starttls";
     }
 

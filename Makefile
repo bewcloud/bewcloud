@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 
-.PHONY: start
-start:
-	deno task start
+.PHONY: preview
+preview:
+	deno task preview
 
 .PHONY: format
 format:
@@ -19,7 +19,7 @@ build:
 
 .PHONY: migrate-db
 migrate-db:
-	deno run --allow-net --allow-read --allow-env migrate-db.ts
+	deno task migrate-db
 
 .PHONY: exec-db
 exec-db:

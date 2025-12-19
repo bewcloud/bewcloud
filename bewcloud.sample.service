@@ -1,0 +1,73 @@
+# Example bewCloud systemd unit configuration file
+#
+# Requirements:
+#  * `git` and `deno` are installed
+#  * A bewCloud service user
+#  * A locally built checkout of bewCloud owned by the bewCloud user at /opt/bewcloud
+#
+# Example setup commands:
+#
+# $ sudo useradd --system --user-group --home-dir /var/lib/bewcloud bewcloud
+# $ sudo -u bewcloud git clone https://github.com/bewcloud/bewcloud.git /opt/bewcloud
+# $ sudo -u bewcloud env -C /opt/bewcloud deno task build
+# $ sudo cp /opt/bewcloud/bewcloud.config{.sample,}.ts
+# $ sudo cp /opt/bewcloud/.env{.sample,}
+#
+# Make sure to add secrets into /opt/bewcloud/.env for production use!
+#
+
+[Unit]
+After=postgresql.target
+Requires=postgresql.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+
+# Startup commands (assumes that bewCloud files are in /opt/bewcloud) 
+ExecStartPre=/usr/bin/deno task migrate-db
+ExecStart=/usr/bin/deno task run
+WorkingDirectory=/opt/bewcloud
+
+# Deno currently requires a *writable* application directory
+#
+# See: https://github.com/denoland/deno/issues/31489
+ReadWritePaths=/opt/bewcloud
+Environment=XDG_CACHE_HOME=%S/.cache
+EnvironmentFile=/opt/bewcloud/.env
+
+# Service user account
+User=bewcloud
+
+# Force listening on a different host and port (if needed)
+Environment=PORT=8013
+Environment=DENO_SERVE_ADDRESS=tcp:[::1]:8013
+
+# Locate bewCloud data at /var/lib/bewcloud
+StateDirectory=bewcloud
+
+# Restrict bewCloud created files to bewCloud user
+UMask=0027
+
+# Restrict various unused system capabilities
+CapabilityBoundingSet=
+DynamicUser=true
+LockPersonality=true
+PrivateDevices=true
+ProcSubset=pid
+ProtectClock=true
+ProtectControlGroups=true
+ProtectDevices=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectProc=invisible
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+SystemCallFilter=@default @basic-io @file-system @io-event @network-io @pkey @process @signal @system-service
+
+[Install]
+WantedBy=multi-user.target

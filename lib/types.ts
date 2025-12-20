@@ -206,6 +206,10 @@ export interface Config {
     host: string;
     /** The SMTP port to send emails from */
     port: number;
+    /** “auto” means “immediate” on port 465, “starttls” otherwise; `null` is legacy behaviour that will be removed in v4: on port 465 it also means “immediate”, otherwise it will use opportunistic StartTLS falling back to plain transmission */
+    tlsMode: null | "auto" | "immediate" | "starttls" | "none";
+    /** Whether to verify the TLS certificate. If a string is used the hostname will be verified using that name. */
+    tlsVerify: boolean | string;
   };
   contacts: {
     /** If true, the CardDAV server will be enabled (proxied) */

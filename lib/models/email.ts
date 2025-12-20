@@ -15,14 +15,31 @@ export class EmailModel {
       throw new Error('config.email.from, config.email.host, or config.email.port is not set');
     }
 
+    let tlsMode = emailConfig.tlsMode;
+    if (tlsMode === null) {
+      // Value “default” will be ignored below causing the nodemailer default behaviour of using opportunistic StartTLS
+      tlsMode = Number(emailConfig.port) === 465 ? "immediate" : "default";
+    } else if (!["immediate", "starttls", "none"].includes(tlsMode)) {
+      tlsMode = Number(emailConfig.port) === 465 ? "immediate" : "starttls";
+    }
+
     const transporterConfig = {
       host: emailConfig.host,
       port: emailConfig.port,
-      secure: Number(emailConfig.port) === 465,
-      auth: {
+
+      secure: tlsMode === "immediate",
+      requireTLS: tlsMode === "starttls",
+      ignoreTLS: tlsMode === "none",
+      tls: (
+        emailConfig.tlsVerify === false ? { rejectUnauthorized: false } :
+        emailConfig.tlsVerify !== true  ? { servername: emailConfig.tlsVerify } :
+        {}
+      ),
+
+      auth: (SMTP_USERNAME || SMTP_PASSWORD) ? {
         user: SMTP_USERNAME,
         pass: SMTP_PASSWORD,
-      },
+      } : null,
     };
 
     const transporter = nodemailer.createTransport(transporterConfig);

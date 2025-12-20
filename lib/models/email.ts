@@ -17,29 +17,33 @@ export class EmailModel {
 
     let tlsMode = emailConfig.tlsMode;
     if (tlsMode === null) {
-      // Value “default” will be ignored below causing the nodemailer default behaviour of using opportunistic StartTLS
-      tlsMode = Number(emailConfig.port) === 465 ? "immediate" : "default";
-    } else if (!["immediate", "starttls", "none"].includes(tlsMode)) {
-      tlsMode = Number(emailConfig.port) === 465 ? "immediate" : "starttls";
+      // Value `null` will be ignored below causing the nodemailer default behaviour of using opportunistic StartTLS
+      tlsMode = Number(emailConfig.port) === 465 ? 'immediate' : null;
+    } else if (!['immediate', 'starttls', 'none'].includes(tlsMode)) {
+      tlsMode = Number(emailConfig.port) === 465 ? 'immediate' : 'starttls';
     }
 
     const transporterConfig = {
       host: emailConfig.host,
       port: emailConfig.port,
 
-      secure: tlsMode === "immediate",
-      requireTLS: tlsMode === "starttls",
-      ignoreTLS: tlsMode === "none",
+      secure: tlsMode === 'immediate',
+      requireTLS: tlsMode === 'starttls',
+      ignoreTLS: tlsMode === 'none',
       tls: (
-        emailConfig.tlsVerify === false ? { rejectUnauthorized: false } :
-        emailConfig.tlsVerify !== true  ? { servername: emailConfig.tlsVerify } :
-        {}
+        emailConfig.tlsVerify === false
+          ? { rejectUnauthorized: false }
+          : emailConfig.tlsVerify !== true
+          ? { servername: emailConfig.tlsVerify }
+          : {}
       ),
 
-      auth: (SMTP_USERNAME || SMTP_PASSWORD) ? {
-        user: SMTP_USERNAME,
-        pass: SMTP_PASSWORD,
-      } : null,
+      auth: (SMTP_USERNAME || SMTP_PASSWORD)
+        ? {
+          user: SMTP_USERNAME,
+          pass: SMTP_PASSWORD,
+        }
+        : null,
     };
 
     const transporter = nodemailer.createTransport(transporterConfig);

@@ -72,7 +72,7 @@ These are the amazing entities or individuals who are sponsoring this project fo
 ```sh
 docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
 make migrate-db # runs any missing database migrations
-make start # runs the app
+make preview # runs the app in development mode
 make format # (optional) formats the code (if you're interested in contributing)
 make test # (optional) runs tests (if you're interested in contributing)
 ```

@@ -1,4 +1,3 @@
-import { tmpdir } from 'node:os';
 import { defineConfig } from 'fresh/server.ts';
 import tailwind from 'fresh/plugins/tailwind.ts';
 
@@ -16,11 +15,16 @@ async function notifyServiceManagerReady(message) {
     return;  // Service manager doesn’t expect any messages
   }
 
-  // Alternative using systemd CLI (systemd specific, requires CLI utils in $PATH)
-  /*await (new Deno.Command("systemd-notify", {
+  // Send message using `systemd-notify` util until the native Deno APIs become stable
+  const result = await (new Deno.Command("systemd-notify", {
     args: ["--ready", `MESSAGE=${message.replace("\n", " ")}`]
-  })).spawn();*/
+  })).output();
+  if (!result.success) {
+    const output = new TextDecoder().decode(result.stderr);
+    throw new Deno.errors.NotCapable(`Failed to execute “systemd-notify”: ${output} (code ${result.code})`);
+  }
 
+  /*
   // Map socket path syntax
   if (socketAddress[0] === "@") {
     socketAddress = `\0${socketAddress.slice(1)}`;
@@ -30,15 +34,16 @@ async function notifyServiceManagerReady(message) {
 
   // Send message to service manager
   //
-  // Passing a valid `path` here is required, even though it is not used (Deno bug/limitation).
-  const senderAddress = `${tmpdir()}/bewcloud-notify-${crypto.randomUUID()}.sock`;
-  const connection = Deno.listenDatagram({ transport: "unixpacket", path: senderAddress });
-  await Deno.remove(senderAddress);
+  // Blockers:
+  //  * https://github.com/denoland/deno/pull/31681
+  //  * Deno stabilization of `Deno.listenDatagram` (`--unstable-net`)
+  const connection = Deno.listenDatagram({ transport: "unixpacket" });
   await connection.send(
     new TextEncoder().encode(`READY=1\nSTATUS=${message.replace("\n", " ")}`),
     { transport: "unixpacket", path: socketAddress }
   );
   await connection.close();
+  */
 }
 
 export default defineConfig({

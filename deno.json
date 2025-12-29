@@ -1,7 +1,7 @@
 {
   "lock": true,
   "tasks": {
-    "execute-with-permissions": "deno run --allow-env --allow-net --allow-sys=networkInterfaces,hostname --allow-read=. --allow-write=data-files",
+    "execute-with-permissions": "deno run --allow-env --allow-net --allow-sys=networkInterfaces,hostname,cpus,homedir --allow-read=.,/ --allow-write=data-files,/ --allow-run",
     "check": "deno fmt --check && deno lint && deno check .",
     "cli": "echo \"import '\\$fresh/src/dev/cli.ts'\" | deno run --unstable -A -",
     "manifest": "deno task cli manifest $(pwd)",

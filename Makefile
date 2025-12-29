@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 
-.PHONY: preview
-preview:
-	deno task preview
+.PHONY: start
+start:
+	deno task start
 
 .PHONY: format
 format:
@@ -24,3 +24,7 @@ migrate-db:
 .PHONY: exec-db
 exec-db:
 	docker exec -it -u postgres $(shell basename $(CURDIR))-postgresql-1 psql
+
+.PHONY: preview
+preview:
+	deno task preview

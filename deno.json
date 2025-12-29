@@ -6,12 +6,12 @@
     "cli": "echo \"import '\\$fresh/src/dev/cli.ts'\" | deno run --unstable -A -",
     "manifest": "deno task cli manifest $(pwd)",
 
-    "build": "deno task execute-with-permissions ./dev.ts build",
     "start": "deno task execute-with-permissions --watch=static/,routes/,lib/,components/,islands/ ./dev.ts",
+    "build": "deno task execute-with-permissions ./dev.ts build",
+    "preview": "deno task execute-with-permissions ./main.ts",
     "test": "deno test --allow-all --check",
-
-    "migrate-db": "deno task execute-with-permissions ./migrate-db.ts",
-    "preview": "deno task execute-with-permissions ./main.ts"
+    
+    "migrate-db": "deno task execute-with-permissions ./migrate-db.ts"
   },
   "fmt": {
     "useTabs": false,

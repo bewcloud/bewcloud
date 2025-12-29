@@ -72,7 +72,7 @@ These are the amazing entities or individuals who are sponsoring this project fo
 ```sh
 docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
 make migrate-db # runs any missing database migrations
-make preview # runs the app in development mode
+make preview # runs the app in production mode
 make format # (optional) formats the code (if you're interested in contributing)
 make test # (optional) runs tests (if you're interested in contributing)
 ```
@@ -80,6 +80,7 @@ make test # (optional) runs tests (if you're interested in contributing)
 ### Other less-used commands (mostly for development)
 
 ```sh
+make start # runs the app in development mode
 make exec-db # runs psql inside the postgres container, useful for running direct development queries like `DROP DATABASE "bewcloud"; CREATE DATABASE "bewcloud";`
 make build # generates all static files for production deploy
 ```

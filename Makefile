@@ -19,8 +19,12 @@ build:
 
 .PHONY: migrate-db
 migrate-db:
-	deno run --allow-net --allow-read --allow-env migrate-db.ts
+	deno task migrate-db
 
 .PHONY: exec-db
 exec-db:
 	docker exec -it -u postgres $(shell basename $(CURDIR))-postgresql-1 psql
+
+.PHONY: preview
+preview:
+	deno task preview

@@ -1,13 +1,15 @@
 {
   "lock": true,
   "tasks": {
+    "execute-with-permissions": "deno run --allow-env --allow-net --allow-sys=networkInterfaces,hostname,cpus,homedir --allow-read=.,/ --allow-write=data-files,/ --allow-run",
     "check": "deno fmt --check && deno lint && deno check .",
     "cli": "echo \"import '\\$fresh/src/dev/cli.ts'\" | deno run --unstable -A -",
     "manifest": "deno task cli manifest $(pwd)",
-    "start": "deno run -A --watch=static/,routes/,lib/,components/,islands/ dev.ts",
-    "build": "deno run -A dev.ts build",
-    "preview": "deno run -A main.ts",
-    "test": "deno test -A --check"
+    "start": "deno task execute-with-permissions --watch=static/,routes/,lib/,components/,islands/ ./dev.ts",
+    "build": "deno task execute-with-permissions ./dev.ts build",
+    "preview": "deno task execute-with-permissions ./main.ts",
+    "test": "deno test --allow-all --check",
+    "migrate-db": "deno task execute-with-permissions ./migrate-db.ts"
   },
   "fmt": {
     "useTabs": false,

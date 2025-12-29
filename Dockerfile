@@ -20,4 +20,4 @@ USER deno
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 RUN deno cache --reload main.ts
 
-CMD ["run", "--allow-all", "main.ts"]
+CMD ["task", "preview"]

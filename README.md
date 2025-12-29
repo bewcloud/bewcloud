@@ -111,5 +111,5 @@ Just push to the `main` branch.
 
 These are not officially endorsed, but are alternative ways of running bewCloud.
 
-- [`bewcloud-nixos`](https://gitlab.com/ntninja/bewcloud-nixos/) by [@ntninja](https://github.com/ntninja) exposes bewCloud as a NixOS integration as an alternative to using Docker or running the app locally.
-  - For installation and known limitations, please see its [README](https://gitlab.com/ntninja/bewcloud-nixos/-/blob/main/README.md).
+- [`bewcloud-nixos`](https://codeberg.org/ntninja/bewcloud-nixos/) by [@ntninja](https://codeberg.org/ntninja/) exposes bewCloud as an easy-to-use NixOS integration as an alternative to using Docker or running the app locally.
+  - For installation, please see the [README](https://codeberg.org/ntninja/bewcloud-nixos/src/branch/main/README.md).

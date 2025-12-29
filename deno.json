@@ -5,12 +5,10 @@
     "check": "deno fmt --check && deno lint && deno check .",
     "cli": "echo \"import '\\$fresh/src/dev/cli.ts'\" | deno run --unstable -A -",
     "manifest": "deno task cli manifest $(pwd)",
-
     "start": "deno task execute-with-permissions --watch=static/,routes/,lib/,components/,islands/ ./dev.ts",
     "build": "deno task execute-with-permissions ./dev.ts build",
     "preview": "deno task execute-with-permissions ./main.ts",
     "test": "deno test --allow-all --check",
-    
     "migrate-db": "deno task execute-with-permissions ./migrate-db.ts"
   },
   "fmt": {

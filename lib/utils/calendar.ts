@@ -57,7 +57,7 @@ export function getColorAsHex(
 }
 
 export function getIdFromVEvent(vEvent: string): string {
-  const lines = vEvent.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = vEvent.split('\n').map((line) => line.trimEnd()).filter(Boolean);
 
   // Loop through every line and find the UID line
   for (const line of lines) {
@@ -71,7 +71,7 @@ export function getIdFromVEvent(vEvent: string): string {
 }
 
 export function splitTextIntoVEvents(text: string): string[] {
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = text.split('\n').map((line) => line.trimEnd()).filter(Boolean);
   const vEvents: string[] = [];
   const currentVEvent: string[] = [];
   let hasFoundBeginVEvent = false;
@@ -154,7 +154,7 @@ export function generateVCalendar(
   const vCalendarText = events.map((event) => generateVEvent(event, createdDate)).join('\n');
 
   return `BEGIN:VCALENDAR\nVERSION:2.0\nCALSCALE:GREGORIAN\n${vCalendarText}\nEND:VCALENDAR`.split('\n').map((line) =>
-    line.trim()
+    line.trimEnd()
   ).filter(
     Boolean,
   ).join('\n');
@@ -212,14 +212,14 @@ END:VALARM`
   }
 END:VEVENT`;
 
-  return vEventText.split('\n').map((line) => line.trim()).filter(Boolean).join('\n');
+  return vEventText.split('\n').map((line) => line.trimEnd()).filter(Boolean).join('\n');
 }
 
 export function updateIcs(
   ics: string,
   event: CalendarEvent,
 ): string {
-  const lines = ics.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = ics.split('\n').map((line) => line.trimEnd()).filter(Boolean);
 
   let replacedTitle = false;
   let replacedStartDate = false;
@@ -313,7 +313,7 @@ export function updateIcs(
   // Put the final lines back
   updatedIcsLines.push(...endLines);
 
-  const updatedIcs = updatedIcsLines.map((line) => line.trim()).filter(Boolean).join('\n');
+  const updatedIcs = updatedIcsLines.map((line) => line.trimEnd()).filter(Boolean).join('\n');
 
   return updatedIcs;
 }
@@ -346,7 +346,7 @@ export function parseVCalendar(text: string): CalendarEvent[] {
     }
 
     return previousLines;
-  }, [] as string[]).map((line) => line.trim()).filter(Boolean);
+  }, [] as string[]).map((line) => line.trimEnd()).filter(Boolean);
 
   const partialCalendarEvents: Partial<CalendarEvent>[] = [];
 

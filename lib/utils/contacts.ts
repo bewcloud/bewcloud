@@ -1,7 +1,7 @@
 import { Contact } from '/lib/models/contacts.ts';
 
 export function getIdFromVCard(vCard: string): string {
-  const lines = vCard.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = vCard.split('\n').map((line) => line.trimEnd()).filter(Boolean);
 
   // Loop through every line and find the UID line
   for (const line of lines) {
@@ -52,7 +52,7 @@ export function updateVCard(
     notes?: string;
   },
 ): string {
-  const lines = vCard.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = vCard.split('\n').map((line) => line.trimEnd()).filter(Boolean);
 
   let replacedName = false;
   let replacedFormattedName = false;
@@ -105,7 +105,7 @@ export function updateVCard(
 
   updatedVCardLines.push('END:VCARD');
 
-  const updatedVCard = updatedVCardLines.map((line) => line.trim()).filter(Boolean).join('\n');
+  const updatedVCard = updatedVCardLines.map((line) => line.trimEnd()).filter(Boolean).join('\n');
 
   return updatedVCard;
 }
@@ -121,7 +121,7 @@ function getSafelyUnescapedTextFromVCard(text: string): string {
 type VCardVersion = '2.1' | '3.0' | '4.0';
 
 export function parseVCard(text: string): Partial<Contact>[] {
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = text.split('\n').map((line) => line.trimEnd()).filter(Boolean);
 
   const partialContacts: Partial<Contact>[] = [];
 

@@ -15,7 +15,7 @@ export function getIdFromVCard(vCard: string): string {
 }
 
 export function splitTextIntoVCards(text: string): string[] {
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = text.split('\n').map((line) => line.trimEnd()).filter(Boolean);
   const vCards: string[] = [];
   const currentVCard: string[] = [];
 

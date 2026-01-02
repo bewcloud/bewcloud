@@ -8,10 +8,9 @@ const isBuildMode = Deno.args.includes('build');
 async function notifyServiceManagerReady() {
   const socketAddress = Deno.env.get('NOTIFY_SOCKET');
   if (typeof socketAddress !== 'string') {
-    return; // Service manager doesn’t expect any messages
+    return;
   }
 
-  // Send message using `systemd-notify` util until the native Deno APIs become stable
   const result = await (new Deno.Command('systemd-notify', {
     args: ['--ready', `MESSAGE=bewCloud is ready`],
   })).output();

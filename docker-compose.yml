@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:v3.5.1
+    image: ghcr.io/bewcloud/bewcloud:v3.6.0
     restart: always
     ports:
       - 127.0.0.1:8000:8000
@@ -32,7 +32,7 @@ services:
 
   # NOTE: If you don't want to use the CardDav/CalDav servers, you can comment/remove this service.
   radicale:
-    image: tomsquest/docker-radicale:3.5.8.2
+    image: tomsquest/docker-radicale:3.6.0.0
     # NOTE: uncomment below only if you need to connect to the CardDav/CalDav servers from outside the container
     # ports:
     #   - 127.0.0.1:5232:5232

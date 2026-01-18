@@ -2,7 +2,7 @@ FROM denoland/deno:ubuntu-2.5.6
 
 EXPOSE 8000
 
-RUN apt-get update && apt-get install -y make zip
+RUN apt-get update && apt-get install -y make zip coreutils
 
 WORKDIR /app
 

@@ -17,7 +17,19 @@ export function humanFileSize(bytes: number) {
     ++unitIndex;
   } while (Math.round(Math.abs(bytes) * roundedPower) / roundedPower >= 1024 && unitIndex < units.length - 1);
 
+  if (bytes.toFixed(2).split('.')[1] === '00') {
+    return `${bytes.toFixed(0)} ${units[unitIndex]}`;
+  }
+
   return `${bytes.toFixed(2)} ${units[unitIndex]}`;
+}
+
+export function bytesFromHumanFileSize(humanFileSize: string) {
+  const [numberString, unit] = humanFileSize.split(' ');
+  const number = Number.parseFloat(numberString);
+
+  return number *
+    (unit === 'B' ? 1 : 1024 ** (['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'].indexOf(unit) + 1));
 }
 
 export function sortEntriesByName(entryA: Deno.DirEntry, entryB: Deno.DirEntry) {

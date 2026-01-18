@@ -4,7 +4,13 @@ import { Cookie, getCookies, setCookie } from '@std/http';
 
 import { AppConfig } from '/lib/config.ts';
 import { Directory, DirectoryFile, FileShare } from '/lib/types.ts';
-import { sortDirectoriesByName, sortEntriesByName, sortFilesByName, TRASH_PATH } from '/lib/utils/files.ts';
+import {
+  bytesFromHumanFileSize,
+  sortDirectoriesByName,
+  sortEntriesByName,
+  sortFilesByName,
+  TRASH_PATH,
+} from '/lib/utils/files.ts';
 import Database, { sql } from '/lib/interfaces/database.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
@@ -39,12 +45,14 @@ export class DirectoryModel {
     for (const entry of directoryEntries) {
       const stat = await Deno.stat(join(rootPath, entry.name));
 
+      const directorySize = await getDirectorySize(join(rootPath, entry.name));
+
       const directory: Directory = {
         user_id: userId,
         parent_path: path,
         directory_name: entry.name,
         has_write_access: true,
-        size_in_bytes: stat.size,
+        size_in_bytes: directorySize || stat.size,
         file_share_id: fileShares.find((fileShare) => fileShare.file_path === `${join(path, entry.name)}/`)?.id || null,
         updated_at: stat.mtime || new Date(),
         created_at: stat.birthtime || new Date(),
@@ -141,12 +149,14 @@ export class DirectoryModel {
           parentPath = '/';
         }
 
+        const directorySize = await getDirectorySize(join(rootPath, relativeDirectoryPath));
+
         const directory: Directory = {
           user_id: userId,
           parent_path: parentPath,
           directory_name: directoryName,
           has_write_access: true,
-          size_in_bytes: stat.size,
+          size_in_bytes: directorySize || stat.size,
           file_share_id: fileShares.find((fileShare) =>
             fileShare.file_path === `${join(relativeDirectoryPath, directoryName)}/`
           )?.id || null,
@@ -763,4 +773,46 @@ export async function getPathInfo(userId: string, path: string): Promise<{ isDir
     isDirectory: stat.isDirectory,
     isFile: stat.isFile,
   };
+}
+
+// NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
+async function getDirectorySize(path: string): Promise<number> {
+  try {
+    const controller = new AbortController();
+    const commandTimeout = setTimeout(() => controller.abort(), 5_000);
+
+    const command = new Deno.Command(`du`, {
+      args: [
+        `-sh`,
+        path,
+      ],
+      signal: controller.signal,
+    });
+
+    const { code, stdout, stderr } = await command.output();
+
+    if (commandTimeout) {
+      clearTimeout(commandTimeout);
+    }
+
+    if (code !== 0) {
+      if (stderr) {
+        throw new Error(new TextDecoder().decode(stderr));
+      }
+
+      throw new Error(`Unknown error running "du"`);
+    }
+
+    const output = new TextDecoder().decode(stdout);
+
+    const value = output.split('\t')[0].trim();
+
+    const number = Number.parseFloat(value.match(/\d+(\.\d+)?/)?.[0] || '0');
+    const unit = value.match(/[A-Z]+/)?.[0] || 'B'.toUpperCase();
+
+    return bytesFromHumanFileSize(`${number} ${unit}B`);
+  } catch (error) {
+    console.error(error);
+    return 0;
+  }
 }

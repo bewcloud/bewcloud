@@ -79,7 +79,7 @@ export default function ListPhotos(
                 </td>
                 {isShowingNotes ? null : (
                   <td class='px-6 py-4 text-slate-200'>
-                    -
+                    {humanFileSize(directory.size_in_bytes)}
                   </td>
                 )}
                 <td class='px-6 py-4'>

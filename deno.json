@@ -52,16 +52,20 @@
     "@std/path": "jsr:@std/path@1.1.2",
 
     "chart.js": "npm:chart.js@4.5.0",
+    "chart.js/auto": "npm:chart.js@4.5.0/auto",
     "jimp": "npm:jimp@1.6.0",
     "mrmime": "npm:mrmime@2.0.1",
     "nodemailer": "npm:nodemailer@7.0.6",
     "openid-client": "npm:openid-client@6.8.0",
     "otpauth": "npm:otpauth@9.4.1",
-    "preact": "npm:preact@10.27.2",
+    "preact": "npm:preact@10.28.3",
+    "preact/debug": "npm:preact@10.28.3/debug",
+    "preact/hooks": "npm:preact@10.28.3/hooks",
+    "preact/jsx-runtime": "npm:preact@10.28.3/jsx-runtime",
     "tailwindcss": "npm:tailwindcss@3.4.17",
-    "tailwindcss/": "npm:/tailwindcss@3.4.17/",
-    "tailwindcss/plugin": "npm:/tailwindcss@3.4.17/plugin.js",
-    "vite": "npm:vite@7.1.7",
-    "@preact/signals": "npm:@preact/signals@2.3.1"
+    "tailwindcss/": "npm:tailwindcss@3.4.17/",
+    "tailwindcss/plugin": "npm:tailwindcss@3.4.17/plugin.js",
+    "vite": "npm:vite@7.3.1",
+    "@preact/signals": "npm:@preact/signals@2.6.2"
   }
 }

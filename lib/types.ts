@@ -31,11 +31,6 @@ export interface UserSession {
   created_at: Date;
 }
 
-export interface FreshContextState {
-  user?: User;
-  session?: UserSession;
-}
-
 export interface VerificationCode {
   id: string;
   user_id: string;
@@ -140,15 +135,7 @@ export interface Expense {
 }
 
 export type SupportedCurrencySymbol = '$' | '€' | '£' | '¥' | '₹';
-type SupportedCurrency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'INR';
-
-export const currencyMap = new Map<SupportedCurrencySymbol, SupportedCurrency>([
-  ['$', 'USD'],
-  ['€', 'EUR'],
-  ['£', 'GBP'],
-  ['¥', 'JPY'],
-  ['₹', 'INR'],
-]);
+export type SupportedCurrency = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'INR';
 
 export type PartialDeep<T> = (T extends (infer U)[] ? PartialDeep<U>[] : { [P in keyof T]?: PartialDeep<T[P]> }) | T;
 
@@ -206,8 +193,8 @@ export interface Config {
     host: string;
     /** The SMTP port to send emails from */
     port: number;
-    /** “auto” means “immediate” on port 465, “starttls” otherwise; `null` is legacy behaviour that will be removed in v4: on port 465 it also means “immediate”, otherwise it will use opportunistic StartTLS falling back to plain transmission */
-    tlsMode: null | 'auto' | 'immediate' | 'starttls' | 'none';
+    /** "auto" means "immediate" on port 465, "starttls" otherwise. */
+    tlsMode: 'auto' | 'immediate' | 'starttls' | 'none';
     /** Whether to verify the TLS certificate. If a string is used the hostname will be verified using that name. */
     tlsVerify: boolean | string;
   };

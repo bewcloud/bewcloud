@@ -2,7 +2,7 @@
 
 [![](https://github.com/bewcloud/bewcloud/workflows/Run%20Tests/badge.svg)](https://github.com/bewcloud/bewcloud/actions?workflow=Run+Tests)
 
-This is the [bewCloud app](https://bewcloud.com) built using [Fresh](https://fresh.deno.dev) and deployed using [docker compose](https://docs.docker.com/compose/).
+This is the [bewCloud app](https://bewcloud.com) built with [Deno](https://deno.land/) and deployed using [docker compose](https://docs.docker.com/compose/).
 
 If you're looking for the desktop sync app, it's at [`bewcloud-desktop`](https://github.com/bewcloud/bewcloud-desktop).
 
@@ -10,9 +10,7 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 ## Self-host it!
 
-[![Buy managed cloud (1 year)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20year)-51a4fb?style=for-the-badge)](https://buy.stripe.com/eVa01HgQk0Ap0eseVz)
-
-[![Buy managed cloud (1 month)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20month)-51a4fb?style=for-the-badge)](https://buy.stripe.com/fZu8wOb5RfIydj56FA1gs0J)
+[![Buy managed cloud (1 year)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20year)-51a4fb?style=for-the-badge)](https://payment-links.mollie.com/payment/zeLCmenLMLQwTcvqPJMyb)
 
 Or, to run on your own machine, start with these commands:
 
@@ -48,7 +46,7 @@ See the [Community Links](#community-links) section for alternative ways of runn
 
 ## Sponsors
 
-These are the amazing entities or individuals who are sponsoring this project for this current month. If you'd like to show up here, [check the GitHub Sponsors page](https://github.com/sponsors/bewcloud) or [make a donation](https://donate.stripe.com/bIYeWBbw00Ape5iaFi) above $50 ($100 to show up on the website)!
+These are the amazing entities or individuals who are sponsoring this project for this current month. If you'd like to show up here, [check the GitHub Sponsors page](https://github.com/sponsors/bewcloud) or [make a donation](https://payment-links.mollie.com/payment/wUS9dvewvjEPvseZVHEi5) above $50 ($100 to show up on the website)!
 
 <p align="center" width="100%">
   <a href="https://nlnet.nl/project/bewCloud/" title="NLnet Foundation">
@@ -72,9 +70,10 @@ These are the amazing entities or individuals who are sponsoring this project fo
 ```sh
 docker compose -f docker-compose.dev.yml up # (optional) runs docker with postgres, locally
 make migrate-db # runs any missing database migrations
-make start # runs the app in development mode (watches for file changes and recompiles the app)
+make start # runs the app in development mode (watches for CSS file changes and recompiles the CSS)
 make format # (optional) formats the code (if you're interested in contributing)
 make test # (optional) runs tests (if you're interested in contributing)
+make build # (optional) generates CSS for production, if you've made changes
 ```
 
 ### Other less-used commands (mostly for development)
@@ -82,15 +81,14 @@ make test # (optional) runs tests (if you're interested in contributing)
 ```sh
 make preview # runs the app in production mode (serves the app from the built files)
 make exec-db # runs psql inside the postgres container, useful for running direct development queries like `DROP DATABASE "bewcloud"; CREATE DATABASE "bewcloud";`
-make build # generates all static files for production deploy
 ```
 
 ## File/Directory Structure
 
-- Routes are defined at `routes/`.
-- Static files are defined at `static/`.
-- Frontend-only components are defined at `components/`.
-- Isomorphic components are defined at `islands/`.
+- Backend routes are defined at `routes.ts`
+- Publicly-available files are defined at `public/`
+- Pages are defined at `pages/`.
+- JSX/TSX components are defined at `components/`.
 - Cron jobs are defined at `crons/`.
 - Reusable bits of code are defined at `lib/`.
 - Database migrations are defined at `db-migrations/`.

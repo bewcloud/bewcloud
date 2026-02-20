@@ -1,5 +1,5 @@
 import { DirectoryFile } from '/lib/types.ts';
-import { PHOTO_IMAGE_EXTENSIONS, PHOTO_VIDEO_EXTENSIONS } from '/lib/utils/photos.ts';
+import { PHOTO_IMAGE_EXTENSIONS, PHOTO_VIDEO_EXTENSIONS } from '/public/ts/utils/photos.ts';
 
 interface ListPhotosProps {
   files: DirectoryFile[];

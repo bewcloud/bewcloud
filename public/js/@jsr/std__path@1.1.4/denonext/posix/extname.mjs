@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/posix/extname */
+import{CHAR_DOT as n}from"../_common/constants.mjs";import{assertPath as m}from"../_common/assert_path.mjs";import{isPosixPathSeparator as a}from"./_util.mjs";import{fromFileUrl as c}from"./from-file-url.mjs";function D(e){e instanceof URL&&(e=c(e)),m(e);let t=-1,f=0,i=-1,l=!0,o=0;for(let r=e.length-1;r>=0;--r){let s=e.charCodeAt(r);if(a(s)){if(!l){f=r+1;break}continue}i===-1&&(l=!1,i=r+1),s===n?t===-1?t=r:o!==1&&(o=1):t!==-1&&(o=-1)}return t===-1||i===-1||o===0||o===1&&t===i-1&&t===f+1?"":e.slice(t,i)}export{D as extname};
+//extname.mjs.map

@@ -4,7 +4,7 @@ import { decodeBase64, encodeBase32, encodeBase64 } from '@std/encoding';
 
 import { MultiFactorAuthMethod } from '/lib/types.ts';
 import { MFA_KEY, MFA_SALT } from '/lib/auth.ts';
-import { generateHash } from '/lib/utils/misc.ts';
+import { generateHash } from '/public/ts/utils/misc.ts';
 import { MultiFactorAuthSetup } from '/lib/models/multi-factor-auth.ts';
 
 export class TOTPModel {

@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/windows/basename */
+import{assertArgs as n,lastPathSegment as f,stripSuffix as a}from"../_common/basename.mjs";import{CHAR_COLON as c}from"../_common/constants.mjs";import{stripTrailingSeparators as l}from"../_common/strip_trailing_separators.mjs";import{isPathSeparator as i,isWindowsDeviceRoot as g}from"./_util.mjs";import{fromFileUrl as S}from"./from-file-url.mjs";function v(r,t=""){r instanceof URL&&(r=S(r)),n(r,t);let o=0;if(r.length>=2){let m=r.charCodeAt(0);g(m)&&r.charCodeAt(1)===c&&(o=2)}let s=f(r,i,o),e=l(s,i);return t?a(e,t):e}export{v as basename};
+//basename.mjs.map

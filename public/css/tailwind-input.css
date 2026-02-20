@@ -1,0 +1,74 @@
+@import 'tailwindcss';
+
+@layer base {
+  html {
+    /* This is needed to ensure that the system color scheme is dark and matches the dark theme of the app */
+    color-scheme: dark;
+  }
+
+  h1 {
+    @apply text-4xl font-bold;
+  }
+
+  a {
+    @apply text-[#51a4fb] no-underline hover:underline font-semibold cursor-pointer;
+  }
+
+  main {
+    @apply mx-auto max-w-7xl py-6 sm:px-6 lg:px-8 text-white;
+  }
+
+  form {
+    @apply px-4 py-8 max-w-3xl mx-auto lg:min-w-96;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+}
+
+@layer components {
+  .button {
+    @apply inline-block rounded text-white no-underline font-normal bg-[#51a4fb] hover:bg-sky-400 hover:shadow-sm
+      hover:no-underline px-4 py-2 cursor-pointer;
+  }
+
+  .button-secondary {
+    @apply inline-block rounded text-white no-underline font-normal bg-slate-600 hover:text-slate-900 hover:bg-slate-400
+      hover:shadow-sm hover:no-underline px-4 py-2 cursor-pointer;
+  }
+
+  .button-danger {
+    @apply inline-block rounded text-slate-50 no-underline font-normal bg-red-600 hover:text-slate-900 hover:bg-red-400
+      hover:shadow-md hover:no-underline px-4 py-2 cursor-pointer;
+  }
+
+  .input-field {
+    @apply block w-full p-2 rounded-md text-white bg-slate-700 border-transparent border focus:border-[#51a4fb]
+      focus:bg-slate-700 outline-none focus:ring-0 shadow-sm;
+  }
+
+  .input-field[type='range'] {
+    @apply w-auto;
+  }
+
+  .input-field:required:invalid:not(:placeholder-shown) {
+    @apply bg-red-400;
+  }
+
+  .notification-error {
+    @apply bg-red-700 rounded text-white px-6 py-8 shadow-md mt-2 mb-6 w-full hover:shadow-lg;
+  }
+
+  .notification-error h3 {
+    @apply text-4xl text-white mb-6;
+  }
+
+  .notification-success {
+    @apply bg-green-600 rounded text-white px-6 py-8 shadow-md mt-2 mb-6 w-full hover:shadow-lg;
+  }
+
+  .notification-success h3 {
+    @apply text-4xl text-white mb-6;
+  }
+}

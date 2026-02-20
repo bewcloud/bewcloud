@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/windows/normalize-glob */
+import{normalize as t}from"./normalize.mjs";import{SEPARATOR_PATTERN as c}from"./constants.mjs";function m(r,n={}){let{globstar:o=!1}=n;if(r.match(/\0/g))throw new Error(`Glob contains invalid characters: "${r}"`);if(!o)return t(r);let e=c.source,a=new RegExp(`(?<=(${e}|^)\\*\\*${e})\\.\\.(?=${e}|$)`,"g");return t(r.replace(a,"\0")).replace(/\0/g,"..")}export{m as normalizeGlob};
+//normalize-glob.mjs.map

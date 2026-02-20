@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/windows/to-namespaced-path */
+import{CHAR_BACKWARD_SLASH as o,CHAR_COLON as i,CHAR_DOT as A,CHAR_QUESTION_MARK as c}from"../_common/constants.mjs";import{isWindowsDeviceRoot as f}from"./_util.mjs";import{resolve as n}from"./resolve.mjs";function m(r){if(typeof r!="string")return r;if(r.length===0)return"";let e=n(r);if(e.length>=3){if(e.charCodeAt(0)===o){if(e.charCodeAt(1)===o){let t=e.charCodeAt(2);if(t!==c&&t!==A)return`\\\\?\\UNC\\${e.slice(2)}`}}else if(f(e.charCodeAt(0))&&e.charCodeAt(1)===i&&e.charCodeAt(2)===o)return`\\\\?\\${e}`}return r}export{m as toNamespacedPath};
+//to-namespaced-path.mjs.map

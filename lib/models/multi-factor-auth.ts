@@ -4,7 +4,7 @@ import { MultiFactorAuthMethod, User } from '/lib/types.ts';
 import {
   getEnabledMultiFactorAuthMethodsFromUser,
   getMultiFactorAuthMethodByIdFromUser,
-} from '/lib/utils/multi-factor-auth.ts';
+} from '/public/ts/utils/multi-factor-auth.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
   generateKey,
@@ -14,7 +14,7 @@ import {
   resolveCookieDomain,
   verifyAuthJwt,
 } from '/lib/auth.ts';
-import { isRunningLocally } from '/lib/utils/misc.ts';
+import { isRunningLocally } from '/public/ts/utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 import { UserModel } from './user.ts';
 import { EmailModel } from './multi-factor-auth/email.ts';

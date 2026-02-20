@@ -1,0 +1,2 @@
+/* esm.sh - @jsr/std__internal@1.0.12/os */
+export * from "/public/js/@jsr/std__internal@1.0.12/denonext/os.mjs";

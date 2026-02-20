@@ -1,0 +1,36 @@
+/* Base/Custom */
+
+a, button {
+  transition: 60ms all ease-in;
+}
+
+img.white {
+  filter: invert(100%) sepia(0%) saturate(7500%) hue-rotate(42deg) brightness(99%) contrast(112%);
+  fill: white;
+}
+
+img.green {
+  filter: invert(47%) sepia(19%) saturate(6698%) hue-rotate(114deg) brightness(91%) contrast(83%);
+}
+
+img.red {
+  filter: invert(18%) sepia(45%) saturate(3518%) hue-rotate(337deg) brightness(110%) contrast(101%);
+}
+
+img.gray {
+  filter: invert(30%) sepia(46%) saturate(356%) hue-rotate(174deg) brightness(90%) contrast(82%);
+}
+
+img.blue {
+  filter: invert(74%) sepia(36%) saturate(7057%) hue-rotate(186deg) brightness(101%) contrast(97%);
+}
+
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+.calendar-week-view-days {
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-rows:
+    0.5fr 1fr 0.5fr 0.5fr 0.5fr 0.5fr 0.5fr 0.5fr 0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+}

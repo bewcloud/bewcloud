@@ -2,10 +2,10 @@ import { decodeBase64, decodeBase64Url, encodeBase64Url } from '@std/encoding';
 import { Cookie, getCookies, setCookie } from '@std/http';
 import '@std/dotenv/load';
 
-import { generateHash, isRunningLocally } from './utils/misc.ts';
-import { User, UserSession } from './types.ts';
-import { UserModel, UserSessionModel, validateUserAndSession } from './models/user.ts';
-import { AppConfig } from './config.ts';
+import { generateHash, isRunningLocally } from '/public/ts/utils/misc.ts';
+import { User, UserSession } from '/lib/types.ts';
+import { UserModel, UserSessionModel, validateUserAndSession } from '/lib/models/user.ts';
+import { AppConfig } from '/lib/config.ts';
 
 export const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
 export const PASSWORD_SALT = Deno.env.get('PASSWORD_SALT') || '';

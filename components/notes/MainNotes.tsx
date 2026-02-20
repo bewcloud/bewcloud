@@ -1,16 +1,16 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { ResponseBody as UploadResponseBody } from '/routes/api/files/upload.tsx';
-import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/files/delete.tsx';
+import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
+import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/pages/api/files/delete.ts';
 import {
   RequestBody as CreateDirectoryRequestBody,
   ResponseBody as CreateDirectoryResponseBody,
-} from '/routes/api/files/create-directory.tsx';
+} from '/pages/api/files/create-directory.ts';
 import {
   RequestBody as DeleteDirectoryRequestBody,
   ResponseBody as DeleteDirectoryResponseBody,
-} from '/routes/api/files/delete-directory.tsx';
+} from '/pages/api/files/delete-directory.ts';
 import ListFiles from '/components/files/ListFiles.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
 import CreateDirectoryModal from '/components/files/CreateDirectoryModal.tsx';
@@ -240,7 +240,7 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
                 onClick={() => toggleNewOptionsDropdown()}
               >
                 <img
-                  src='/images/add.svg'
+                  src='/public/images/add.svg'
                   alt='Add new note or directory'
                   class={`white ${isAdding.value ? 'animate-spin' : ''}`}
                   width={20}
@@ -294,14 +294,14 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
           {isDeleting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
               </>
             )
             : null}
           {isAdding.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
               </>
             )
             : null}

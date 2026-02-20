@@ -2,7 +2,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Budget } from '/lib/types.ts';
-import { formatInputToNumber } from '/lib/utils/misc.ts';
+import { formatInputToNumber } from '/public/ts/utils/misc.ts';
 
 interface BudgetModalProps {
   isOpen: boolean;
@@ -41,7 +41,7 @@ export default function BudgetModal(
   return (
     <>
       <section
-        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900 bg-opacity-60`}
+        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900/60`}
       >
       </section>
 

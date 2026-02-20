@@ -1,11 +1,11 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { ResponseBody as UploadResponseBody } from '/routes/api/files/upload.tsx';
+import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
 import {
   RequestBody as CreateDirectoryRequestBody,
   ResponseBody as CreateDirectoryResponseBody,
-} from '/routes/api/files/create-directory.tsx';
+} from '/pages/api/files/create-directory.ts';
 import CreateDirectoryModal from '/components/files/CreateDirectoryModal.tsx';
 import ListFiles from '/components/files/ListFiles.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
@@ -156,7 +156,7 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
                 onClick={() => toggleNewOptionsDropdown()}
               >
                 <img
-                  src='/images/add.svg'
+                  src='/public/images/add.svg'
                   alt='Add new file or directory'
                   class={`white ${isAdding.value || isUploading.value ? 'animate-spin' : ''}`}
                   width={20}
@@ -212,14 +212,14 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
           {isAdding.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
               </>
             )
             : null}
           {isUploading.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Uploading...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Uploading...
               </>
             )
             : null}

@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import '@std/dotenv/load';
 
-import { escapeHtml } from '/lib/utils/misc.ts';
+import { escapeHtml } from '/public/ts/utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 
 const SMTP_USERNAME = Deno.env.get('SMTP_USERNAME') || '';
@@ -16,10 +16,7 @@ export class EmailModel {
     }
 
     let tlsMode = emailConfig.tlsMode;
-    if (tlsMode === null) {
-      // Value `null` will be ignored below causing the nodemailer default behaviour of using opportunistic StartTLS
-      tlsMode = Number(emailConfig.port) === 465 ? 'immediate' : null;
-    } else if (!['immediate', 'starttls', 'none'].includes(tlsMode)) {
+    if (tlsMode === 'auto') {
       tlsMode = Number(emailConfig.port) === 465 ? 'immediate' : 'starttls';
     }
 
@@ -30,13 +27,11 @@ export class EmailModel {
       secure: tlsMode === 'immediate',
       requireTLS: tlsMode === 'starttls',
       ignoreTLS: tlsMode === 'none',
-      tls: (
-        emailConfig.tlsVerify === false
-          ? { rejectUnauthorized: false }
-          : emailConfig.tlsVerify !== true
-          ? { servername: emailConfig.tlsVerify }
-          : {}
-      ),
+      tls: emailConfig.tlsVerify === false
+        ? { rejectUnauthorized: false }
+        : emailConfig.tlsVerify !== true
+        ? { servername: emailConfig.tlsVerify }
+        : {},
 
       auth: (SMTP_USERNAME || SMTP_PASSWORD)
         ? {

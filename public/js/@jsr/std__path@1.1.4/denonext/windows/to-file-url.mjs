@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/windows/to-file-url */
+import{encodeWhitespace as r}from"../_common/to_file_url.mjs";import{isAbsolute as a}from"./is-absolute.mjs";function s(o){if(!a(o))throw new TypeError(`Path must be absolute: received "${o}"`);let[,t,n]=o.match(/^(?:[/\\]{2}([^/\\]+)(?=[/\\](?:[^/\\]|$)))?(.*)/),e=new URL("file:///");if(e.pathname=r(n.replace(/%/g,"%25")),t!==void 0&&t!=="localhost"&&(e.hostname=t,!e.hostname))throw new TypeError(`Invalid hostname: "${e.hostname}"`);return e}export{s as toFileUrl};
+//to-file-url.mjs.map

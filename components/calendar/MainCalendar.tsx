@@ -1,18 +1,18 @@
 import { useSignal } from '@preact/signals';
 
 import { Calendar, CalendarEvent } from '/lib/models/calendar.ts';
-import { capitalizeWord } from '/lib/utils/misc.ts';
-import { generateVCalendar } from '/lib/utils/calendar.ts';
+import { capitalizeWord } from '/public/ts/utils/misc.ts';
+import { generateVCalendar } from '/public/ts/utils/calendar.ts';
 import {
   RequestBody as ExportRequestBody,
   ResponseBody as ExportResponseBody,
-} from '/routes/api/calendar/export-events.tsx';
-import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/routes/api/calendar/add-event.tsx';
+} from '/pages/api/calendar/export-events.ts';
+import { RequestBody as AddRequestBody, ResponseBody as AddResponseBody } from '/pages/api/calendar/add-event.ts';
 import {
   RequestBody as DeleteRequestBody,
   ResponseBody as DeleteResponseBody,
-} from '/routes/api/calendar/delete-event.tsx';
-import { RequestBody as ImportRequestBody, ResponseBody as ImportResponseBody } from '/routes/api/calendar/import.tsx';
+} from '/pages/api/calendar/delete-event.ts';
+import { RequestBody as ImportRequestBody, ResponseBody as ImportResponseBody } from '/pages/api/calendar/import.ts';
 import CalendarViewDay from './CalendarViewDay.tsx';
 import CalendarViewWeek from './CalendarViewWeek.tsx';
 import CalendarViewMonth from './CalendarViewMonth.tsx';
@@ -32,8 +32,7 @@ interface MainCalendarProps {
 }
 
 export default function MainCalendar(
-  { initialCalendars, initialCalendarEvents, view, startDate, baseUrl, timezoneId, timezoneUtcOffset }:
-    MainCalendarProps,
+  { initialCalendars, initialCalendarEvents, view, startDate, baseUrl, timezoneId }: MainCalendarProps,
 ) {
   const isAdding = useSignal<boolean>(false);
   const isDeleting = useSignal<boolean>(false);
@@ -543,7 +542,7 @@ export default function MainCalendar(
             onClick={() => onClickAddEvent()}
           >
             <img
-              src='/images/add.svg'
+              src='/public/images/add.svg'
               alt='Add new event'
               class={`white ${isAdding.value ? 'animate-spin' : ''}`}
               width={20}
@@ -597,21 +596,21 @@ export default function MainCalendar(
           {isDeleting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
               </>
             )
             : null}
           {isExporting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Exporting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Exporting...
               </>
             )
             : null}
           {isImporting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Importing...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Importing...
               </>
             )
             : null}

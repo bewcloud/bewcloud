@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/posix/dirname */
+import{assertArg as f}from"../_common/dirname.mjs";import{stripTrailingSeparators as m}from"../_common/strip_trailing_separators.mjs";import{isPosixPathSeparator as i}from"./_util.mjs";import{fromFileUrl as n}from"./from-file-url.mjs";function d(r){r instanceof URL&&(r=n(r)),f(r);let o=-1,t=!1;for(let e=r.length-1;e>=1;--e)if(i(r.charCodeAt(e))){if(t){o=e;break}}else t=!0;return o===-1?i(r.charCodeAt(0))?"/":".":m(r.slice(0,o),i)}export{d as dirname};
+//dirname.mjs.map

@@ -1,7 +1,7 @@
 import { createDAVClient } from '/lib/models/dav.js';
 import { AppConfig } from '/lib/config.ts';
-import { getColorAsHex, parseVCalendar } from '/lib/utils/calendar.ts';
-import { concurrentPromises } from '/lib/utils/misc.ts';
+import { getColorAsHex, parseVCalendar } from '/public/ts/utils/calendar.ts';
+import { concurrentPromises } from '/public/ts/utils/misc.ts';
 import { UserModel } from '/lib/models/user.ts';
 
 interface DAVObject extends Record<string, any> {

@@ -1,0 +1,3 @@
+/* esm.sh - @kurkle/color@0.3.4 */
+export * from "/public/js/@kurkle/color@0.3.4/denonext/color.mjs";
+export { default } from "/public/js/@kurkle/color@0.3.4/denonext/color.mjs";

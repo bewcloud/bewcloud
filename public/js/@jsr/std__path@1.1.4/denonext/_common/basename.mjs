@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/_common/basename */
+import{assertPath as o}from"./assert_path.mjs";function f(e,t){if(t.length>=e.length)return e;let n=e.length-t.length;for(let r=t.length-1;r>=0;--r)if(e.charCodeAt(n+r)!==t.charCodeAt(r))return e;return e.slice(0,-t.length)}function c(e,t,n=0){let r=!1,l=e.length;for(let i=e.length-1;i>=n;--i)if(t(e.charCodeAt(i))){if(r){n=i+1;break}}else r||(r=!0,l=i+1);return e.slice(n,l)}function h(e,t){if(o(e),e.length===0)return e;if(typeof t!="string")throw new TypeError(`Suffix must be a string, received "${JSON.stringify(t)}"`)}export{h as assertArgs,c as lastPathSegment,f as stripSuffix};
+//basename.mjs.map

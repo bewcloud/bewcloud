@@ -1,6 +1,10 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:v3.7.0
+    image: ghcr.io/bewcloud/bewcloud:v4.0.0
+    # NOTE: uncomment below (and comment above) only if you pulled the repo and want to build the image locally
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     restart: always
     ports:
       - 127.0.0.1:8000:8000

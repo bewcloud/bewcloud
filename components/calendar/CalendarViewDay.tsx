@@ -1,5 +1,5 @@
 import { Calendar, CalendarEvent } from '/lib/models/calendar.ts';
-import { getCalendarEventStyle } from '/lib/utils/calendar.ts';
+import { getCalendarEventStyle } from '/public/ts/utils/calendar.ts';
 
 interface CalendarViewDayProps {
   startDate: Date;

@@ -10,7 +10,7 @@ import {
   sortEntriesByName,
   sortFilesByName,
   TRASH_PATH,
-} from '/lib/utils/files.ts';
+} from '/public/ts/utils/files.ts';
 import Database, { sql } from '/lib/interfaces/database.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
@@ -20,7 +20,7 @@ import {
   resolveCookieDomain,
   verifyAuthJwt,
 } from '/lib/auth.ts';
-import { isRunningLocally } from '/lib/utils/misc.ts';
+import { isRunningLocally } from '/public/ts/utils/misc.ts';
 
 const COOKIE_NAME = `${AUTH_COOKIE_NAME}-file-share`;
 

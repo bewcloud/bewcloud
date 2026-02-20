@@ -4,7 +4,7 @@ import '@std/dotenv/load';
 
 import { createSessionResponse, dataToText } from '/lib/auth.ts';
 import { UserModel } from '/lib/models/user.ts';
-import { generateRandomCode } from '/lib/utils/misc.ts';
+import { generateRandomCode } from '/public/ts/utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 import SimpleCache from '/lib/interfaces/simple-cache.ts';
 

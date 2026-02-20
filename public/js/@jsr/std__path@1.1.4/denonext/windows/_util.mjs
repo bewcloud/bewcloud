@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/windows/_util */
+import{CHAR_BACKWARD_SLASH as t,CHAR_FORWARD_SLASH as r,CHAR_LOWERCASE_A as R,CHAR_LOWERCASE_Z as _,CHAR_UPPERCASE_A as C,CHAR_UPPERCASE_Z as i}from"../_common/constants.mjs";function o(A){return A===r}function S(A){return A===r||A===t}function E(A){return A>=R&&A<=_||A>=C&&A<=i}export{S as isPathSeparator,o as isPosixPathSeparator,E as isWindowsDeviceRoot};
+//_util.mjs.map

@@ -1,7 +1,8 @@
 import { DOMParser, initParser } from '@b-fuze/deno-dom/wasm-noinit';
 import { Feed, parseFeed } from '@mikaelporttila/rss';
-import { fetchUrl, fetchUrlAsGooglebot, fetchUrlWithProxy, fetchUrlWithRetries } from './utils/misc.ts';
-import { NewsFeed, NewsFeedCrawlType, NewsFeedType } from './types.ts';
+
+import { fetchUrl, fetchUrlAsGooglebot, fetchUrlWithProxy, fetchUrlWithRetries } from '/public/ts/utils/misc.ts';
+import { NewsFeed, NewsFeedCrawlType, NewsFeedType } from '/lib/types.ts';
 
 export interface JsonFeedItem {
   id: string;

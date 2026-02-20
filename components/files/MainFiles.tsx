@@ -1,38 +1,38 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { ResponseBody as UploadResponseBody } from '/routes/api/files/upload.tsx';
-import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/routes/api/files/rename.tsx';
-import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/routes/api/files/move.tsx';
-import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/files/delete.tsx';
+import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
+import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/pages/api/files/rename.ts';
+import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/pages/api/files/move.ts';
+import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/pages/api/files/delete.ts';
 import {
   RequestBody as CreateDirectoryRequestBody,
   ResponseBody as CreateDirectoryResponseBody,
-} from '/routes/api/files/create-directory.tsx';
+} from '/pages/api/files/create-directory.ts';
 import {
   RequestBody as RenameDirectoryRequestBody,
   ResponseBody as RenameDirectoryResponseBody,
-} from '/routes/api/files/rename-directory.tsx';
+} from '/pages/api/files/rename-directory.ts';
 import {
   RequestBody as MoveDirectoryRequestBody,
   ResponseBody as MoveDirectoryResponseBody,
-} from '/routes/api/files/move-directory.tsx';
+} from '/pages/api/files/move-directory.ts';
 import {
   RequestBody as DeleteDirectoryRequestBody,
   ResponseBody as DeleteDirectoryResponseBody,
-} from '/routes/api/files/delete-directory.tsx';
+} from '/pages/api/files/delete-directory.ts';
 import {
   RequestBody as CreateShareRequestBody,
   ResponseBody as CreateShareResponseBody,
-} from '/routes/api/files/create-share.tsx';
+} from '/pages/api/files/create-share.ts';
 import {
   RequestBody as UpdateShareRequestBody,
   ResponseBody as UpdateShareResponseBody,
-} from '/routes/api/files/update-share.tsx';
+} from '/pages/api/files/update-share.ts';
 import {
   RequestBody as DeleteShareRequestBody,
   ResponseBody as DeleteShareResponseBody,
-} from '/routes/api/files/delete-share.tsx';
+} from '/pages/api/files/delete-share.ts';
 import SearchFiles from './SearchFiles.tsx';
 import ListFiles from './ListFiles.tsx';
 import FilesBreadcrumb from './FilesBreadcrumb.tsx';
@@ -741,7 +741,7 @@ export default function MainFiles(
                       onClick={() => toggleBulkOptionsDropdown()}
                     >
                       <img
-                        src={`/images/${areBulkOptionsOpen.value ? 'hide-options' : 'show-options'}.svg`}
+                        src={`/public/images/${areBulkOptionsOpen.value ? 'hide-options' : 'show-options'}.svg`}
                         alt='Bulk actions'
                         class={`white w-5 max-w-5`}
                         width={20}
@@ -792,7 +792,7 @@ export default function MainFiles(
                     onClick={() => toggleNewOptionsDropdown()}
                   >
                     <img
-                      src='/images/add.svg'
+                      src='/public/images/add.svg'
                       alt='Add new file or directory'
                       class={`white ${isAdding.value || isUploading.value ? 'animate-spin' : ''}`}
                       width={20}
@@ -866,28 +866,28 @@ export default function MainFiles(
           {isDeleting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
               </>
             )
             : null}
           {isAdding.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
               </>
             )
             : null}
           {isUploading.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Uploading...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Uploading...
               </>
             )
             : null}
           {isUpdating.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Updating...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Updating...
               </>
             )
             : null}

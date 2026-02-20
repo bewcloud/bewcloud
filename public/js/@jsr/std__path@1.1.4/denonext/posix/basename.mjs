@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/posix/basename */
+import{assertArgs as m,lastPathSegment as s,stripSuffix as n}from"../_common/basename.mjs";import{fromFileUrl as a}from"./from-file-url.mjs";import{stripTrailingSeparators as p}from"../_common/strip_trailing_separators.mjs";import{isPosixPathSeparator as e}from"./_util.mjs";function c(r,t=""){r instanceof URL&&(r=a(r)),m(r,t);let i=s(r,e),o=p(i,e);return t?n(o,t):o}export{c as basename};
+//basename.mjs.map

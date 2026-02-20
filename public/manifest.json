@@ -1,0 +1,33 @@
+{
+  "name": "bewCloud",
+  "short_name": "bewCloud",
+  "icons": [
+    {
+      "src": "/public/images/favicon-dark.svg",
+      "sizes": "1024x1024 any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/public/images/favicon-dark.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#1e293b",
+  "background_color": "#1e293b",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "shortcuts": [
+    {
+      "name": "News",
+      "url": "/news"
+    },
+    {
+      "name": "Expenses",
+      "url": "/expenses"
+    }
+  ]
+}

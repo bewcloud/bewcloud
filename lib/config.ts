@@ -37,7 +37,7 @@ export class AppConfig {
         from: 'help@bewcloud.com',
         host: 'localhost',
         port: 465,
-        tlsMode: null,
+        tlsMode: 'auto',
         tlsVerify: true,
       },
       contacts: {
@@ -98,12 +98,6 @@ export class AppConfig {
       };
 
       console.info('\nConfig loaded from bewcloud.config.ts', JSON.stringify(this.config, null, 2), '\n');
-
-      if (this.config.email.port !== 465 && this.config.email.tlsMode === null) {
-        console.warn(
-          "DEPRECATION WARNING: When using `config.email.port` with a value other than `465`, please set `config.email.tlsMode` to either `'starttls'` or `'none'` to explicitly enable or disable usage of StartTLS! Support for legacy opportunistic StartTLS will be removed in a future version of bewCloud!",
-        );
-      }
 
       if (this.config.core.enabledApps.length === 0) {
         throw new Error('At least one app must be enabled. Please check the config.core.enabledApps array.');

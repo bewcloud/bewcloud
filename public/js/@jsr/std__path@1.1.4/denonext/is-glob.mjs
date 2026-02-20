@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/is-glob */
+function s(e){let o={"{":"}","(":")","[":"]"},f=/\\(.)|(^!|\*|\?|[\].+)]\?|\[[^[\\\]]+\]|\{[^{\\}]+\}|\(\?[:!=][^\\)]+\)|\([^(|]+\|[^\\)]+\)|@\([^)]+\))/;if(e==="")return!1;let n;for(;n=f.exec(e);){if(n[2])return!0;let c=n.index+n[0].length,i=n[1],l=i?o[i]:null;if(i&&l){let t=e.indexOf(l,c);t!==-1&&(c=t+1)}e=e.slice(c)}return!1}export{s as isGlob};
+//is-glob.mjs.map

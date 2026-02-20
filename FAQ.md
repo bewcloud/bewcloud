@@ -215,3 +215,7 @@ BEWCLOUD_CALENDAR_CALDAV_URL=http://127.0.0.1:5232
 ```
 
 </details>
+
+## Wasn't this made with Fresh?
+
+Up until [v4.0.0](https://github.com/bewcloud/bewcloud/releases/tag/v4.0.0), bewCloud was made with [Fresh](https://fresh.deno.dev/), but as per [#141](https://github.com/bewcloud/bewcloud/issues/141) it has since been rewritten in standard Deno to use a more web-standards-based backend, easier to maintain and extend, without requiring breaking updates.

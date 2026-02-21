@@ -332,7 +332,7 @@ const routes: Routes = {
   index: createPageRouteHandler('index.ts', '/'),
   login: createPageRouteHandler('login.tsx', '/login'),
   signup: createPageRouteHandler('signup.ts', '/signup'),
-  logout: createPageRouteHandler('login.ts', '/logout'),
+  logout: createPageRouteHandler('logout.ts', '/logout'),
   caldav: createPageRouteHandler('caldav.ts', '/caldav/:path*{/}?'),
   calendar: createPageRouteHandler('calendar.ts', '/calendar'),
   calendars: createPageRouteHandler('calendars.ts', '/calendars'),

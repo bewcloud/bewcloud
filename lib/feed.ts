@@ -232,8 +232,9 @@ export async function parseTextFromHtml(html: string): Promise<string> {
 
   // Extract text from body to avoid any artifacts from the document wrapper
   const text = (document?.querySelector('body')?.textContent || document?.textContent || '')
-    // Collapse multiple whitespace/newlines into single spaces
-    .replace(/\s+/g, ' ')
+    // Collapse runs of 2+ whitespace/newline characters, preserving single line breaks
+    .replace(/[^\S\n]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 
   return text;

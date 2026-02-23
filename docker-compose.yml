@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:v4.0.1
+    image: ghcr.io/bewcloud/bewcloud:v4.0.2
     # NOTE: uncomment below (and comment above) only if you pulled the repo and want to build the image locally
     # build:
     #   context: .

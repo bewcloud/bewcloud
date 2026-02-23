@@ -222,13 +222,20 @@ export async function getUrlInfo(url: string): Promise<{ title: string; htmlBody
 }
 
 export async function parseTextFromHtml(html: string): Promise<string> {
-  let text = '';
+  if (!html || !html.trim()) {
+    return '';
+  }
 
   await initParser();
 
   const document = new DOMParser().parseFromString(html, 'text/html');
 
-  text = document!.textContent;
+  // Extract text from body to avoid any artifacts from the document wrapper
+  const text = (document?.querySelector('body')?.textContent || document?.textContent || '')
+    // Collapse runs of 2+ whitespace/newline characters, preserving single line breaks
+    .replace(/[^\S\n]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
   return text;
 }

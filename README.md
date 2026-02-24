@@ -10,7 +10,7 @@ If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github
 
 ## Self-host it!
 
-[![Buy managed cloud (1 year)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20year)-51a4fb?style=for-the-badge)](https://payment-links.mollie.com/payment/zeLCmenLMLQwTcvqPJMyb)
+[![Buy managed cloud (1 year)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20year)-51a4fb?style=for-the-badge)](https://payment-links.mollie.com/payment/AiEHa5EpD6wkZN5r6Vs3c)
 
 Or, to run on your own machine, start with these commands:
 

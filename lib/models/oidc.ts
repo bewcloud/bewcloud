@@ -169,7 +169,7 @@ export class OidcModel {
       throw new Error(`Missing user/${emailAttribute}`);
     }
 
-    const isSignupAllowed = await AppConfig.isSignupAllowed();
+    const isSignupAllowed = await AppConfig.isSignupAllowed(true);
     const isThereAnAdmin = await UserModel.isThereAnAdmin();
 
     // Confirm the user exists (or signup if allowed)

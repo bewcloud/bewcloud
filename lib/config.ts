@@ -16,7 +16,7 @@ export class AppConfig {
         allowedCookieDomains: [],
         skipCookieDomainSecurity: false,
         enableSingleSignOn: false,
-        enableSingleSignOnSignUp: false,
+        allowSingleSignOnSignups: false,
         singleSignOnUrl: '',
         singleSignOnEmailAttribute: 'email',
         singleSignOnScopes: ['openid', 'email'],
@@ -121,7 +121,7 @@ export class AppConfig {
   static async isSignupAllowed(sso: boolean = false): Promise<boolean> {
     await this.loadConfig();
 
-    const areSignupsAllowed = sso ? this.config.auth.enableSingleSignOnSignUp : this.config.auth.allowSignups;
+    const areSignupsAllowed = sso ? this.config.auth.allowSingleSignOnSignups : this.config.auth.allowSignups;
     const areThereAdmins = await UserModel.isThereAnAdmin();
 
     return areSignupsAllowed || !areThereAdmins;

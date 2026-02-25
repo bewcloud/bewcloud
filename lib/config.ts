@@ -124,11 +124,7 @@ export class AppConfig {
     const areSignupsAllowed = (sso) ? this.config.auth.enableSingleSignOnSignUp : this.config.auth.allowSignups;
     const areThereAdmins = await UserModel.isThereAnAdmin();
 
-    if (areSignupsAllowed || !areThereAdmins) {
-      return true;
-    }
-
-    return false;
+    return areSignupsAllowed || !areThereAdmins;
   }
 
   static async isAppEnabled(app: OptionalApp): Promise<boolean> {

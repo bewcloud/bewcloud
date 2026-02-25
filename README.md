@@ -111,3 +111,6 @@ These are not officially endorsed, but are alternative ways of running bewCloud.
 
 - [`bewcloud-nixos`](https://codeberg.org/ntninja/bewcloud-nixos/) by [@ntninja](https://codeberg.org/ntninja/) exposes bewCloud as an easy-to-use NixOS integration as an alternative to using Docker or running the app locally.
   - For installation, please see the [README](https://codeberg.org/ntninja/bewcloud-nixos/src/branch/main/README.md).
+- [`bewcloud-helm`](https://github.com/loboda4450/charts/tree/main/charts/bewcloud) by [@loboda4450](https://github.com/loboda4450/) exposes bewCloud as a Helm chart.
+  - For installation, please see the [README](https://github.com/loboda4450/charts/blob/main/charts/bewcloud/README.md)
+  - Supports automatic migrations, Radicale installation (as a dependency chart) and streamlined, fully yaml-based configuration.

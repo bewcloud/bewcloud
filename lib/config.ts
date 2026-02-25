@@ -118,10 +118,10 @@ export class AppConfig {
     return this.config;
   }
 
-  static async isSignupAllowed(sso: boolean=false): Promise<boolean> {
+  static async isSignupAllowed(sso: boolean = false): Promise<boolean> {
     await this.loadConfig();
 
-    const areSignupsAllowed = (sso) ? this.config.auth.enableSingleSignOnSignUp : this.config.auth.allowSignups;
+    const areSignupsAllowed = sso ? this.config.auth.enableSingleSignOnSignUp : this.config.auth.allowSignups;
     const areThereAdmins = await UserModel.isThereAnAdmin();
 
     return areSignupsAllowed || !areThereAdmins;

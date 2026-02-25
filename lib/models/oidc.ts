@@ -181,6 +181,10 @@ export class OidcModel {
     }
 
     if (!user) {
+      // this will allow admin account creation even if SSO signups are disabled following the foregoing logic
+      if (!config.auth.enableSingleSignOnSignUp) {
+        throw new Error('Sign up via SSO is not enabled');
+      }
       throw new Error('There was a problem signing up or logging in!');
     }
 

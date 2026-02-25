@@ -448,7 +448,7 @@ export default function MainCalendar(
             </div>
 
             <div
-              class={`absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none ${
+              class={`absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none ${
                 !isViewOptionsDropdownOpen.value ? 'hidden' : ''
               }`}
               role='menu'
@@ -509,7 +509,7 @@ export default function MainCalendar(
             </div>
 
             <div
-              class={`absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none ${
+              class={`absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none ${
                 !isImportExportOptionsDropdownOpen.value ? 'hidden' : ''
               }`}
               role='menu'

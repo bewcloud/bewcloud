@@ -111,7 +111,7 @@ export default function SearchFiles() {
         ? (
           <section class='relative inline-block text-left ml-2 text-sm'>
             <section
-              class={`absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-slate-600 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none overflow-y-scroll max-h-[80%] min-h-56`}
+              class={`absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-slate-600 shadow-lg ring-1 ring-black/15 focus:outline-none overflow-y-scroll max-h-[80%] min-h-56`}
               role='menu'
               aria-orientation='vertical'
               aria-labelledby='view-button'

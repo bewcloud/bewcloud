@@ -278,7 +278,7 @@ export default function Contacts({
     d: "M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z",
     "clip-rule": "evenodd"
   })))), h("div", {
-    class: `absolute right-0 z-10 mt-2 w-44 origin-top-right divide-y divide-slate-600 rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none ${!isAddressBooksDropdownOpen.value ? 'hidden' : ''}`,
+    class: `absolute right-0 z-10 mt-2 w-44 origin-top-right divide-y divide-slate-600 rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none ${!isAddressBooksDropdownOpen.value ? 'hidden' : ''}`,
     role: "menu",
     "aria-orientation": "vertical",
     "aria-labelledby": "select-address-book-button",
@@ -318,7 +318,7 @@ export default function Contacts({
     d: "M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z",
     "clip-rule": "evenodd"
   })))), h("div", {
-    class: `absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none ${!isOptionsDropdownOpen.value ? 'hidden' : ''}`,
+    class: `absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none ${!isOptionsDropdownOpen.value ? 'hidden' : ''}`,
     role: "menu",
     "aria-orientation": "vertical",
     "aria-labelledby": "import-export-button",

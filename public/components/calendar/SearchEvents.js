@@ -91,7 +91,7 @@ export default function SearchEvents({
   }) : null, areResultsVisible.value ? h("section", {
     class: "relative inline-block text-left ml-2 text-xs"
   }, h("section", {
-    class: `absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none`,
+    class: `absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none`,
     role: "menu",
     "aria-orientation": "vertical",
     "aria-labelledby": "view-button",

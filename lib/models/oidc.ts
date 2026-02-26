@@ -169,7 +169,7 @@ export class OidcModel {
       throw new Error(`Missing user/${emailAttribute}`);
     }
 
-    const isSignupAllowed = await AppConfig.isSignupAllowed();
+    const isSignupAllowed = await AppConfig.isSignupAllowed({ viaSingleSignOn: true });
     const isThereAnAdmin = await UserModel.isThereAnAdmin();
 
     // Confirm the user exists (or signup if allowed)
@@ -181,6 +181,10 @@ export class OidcModel {
     }
 
     if (!user) {
+      if (!config.auth.allowSignupsViaSingleSignOn) {
+        throw new Error('Sign up via SSO is not allowed!');
+      }
+
       throw new Error('There was a problem signing up or logging in!');
     }
 

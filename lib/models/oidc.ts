@@ -169,7 +169,7 @@ export class OidcModel {
       throw new Error(`Missing user/${emailAttribute}`);
     }
 
-    const isSignupAllowed = await AppConfig.isSignupAllowed(true);
+    const isSignupAllowed = await AppConfig.isSignupAllowed({ viaSingleSignOn: true });
     const isThereAnAdmin = await UserModel.isThereAnAdmin();
 
     // Confirm the user exists (or signup if allowed)
@@ -181,9 +181,8 @@ export class OidcModel {
     }
 
     if (!user) {
-      // this will allow admin account creation even if SSO signups are disabled following the foregoing logic
-      if (!config.auth.allowSingleSignOnSignups) {
-        throw new Error('Sign up via SSO is not allowed');
+      if (!config.auth.allowSignupsViaSingleSignOn) {
+        throw new Error('Sign up via SSO is not allowed!');
       }
 
       throw new Error('There was a problem signing up or logging in!');

@@ -159,8 +159,8 @@ export interface Config {
     skipCookieDomainSecurity: boolean;
     /** If true, single sign-on will be enabled */
     enableSingleSignOn: boolean;
-    /** If true, single sign-on signups will be allowed overriding allowSignups */
-    allowSingleSignOnSignups: boolean;
+    /** If true, signups via single sign-on will be allowed, overriding allowSignups */
+    allowSignupsViaSingleSignOn: boolean;
     /** The Discovery URL (AKA Issuer) of the identity/single sign-on provider */
     singleSignOnUrl: string;
     /** The attribute to prefer as email of the identity/single sign-on provider */

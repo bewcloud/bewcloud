@@ -121,10 +121,16 @@ export class AppConfig {
   static async isSignupAllowed({ viaSingleSignOn = false }: { viaSingleSignOn?: boolean } = {}): Promise<boolean> {
     await this.loadConfig();
 
-    const areSignupsAllowed = viaSingleSignOn && !this.config.auth.allowSignups ? this.config.auth.allowSingleSignOnSignups : this.config.auth.allowSignups;
+    const areSignupsAllowed = viaSingleSignOn && !this.config.auth.allowSignups
+      ? this.config.auth.allowSignupsViaSingleSignOn
+      : this.config.auth.allowSignups;
     const areThereAdmins = await UserModel.isThereAnAdmin();
 
-    return areSignupsAllowed || !areThereAdmins;
+    if (areSignupsAllowed || !areThereAdmins) {
+      return true;
+    }
+
+    return false;
   }
 
   static async isAppEnabled(app: OptionalApp): Promise<boolean> {

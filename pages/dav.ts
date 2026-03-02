@@ -257,12 +257,6 @@ export default page({
   delete: handler,
   put: handler,
   options: handler,
-  copy: handler,
-  move: handler,
-  mkcol: handler,
-  lock: handler,
-  unlock: handler,
-  propfind: handler,
-  report: handler,
+  catchAll: handler,
   accessMode: 'public',
 });

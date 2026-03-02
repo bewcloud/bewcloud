@@ -1,9 +1,13 @@
 import routes, { Route } from './routes.ts';
 import { startCrons } from './crons/index.ts';
 import { Page } from './lib/page.ts';
+import { AppConfig } from './lib/config.ts';
 
-const MAX_REQUEST_SIZE_IN_MEGABYTES = 12;
+const config = await AppConfig.getConfig();
+const MAX_REQUEST_SIZE_IN_MEGABYTES = config.core.maxRequestSizeInMegabytes;
+const MAX_UPLOAD_SIZE_IN_MEGABYTES = config.files.maxUploadSizeInMegabytes;
 const MAX_REQUEST_SIZE_IN_BYTES = MAX_REQUEST_SIZE_IN_MEGABYTES * 1024 * 1024;
+const MAX_UPLOAD_SIZE_IN_BYTES = MAX_UPLOAD_SIZE_IN_MEGABYTES * 1024 * 1024;
 
 function applyCorsHeadersToResponse(origin: string, response: Response) {
   const headers = response.headers;
@@ -53,12 +57,15 @@ function handleLogging(request: Request, response: Response) {
 
 async function handler(request: Request) {
   const contentLength = request.headers.get('content-length');
+  const path = new URL(request.url).pathname;
 
-  if (contentLength && parseInt(contentLength, 10) > MAX_REQUEST_SIZE_IN_BYTES) {
+  const isUploadRequest = path.startsWith('/api/files/upload') || path.startsWith('/dav');
+  const maxSizeInBytes = isUploadRequest ? MAX_UPLOAD_SIZE_IN_BYTES : MAX_REQUEST_SIZE_IN_BYTES;
+
+  if (contentLength && parseInt(contentLength, 10) > maxSizeInBytes) {
     return new Response('Payload too large', { status: 413 });
   }
 
-  const path = new URL(request.url).pathname;
   const origin = request.headers.get('Origin') || '*';
 
   // CORS headers for non-DAV routes

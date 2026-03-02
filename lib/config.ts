@@ -25,9 +25,11 @@ export class AppConfig {
         rootPath: 'data-files',
         allowPublicSharing: false,
         allowDirectoryDownloads: false,
+        maxUploadSizeInMegabytes: 100,
       },
       core: {
         enabledApps: ['dashboard', 'files', 'news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'],
+        maxRequestSizeInMegabytes: 12,
       },
       visuals: {
         title: '',

@@ -33,14 +33,7 @@ function createPageRouteHandler(id: string, pathname: string) {
           patch,
           delete: deleteAction,
           options,
-          copy,
-          move,
-          mkcol,
-          lock,
-          unlock,
-          propfind,
-          proppatch,
-          report,
+          catchAll,
         } = page;
 
         const { user, session, tokenData } = (await getDataFromRequest(request)) || {};
@@ -148,95 +141,17 @@ function createPageRouteHandler(id: string, pathname: string) {
               });
             }
             break;
-          case 'COPY':
-            if (copy) {
-              return await copy({
-                request,
-                match,
-                user,
-                session: { userSession: session, tokenData },
-                isRunningLocally,
-              });
-            }
-            break;
-          case 'MOVE':
-            if (move) {
-              return await move({
-                request,
-                match,
-                user,
-                session: { userSession: session, tokenData },
-                isRunningLocally,
-              });
-            }
-            break;
-          case 'MKCOL':
-            if (mkcol) {
-              return await mkcol({
-                request,
-                match,
-                user,
-                session: { userSession: session, tokenData },
-                isRunningLocally,
-              });
-            }
-            break;
-          case 'LOCK':
-            if (lock) {
-              return await lock({
-                request,
-                match,
-                user,
-                session: { userSession: session, tokenData },
-                isRunningLocally,
-              });
-            }
-            break;
-          case 'UNLOCK':
-            if (unlock) {
-              return await unlock({
-                request,
-                match,
-                user,
-                session: { userSession: session, tokenData },
-                isRunningLocally,
-              });
-            }
-            break;
-          case 'PROPFIND':
-            if (propfind) {
-              return await propfind({
-                request,
-                match,
-                user,
-                session: { userSession: session, tokenData },
-                isRunningLocally,
-              });
-            }
-            break;
-          case 'PROPPATCH':
-            if (proppatch) {
-              return await proppatch({
-                request,
-                match,
-                user,
-                session: { userSession: session, tokenData },
-                isRunningLocally,
-              });
-            }
-            break;
-          case 'REPORT':
-            if (report) {
-              return await report({
-                request,
-                match,
-                user,
-                session: { userSession: session, tokenData },
-                isRunningLocally,
-              });
-            }
-            break;
           default:
+            if (catchAll) {
+              return await catchAll({
+                request,
+                match,
+                user,
+                session: { userSession: session, tokenData },
+                isRunningLocally,
+              });
+            }
+
             return new Response('Not Implemented', { status: 501 });
         }
 

@@ -17,15 +17,7 @@ export interface Page {
   patch?: RequestHandler;
   delete?: RequestHandler;
   options?: RequestHandler;
-  copy?: RequestHandler;
-  move?: RequestHandler;
-  mkcol?: RequestHandler;
-  mkcalendar?: RequestHandler;
-  lock?: RequestHandler;
-  unlock?: RequestHandler;
-  propfind?: RequestHandler;
-  proppatch?: RequestHandler;
-  report?: RequestHandler;
+  catchAll?: RequestHandler;
 }
 
 type AccessMode = 'public' | 'user';
@@ -61,15 +53,7 @@ export default function page(
     patch,
     delete: deleteAction,
     options,
-    copy,
-    move,
-    mkcol,
-    mkcalendar,
-    lock,
-    unlock,
-    propfind,
-    proppatch,
-    report,
+    catchAll,
     accessMode,
   }: Params,
 ): Page {
@@ -80,14 +64,6 @@ export default function page(
     patch: patch ? permissioned(patch, accessMode) : undefined,
     delete: deleteAction ? permissioned(deleteAction, accessMode) : undefined,
     options: options ? permissioned(options, accessMode) : undefined,
-    copy: copy ? permissioned(copy, accessMode) : undefined,
-    move: move ? permissioned(move, accessMode) : undefined,
-    mkcol: mkcol ? permissioned(mkcol, accessMode) : undefined,
-    mkcalendar: mkcalendar ? permissioned(mkcalendar, accessMode) : undefined,
-    lock: lock ? permissioned(lock, accessMode) : undefined,
-    unlock: unlock ? permissioned(unlock, accessMode) : undefined,
-    propfind: propfind ? permissioned(propfind, accessMode) : undefined,
-    proppatch: proppatch ? permissioned(proppatch, accessMode) : undefined,
-    report: report ? permissioned(report, accessMode) : undefined,
+    catchAll: catchAll ? permissioned(catchAll, accessMode) : undefined,
   };
 }

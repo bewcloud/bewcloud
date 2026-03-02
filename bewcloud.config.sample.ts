@@ -20,9 +20,11 @@ const config: PartialDeep<Config> = {
   //   rootPath: 'data-files',
   //   allowPublicSharing: false, // If true, public file sharing will be allowed (still requires a user to enable sharing for a given file or directory)
   //   allowDirectoryDownloads: false, // If true, directories can be downloaded as zip files
+  //   maxUploadSizeInMegabytes: 100, // The maximum upload size in megabytes. Overrides the core.maxRequestSizeInMegabytes setting on /dav and /api/files/upload endpoints.
   // },
   // core: {
   //   enabledApps: ['dashboard', 'files', 'news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'], // The apps to show, in order of appearance in the header. The first app will be the default one shown after logging in. At least one is required.
+  //   maxRequestSizeInMegabytes: 12, // The maximum request size in megabytes.
   // },
   // visuals: {
   //   title: 'My own cloud',

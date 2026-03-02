@@ -175,10 +175,14 @@ export interface Config {
     allowPublicSharing: boolean;
     /** If true, directories can be downloaded as zip files */
     allowDirectoryDownloads: boolean;
+    /** The maximum upload size in megabytes. Overrides the core.maxRequestSizeInMegabytes setting on /dav and /api/files/upload endpoints. */
+    maxUploadSizeInMegabytes: number;
   };
   core: {
     /** The apps to show, in order of appearance in the header. The first app will be the default one shown after logging in. At least one is required. */
     enabledApps: OptionalApp[];
+    /** The maximum request size in megabytes. */
+    maxRequestSizeInMegabytes: number;
   };
   visuals: {
     /** An override title of the application. Empty shows the default title. */

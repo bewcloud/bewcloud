@@ -142,6 +142,8 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
         console.error(error);
       }
     }
+
+    return new Response('Not Found', { status: 404 });
   }
 
   if (request.method === 'MKCOL') {

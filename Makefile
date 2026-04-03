@@ -41,13 +41,13 @@ exec-db:
 
 .PHONY: build-tailwind
 build-tailwind:
-	deno install --allow-scripts npm:tailwindcss@4.2.0 npm:@tailwindcss/cli@4.2.0
-	deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css,/var/folders --allow-scripts npm:@tailwindcss/cli@4.2.0 -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css
+	deno install --allow-scripts npm:tailwindcss@4.2.2 npm:@tailwindcss/cli@4.2.2
+	deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css,/var/folders --allow-scripts npm:@tailwindcss/cli@4.2.2 -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css
 
 .PHONY: watch-tailwind
 watch-tailwind:
-	deno install --allow-scripts npm:tailwindcss@4.2.0 npm:@tailwindcss/cli@4.2.0
-	deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css,/var/folders --allow-scripts npm:@tailwindcss/cli@4.2.0 -w -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css
+	deno install --allow-scripts npm:tailwindcss@4.2.2 npm:@tailwindcss/cli@4.2.2
+	deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css,/var/folders --allow-scripts npm:@tailwindcss/cli@4.2.2 -w -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css
 
 .PHONY: preview
 preview:

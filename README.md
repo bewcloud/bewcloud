@@ -8,6 +8,8 @@ If you're looking for the desktop sync app, it's at [`bewcloud-desktop`](https:/
 
 If you're looking for the mobile app, it's at [`bewcloud-mobile`](https://github.com/bewcloud/bewcloud-mobile).
 
+This repo is originally maintained on [GitHub](https://github.com/bewcloud/bewcloud), and mirrored to [Codeberg (Forgejo)](https://codeberg.org/bewcloud/bewcloud).
+
 ## Self-host it!
 
 [![Buy managed cloud (1 year)](https://img.shields.io/badge/Buy%20managed%20cloud%20(1%20year)-51a4fb?style=for-the-badge)](https://payment-links.mollie.com/payment/AiEHa5EpD6wkZN5r6Vs3c)

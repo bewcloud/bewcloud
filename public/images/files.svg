@@ -6,7 +6,8 @@
     stroke-linejoin="round"
     stroke-width="32"
     d="M64 192v-72a40 40 0 0 1 40-40h75.89a40 40 0 0 1 22.19 6.72l27.84 18.56a40 40 0 0 0 22.19 6.72H408a40 40 0 0 1 40 40v40"
-  /><path
+  />
+  <path
     fill="none"
     stroke="currentColor"
     stroke-linecap="round"

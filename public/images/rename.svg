@@ -6,7 +6,8 @@
     stroke-linejoin="round"
     stroke-width="32"
     d="m32 415.5l120-320l120 320m-42-112H74m252-64c12.19-28.69 41-48 74-48h0c46 0 80 32 80 80v144"
-  /><path
+  />
+  <path
     fill="none"
     stroke="currentColor"
     stroke-linecap="round"

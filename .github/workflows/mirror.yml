@@ -1,0 +1,24 @@
+# Sync repo to the Codeberg (Forgejo) mirror
+name: Repo sync (GitHub -> Codeberg)
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch: # Manual dispatch
+  schedule:
+    - cron: '5 2 * * *' # Every day at 2:05 AM
+
+jobs:
+  sync-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: 'Sync repo'
+        uses: spyoungtech/mirror-action@662fce0eced8996f64d7fa264d76cddd84827f33
+        with:
+          REMOTE: git@codeberg.org:bewcloud/bewcloud.git
+          GIT_SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+          GIT_SSH_NO_VERIFY_HOST: 'true'

@@ -6,14 +6,16 @@
     stroke-linejoin="round"
     stroke-width="32"
     d="m112 112l20 320c.95 18.49 14.4 32 32 32h184c17.67 0 30.87-13.51 32-32l20-320"
-  /><path
+  />
+  <path
     fill="currentColor"
     stroke="currentColor"
     stroke-linecap="round"
     stroke-miterlimit="10"
     stroke-width="32"
     d="M80 112h352"
-  /><path
+  />
+  <path
     fill="none"
     stroke="currentColor"
     stroke-linecap="round"

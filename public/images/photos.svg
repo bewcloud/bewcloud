@@ -10,7 +10,9 @@
     stroke-width="32"
     rx="48"
     ry="48"
-  /><circle cx="336" cy="176" r="32" fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="32" /><path
+  />
+  <circle cx="336" cy="176" r="32" fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="32" />
+  <path
     fill="none"
     stroke="currentColor"
     stroke-linecap="round"

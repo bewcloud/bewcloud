@@ -2,7 +2,8 @@
   <path
     fill="currentColor"
     d="m273.77 169.57l-89.09 74.13a16 16 0 0 0 0 24.6l89.09 74.13A16 16 0 0 0 300 330.14V181.86a16 16 0 0 0-26.23-12.29Z"
-  /><path
+  />
+  <path
     fill="none"
     stroke="currentColor"
     stroke-miterlimit="10"

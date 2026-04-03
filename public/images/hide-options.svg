@@ -6,7 +6,8 @@
     stroke-linejoin="round"
     stroke-width="32"
     d="m352 296l-96-96l-96 96"
-  /><path
+  />
+  <path
     fill="none"
     stroke="currentColor"
     stroke-miterlimit="10"

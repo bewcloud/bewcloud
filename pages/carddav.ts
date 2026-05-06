@@ -40,11 +40,6 @@ async function get({ request, user, match }: RequestHandlerParams): Promise<Resp
 
     const originalRequestHeaders = { ...Object.fromEntries(request.headers.entries()) };
 
-    // Delete potentially-troublesome Cookie headers (https://github.com/bewcloud/bewcloud/issues/162)
-    if (request.headers.has('cookie')) {
-      delete originalRequestHeaders.cookie;
-    }
-
     const response = await fetch(`${contactsConfig.cardDavUrl}/${path}`, {
       headers: {
         ...originalRequestHeaders,

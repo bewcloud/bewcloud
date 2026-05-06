@@ -40,11 +40,6 @@ async function get({ request, user, match }: RequestHandlerParams) {
 
     const originalRequestHeaders = { ...Object.fromEntries(request.headers.entries()) };
 
-    // Delete potentially-troublesome Cookie headers (https://github.com/bewcloud/bewcloud/issues/162)
-    if (request.headers.has('cookie')) {
-      delete originalRequestHeaders.cookie;
-    }
-
     const response = await fetch(`${calendarConfig.calDavUrl}/${path}`, {
       headers: {
         ...originalRequestHeaders,

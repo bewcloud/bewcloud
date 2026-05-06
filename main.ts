@@ -105,18 +105,20 @@ async function handler(request: Request) {
 
   const notFoundPage: Page = (await import(`/pages/404.ts`)).default;
 
-  const response = await notFoundPage.get!({
+  const notFoundResponse = await notFoundPage.get!({
     request,
     match: new URLPattern({ pathname: '/' }).exec(request.url) as URLPatternResult,
     isRunningLocally: false,
   });
 
+  const response = new Response(notFoundResponse.body, {
+    status: 404,
+    headers: notFoundResponse.headers,
+  });
+
   handleLogging(request, response);
 
-  return new Response(response.body, {
-    status: 404,
-    headers: response.headers,
-  });
+  return response;
 }
 
 async function notifyServiceManagerReady() {

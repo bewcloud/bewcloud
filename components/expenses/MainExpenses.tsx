@@ -58,7 +58,7 @@ export default function MainExpenses({ initialBudgets, initialExpenses, initialM
   const editingBudget = useSignal<Budget | null>(null);
   const shouldResetExpenseModal = useSignal<boolean>(false);
   const shouldResetBudgetModal = useSignal<boolean>(false);
-  const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
+  const searchTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',

@@ -14,8 +14,8 @@ export default function SearchEvents({ calendars, onClickOpenEvent }: SearchEven
   const isSearching = useSignal<boolean>(false);
   const areResultsVisible = useSignal<boolean>(false);
   const calendarEvents = useSignal<CalendarEvent[]>([]);
-  const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
-  const closeTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
+  const searchTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const closeTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',

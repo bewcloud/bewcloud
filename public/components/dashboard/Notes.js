@@ -3,8 +3,8 @@ import { useEffect } from 'preact/hooks';
 export default function Notes({
   initialNotes
 }) {
-  const saveTimeout = useSignal(0);
-  const hasSavedTimeout = useSignal(0);
+  const saveTimeout = useSignal(undefined);
+  const hasSavedTimeout = useSignal(undefined);
   const isSaving = useSignal(false);
   const hasSaved = useSignal(false);
   function saveNotes(newNotes) {

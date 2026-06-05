@@ -24,7 +24,7 @@ export default function MainExpenses({
   const editingBudget = useSignal(null);
   const shouldResetExpenseModal = useSignal(false);
   const shouldResetBudgetModal = useSignal(false);
-  const searchTimeout = useSignal(0);
+  const searchTimeout = useSignal(undefined);
   const dateFormatOptions = {
     year: 'numeric',
     month: 'long',

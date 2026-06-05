@@ -10,7 +10,7 @@ interface LinksProps {
 }
 
 export default function Links({ initialLinks }: LinksProps) {
-  const hasSavedTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
+  const hasSavedTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isSaving = useSignal<boolean>(false);
   const hasSaved = useSignal<boolean>(false);
   const links = useSignal<DashboardLink[]>(initialLinks);

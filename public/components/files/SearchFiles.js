@@ -5,8 +5,8 @@ export default function SearchFiles() {
   const areResultsVisible = useSignal(false);
   const matchingDirectories = useSignal([]);
   const matchingFiles = useSignal([]);
-  const searchTimeout = useSignal(0);
-  const closeTimeout = useSignal(0);
+  const searchTimeout = useSignal(undefined);
+  const closeTimeout = useSignal(undefined);
   const dateFormatOptions = {
     year: 'numeric',
     month: 'long',

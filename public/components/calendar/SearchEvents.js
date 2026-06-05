@@ -8,8 +8,8 @@ export default function SearchEvents({
   const isSearching = useSignal(false);
   const areResultsVisible = useSignal(false);
   const calendarEvents = useSignal([]);
-  const searchTimeout = useSignal(0);
-  const closeTimeout = useSignal(0);
+  const searchTimeout = useSignal(undefined);
+  const closeTimeout = useSignal(undefined);
   const dateFormat = new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
     month: 'long',

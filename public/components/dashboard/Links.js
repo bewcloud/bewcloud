@@ -4,7 +4,7 @@ import { validateUrl } from '/public/ts/utils/misc.ts';
 export default function Links({
   initialLinks
 }) {
-  const hasSavedTimeout = useSignal(0);
+  const hasSavedTimeout = useSignal(undefined);
   const isSaving = useSignal(false);
   const hasSaved = useSignal(false);
   const links = useSignal(initialLinks);

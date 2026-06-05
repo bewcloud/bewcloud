@@ -9,8 +9,8 @@ export default function SearchFiles() {
   const areResultsVisible = useSignal<boolean>(false);
   const matchingDirectories = useSignal<Directory[]>([]);
   const matchingFiles = useSignal<DirectoryFile[]>([]);
-  const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
-  const closeTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
+  const searchTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const closeTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',

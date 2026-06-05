@@ -6,8 +6,8 @@ export default function Note({
   currentPath,
   contents
 }) {
-  const saveTimeout = useSignal(0);
-  const hasSavedTimeout = useSignal(0);
+  const saveTimeout = useSignal(undefined);
+  const hasSavedTimeout = useSignal(undefined);
   const isSaving = useSignal(false);
   const hasSaved = useSignal(false);
   function saveNote(newNotes) {

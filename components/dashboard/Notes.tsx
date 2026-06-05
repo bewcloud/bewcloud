@@ -8,8 +8,8 @@ interface NotesProps {
 }
 
 export default function Notes({ initialNotes }: NotesProps) {
-  const saveTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
-  const hasSavedTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
+  const saveTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hasSavedTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isSaving = useSignal<boolean>(false);
   const hasSaved = useSignal<boolean>(false);
 

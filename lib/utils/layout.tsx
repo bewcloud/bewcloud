@@ -69,6 +69,7 @@ const importMap = denoConfig.frontendImports.reduce(
     if (!fileName.endsWith('.mjs')) {
       fileName = `${fileName}.mjs`;
     }
+    fileName = fileName.replaceAll('*', '_');
     importsObject.imports[importName] = `/public/js/${fileName}`;
     return importsObject;
   },

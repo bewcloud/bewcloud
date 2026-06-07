@@ -3,13 +3,15 @@
   "tasks": {
     "execute-with-permissions": "deno run --allow-env --allow-net --allow-sys=networkInterfaces,hostname,cpus,homedir --allow-read=.,/ --allow-write=data-files,/ --allow-run",
     "check": "deno fmt --check && deno lint && deno check .",
-    "build": "make build",
+    "build": "deno task download-frontend-imports && deno task build-babel && deno task build-tailwind",
+    "build-babel": "deno run --allow-env --allow-ffi --allow-sys --allow-read --allow-write=public/components npm:@babel/cli@7.28.6/babel ./components --out-dir ./public/components --extensions \".ts,.tsx\"",
+    "build-tailwind": "deno install --allow-scripts npm:tailwindcss@4.3.0 npm:@tailwindcss/cli@4.3.0 && deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css --allow-scripts npm:@tailwindcss/cli@4.3.0 -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css",
     "preview": "deno task execute-with-permissions ./main.ts",
     "test": "IS_TESTING=true deno test --allow-all --check",
     "migrate-db": "deno task execute-with-permissions ./migrate-db.ts",
     "watch-app": "deno task execute-with-permissions --watch --watch-exclude=./public/css/tailwind.css,./public/components ./main.ts",
-    "watch-babel": "make watch-babel",
-    "watch-tailwind": "make watch-tailwind",
+    "watch-babel": "deno run --allow-env --allow-ffi --allow-sys --allow-read --allow-write=public/components npm:@babel/cli@7.28.6/babel ./components --out-dir ./public/components --extensions \".ts,.tsx\" --watch",
+    "watch-tailwind": "deno install --allow-scripts npm:tailwindcss@4.3.0 npm:@tailwindcss/cli@4.3.0 && deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css --allow-scripts npm:@tailwindcss/cli@4.3.0 -w -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css",
     "download-frontend-imports": "deno run --allow-read=./deno.json,./public/js --allow-write=./public/js --allow-net=esm.sh ./download-frontend-imports.ts",
     "start": {
       "dependencies": ["watch-tailwind", "watch-babel", "watch-app"]

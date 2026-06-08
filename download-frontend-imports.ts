@@ -8,7 +8,7 @@ function extractFileNameFromUrl(url: string) {
   if (!fileName.endsWith('.mjs') && !fileName.includes('color@^0.3.0')) {
     fileName = `${fileName}.mjs`;
   }
-  // '*' is illegal in filenames on Windows (NTFS); replace with '_'
+  // Replace characters in file names that aren't cross-OS-compatible (looking at Windows, non WSL, mostly)
   fileName = fileName.replaceAll('*', '_');
   return fileName;
 }
@@ -101,7 +101,7 @@ async function downloadUrls(urlMap: Map<string, { url: string; fileName: string 
       'export { default } from "/',
       'export { default } from "/public/js/',
     );
-    // Replace '*@' with '_@' in local paths (CDN uses '*' which is illegal on Windows)
+    // Replace characters in file names that aren't cross-OS-compatible (looking at Windows, non WSL, mostly)
     bundleFileContent = bundleFileContent.replaceAll('/public/js/*@', '/public/js/_@');
     // Remove sourcemap URLs (they're not downloaded)
     bundleFileContent = bundleFileContent.replaceAll('//# sourceMappingURL=', '//');

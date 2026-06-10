@@ -775,6 +775,24 @@ export async function getPathInfo(userId: string, path: string): Promise<{ isDir
   };
 }
 
+async function getDirectorySizeFallback(path: string): Promise<number> {
+  let totalSize = 0;
+  try {
+    for await (const entry of Deno.readDir(path)) {
+      const entryPath = join(path, entry.name);
+      const stat = await Deno.lstat(entryPath);
+      if (stat.isDirectory) {
+        totalSize += await getDirectorySizeFallback(entryPath);
+      } else {
+        totalSize += stat.size;
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  return totalSize;
+}
+
 // NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
 async function getDirectorySize(path: string): Promise<number> {
   try {
@@ -811,8 +829,7 @@ async function getDirectorySize(path: string): Promise<number> {
     const unit = value.match(/[A-Z]+/)?.[0] || 'B'.toUpperCase();
 
     return bytesFromHumanFileSize(`${number} ${unit}B`);
-  } catch (error) {
-    console.error(error);
-    return 0;
+  } catch {
+    return getDirectorySizeFallback(path);
   }
 }

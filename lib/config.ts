@@ -1,4 +1,4 @@
-import { isAbsolute, join } from '@std/path';
+import { isAbsolute, join, toFileUrl } from '@std/path';
 import { UserModel } from './models/user.ts';
 import { Config, OptionalApp } from './types.ts';
 
@@ -66,7 +66,7 @@ export class AppConfig {
     };
 
     try {
-      const configFromFile: Config = (await import(`${Deno.cwd()}/bewcloud.config.ts`)).default;
+      const configFromFile: Config = (await import(toFileUrl(join(Deno.cwd(), 'bewcloud.config.ts')).href)).default;
 
       this.config = {
         ...config,

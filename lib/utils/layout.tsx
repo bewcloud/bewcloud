@@ -69,6 +69,8 @@ const importMap = denoConfig.frontendImports.reduce(
     if (!fileName.endsWith('.mjs')) {
       fileName = `${fileName}.mjs`;
     }
+    // Replace characters in file names that aren't cross-OS-compatible (looking at Windows, non WSL, mostly)
+    fileName = fileName.replaceAll('*', '_');
     importsObject.imports[importName] = `/public/js/${fileName}`;
     return importsObject;
   },

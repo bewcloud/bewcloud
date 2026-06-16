@@ -25,6 +25,18 @@ Deno.test({
     responseText = await response.text();
     assertEquals(responseText.includes('404 - Page not found'), true);
 
+    response = await fetch(`${baseUrl}/public/robots.txt`);
+    assertEquals(response.status, 200);
+
+    response = await fetch(`${baseUrl}/public/../main.ts`);
+    assertEquals(response.status, 404);
+
+    response = await fetch(`${baseUrl}/public/%2e%2e/main.ts`);
+    assertEquals(response.status, 404);
+
+    response = await fetch(`${baseUrl}/public/assets/%2e%2e/%2e%2e/main.ts`);
+    assertEquals(response.status, 404);
+
     const formData = new FormData();
     formData.append('email', 'user@example.com');
 

@@ -1,7 +1,7 @@
 import { serveFile } from '@std/http/file-server';
 
 import { isRunningLocally as isAppRunningLocally } from '/public/ts/utils/misc.ts';
-import { serveFileWithSass, serveFileWithTs } from '/lib/utils/misc.ts';
+import { resolveSafePublicFilePath, serveFileWithSass, serveFileWithTs } from '/lib/utils/misc.ts';
 import { getDataFromRequest } from '/lib/auth.ts';
 import { Page } from '/lib/page.ts';
 
@@ -201,20 +201,25 @@ const routes: Routes = {
       const { filePath } = match.pathname.groups;
 
       try {
-        const fullFilePath = `public/${decodeURIComponent(filePath!)}`;
+        const resolvedPublicFilePath = resolveSafePublicFilePath(filePath || '');
 
-        const fileExtension = filePath!.split('.').pop()?.toLowerCase();
+        if (!resolvedPublicFilePath) {
+          return new Response('Not Found', { status: 404 });
+        }
+
+        const { absolutePath, relativePath } = resolvedPublicFilePath;
+        const fileExtension = relativePath.split('.').pop()?.toLowerCase();
 
         let response: Response;
 
         if (fileExtension === 'ts') {
-          response = await serveFileWithTs(request, fullFilePath);
+          response = await serveFileWithTs(request, absolutePath);
         } else if (fileExtension === 'scss') {
-          response = await serveFileWithSass(request, fullFilePath);
+          response = await serveFileWithSass(request, absolutePath);
         } else {
-          response = await serveFile(request, fullFilePath);
+          response = await serveFile(request, absolutePath);
 
-          if (filePath?.startsWith('js/')) {
+          if (relativePath.startsWith('js/')) {
             response.headers.set('content-type', 'application/javascript; charset=utf-8');
           }
         }

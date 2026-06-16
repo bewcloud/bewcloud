@@ -1,6 +1,51 @@
 import { serveFile } from '@std/http/file-server';
+import { normalize, resolve } from '@std/path';
 import { transpile } from 'deno/emit';
 import sass from 'sass';
+
+interface PublicFilePathResolution {
+  absolutePath: string;
+  relativePath: string;
+}
+
+export function resolveSafePublicFilePath(filePath: string): PublicFilePathResolution | null {
+  let decodedFilePath: string;
+
+  try {
+    decodedFilePath = decodeURIComponent(filePath);
+  } catch {
+    return null;
+  }
+
+  if (!decodedFilePath || decodedFilePath.includes('\0')) {
+    return null;
+  }
+
+  const normalizedRelativePath = normalize(decodedFilePath.replaceAll('\\', '/'));
+
+  if (
+    normalizedRelativePath.startsWith('/') ||
+    normalizedRelativePath.startsWith('../') ||
+    normalizedRelativePath === '..'
+  ) {
+    return null;
+  }
+
+  const publicRootPath = resolve('public');
+  const resolvedPublicFilePath = resolve(publicRootPath, normalizedRelativePath);
+
+  if (
+    resolvedPublicFilePath !== publicRootPath &&
+    !resolvedPublicFilePath.startsWith(`${publicRootPath}/`)
+  ) {
+    return null;
+  }
+
+  return {
+    absolutePath: resolvedPublicFilePath,
+    relativePath: normalizedRelativePath,
+  };
+}
 
 async function transpileTs(content: string, specifier: URL) {
   const urlStr = specifier.toString();

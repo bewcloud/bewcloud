@@ -7,7 +7,7 @@
     "build-babel": "deno run --allow-env --allow-ffi --allow-sys --allow-read --allow-write=public/components npm:@babel/cli@7.28.6/babel ./components --out-dir ./public/components --extensions \".ts,.tsx\"",
     "build-tailwind": "deno install --allow-scripts npm:tailwindcss@4.3.0 npm:@tailwindcss/cli@4.3.0 && deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css --allow-scripts npm:@tailwindcss/cli@4.3.0 -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css",
     "preview": "deno task execute-with-permissions ./main.ts",
-    "test": "IS_TESTING=true deno test --allow-all --check",
+    "test": "IS_TESTING=true deno test --parallel --allow-all --check",
     "migrate-db": "deno task execute-with-permissions ./migrate-db.ts",
     "watch-app": "deno task execute-with-permissions --watch --watch-exclude=./public/css/tailwind.css,./public/components ./main.ts",
     "watch-babel": "deno run --allow-env --allow-ffi --allow-sys --allow-read --allow-write=public/components npm:@babel/cli@7.28.6/babel ./components --out-dir ./public/components --extensions \".ts,.tsx\" --watch",

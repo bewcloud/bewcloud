@@ -29,17 +29,9 @@ function updateErrorMessage(message: string) {
   }
 }
 
-async function handlePasswordlessLogin(email: string, redirectUrl: string) {
+async function handlePasswordlessLogin(redirectUrl: string) {
   if (isLoading) {
     return;
-  }
-
-  if (!email) {
-    const promptEmail = prompt('Please enter your email');
-    if (!promptEmail) {
-      throw new Error('Email is required to login with Passkey');
-    }
-    email = promptEmail;
   }
 
   const originalButtonText = passkeyButton.textContent;
@@ -48,9 +40,8 @@ async function handlePasswordlessLogin(email: string, redirectUrl: string) {
   updateErrorMessage('');
 
   try {
-    const beginRequestBody: PasskeyBeginRequestBody = {
-      email,
-    };
+    // Discoverable credential flow: no email sent - the authenticator presents all available passkeys
+    const beginRequestBody: PasskeyBeginRequestBody = {};
 
     const beginResponse = await fetch('/api/auth/multi-factor/passkey/begin', {
       method: 'POST',
@@ -74,7 +65,6 @@ async function handlePasswordlessLogin(email: string, redirectUrl: string) {
     });
 
     const verifyRequestBody: PasskeyVerifyRequestBody = {
-      email,
       challenge: beginData.sessionData!.challenge,
       authenticationResponse,
       redirectUrl: redirectUrl || '/',
@@ -104,7 +94,6 @@ async function handlePasswordlessLogin(email: string, redirectUrl: string) {
 }
 
 passkeyButton?.addEventListener('click', () => {
-  const email = passkeyButton.dataset.email;
   const redirectUrl = passkeyButton.dataset.redirectUrl;
-  handlePasswordlessLogin(email ?? '', redirectUrl ?? '/');
+  handlePasswordlessLogin(redirectUrl ?? '/');
 });

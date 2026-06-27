@@ -45,9 +45,7 @@ async function post({ request }: RequestHandlerParams) {
   const credentialID = authenticationResponse.id;
 
   // Resolve user either by email (email-prefilled flow) or by credential ID (discoverable flow)
-  const user = email
-    ? await UserModel.getByEmail(email)
-    : await UserModel.getByPasskeyCredentialId(credentialID);
+  const user = email ? await UserModel.getByEmail(email) : await UserModel.getByPasskeyCredentialId(credentialID);
 
   if (!user) {
     const responseBody: ResponseBody = {

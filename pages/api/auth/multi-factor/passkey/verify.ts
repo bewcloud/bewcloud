@@ -7,7 +7,7 @@ import { AppConfig } from '/lib/config.ts';
 import { createSessionResponse } from '/lib/auth.ts';
 
 export interface RequestBody {
-  email: string;
+  email?: string;
   challenge: string;
   authenticationResponse: AuthenticationResponseJSON;
   redirectUrl?: string;
@@ -33,16 +33,22 @@ async function post({ request }: RequestHandlerParams) {
   const body = await request.clone().json() as RequestBody;
   const { email, challenge, authenticationResponse, redirectUrl } = body;
 
-  if (!email || !challenge || !authenticationResponse) {
+  if (!challenge || !authenticationResponse) {
     const responseBody: ResponseBody = {
       success: false,
-      error: 'Email, challenge, and authentication response are required',
+      error: 'Challenge and authentication response are required',
     };
 
     return new Response(JSON.stringify(responseBody), { status: 400 });
   }
 
-  const user = await UserModel.getByEmail(email);
+  const credentialID = authenticationResponse.id;
+
+  // Resolve user either by email (email-prefilled flow) or by credential ID (discoverable flow)
+  const user = email
+    ? await UserModel.getByEmail(email)
+    : await UserModel.getByPasskeyCredentialId(credentialID);
+
   if (!user) {
     const responseBody: ResponseBody = {
       success: false,
@@ -57,7 +63,6 @@ async function post({ request }: RequestHandlerParams) {
   const expectedRPID = new URL(config.auth.baseUrl).hostname;
 
   const userCredentials = PasskeyModel.getCredentialsFromUser(user);
-  const credentialID = authenticationResponse.id;
 
   const credential = userCredentials.find((credential) => credential.credentialID === credentialID);
   if (!credential) {

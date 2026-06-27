@@ -6,7 +6,7 @@ import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
 
 export interface RequestBody {
-  email: string;
+  email?: string;
 }
 
 export interface ResponseBody {
@@ -34,13 +34,22 @@ async function post({ request }: RequestHandlerParams) {
   const body = await request.clone().json() as RequestBody;
   const { email } = body;
 
+  const config = await AppConfig.getConfig();
+
+  // Discoverable credential flow: no email provided, let the authenticator present all credentials
   if (!email) {
+    const options = await PasskeyModel.generateAuthenticationOptions(config.auth.baseUrl);
+
     const responseBody: ResponseBody = {
-      success: false,
-      error: 'Email is required',
+      success: true,
+      options,
+      sessionData: {
+        challenge: options.challenge,
+        methodId: options.challenge,
+      },
     };
 
-    return new Response(JSON.stringify(responseBody), { status: 400 });
+    return new Response(JSON.stringify(responseBody));
   }
 
   const user = await UserModel.getByEmail(email);
@@ -54,7 +63,6 @@ async function post({ request }: RequestHandlerParams) {
     return new Response(JSON.stringify(responseBody), { status: 404 });
   }
 
-  const config = await AppConfig.getConfig();
   const allowedCredentials = PasskeyModel.getCredentialsFromUser(user);
 
   if (allowedCredentials.length === 0) {

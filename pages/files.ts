@@ -28,6 +28,25 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
     currentPath = `${currentPath}/`;
   }
 
+  const validSortColumns = ['name', 'updated_at', 'size_in_bytes'];
+  const validSortOrders = ['asc', 'desc'];
+
+  const savedSorting = user!.extra.file_sorting;
+  const urlSortBy = searchParams.get('sortBy');
+  const urlSortOrder = searchParams.get('sortOrder');
+
+  const initialSortBy = (urlSortBy && validSortColumns.includes(urlSortBy))
+    ? urlSortBy
+    : (savedSorting?.sort_by && validSortColumns.includes(savedSorting.sort_by))
+    ? savedSorting.sort_by
+    : 'name';
+
+  const initialSortOrder = (urlSortOrder && validSortOrders.includes(urlSortOrder))
+    ? urlSortOrder
+    : (savedSorting?.sort_order && validSortOrders.includes(savedSorting.sort_order))
+    ? savedSorting.sort_order
+    : 'asc';
+
   const userDirectories = await DirectoryModel.list(user!.id, currentPath);
 
   const userFiles = await FileModel.list(user!.id, currentPath);
@@ -42,6 +61,8 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
     baseUrl,
     isFileSharingAllowed: isPublicFileSharingAllowed,
     areDirectoryDownloadsAllowed,
+    initialSortBy,
+    initialSortOrder,
   });
 
   return basicLayoutResponse(htmlContent, {
@@ -56,13 +77,24 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
 }
 
 function defaultHtmlContent(
-  { userDirectories, userFiles, currentPath, baseUrl, isFileSharingAllowed, areDirectoryDownloadsAllowed }: {
+  {
+    userDirectories,
+    userFiles,
+    currentPath,
+    baseUrl,
+    isFileSharingAllowed,
+    areDirectoryDownloadsAllowed,
+    initialSortBy,
+    initialSortOrder,
+  }: {
     userDirectories: Directory[];
     userFiles: DirectoryFile[];
     currentPath: string;
     baseUrl: string;
     isFileSharingAllowed: boolean;
     areDirectoryDownloadsAllowed: boolean;
+    initialSortBy: string;
+    initialSortOrder: string;
   },
 ) {
   return html`
@@ -91,6 +123,8 @@ function defaultHtmlContent(
         baseUrl: ${JSON.stringify(baseUrl)},
         isFileSharingAllowed: ${JSON.stringify(isFileSharingAllowed)},
         areDirectoryDownloadsAllowed: ${JSON.stringify(areDirectoryDownloadsAllowed)},
+        initialSortBy: ${JSON.stringify(initialSortBy)},
+        initialSortOrder: ${JSON.stringify(initialSortOrder)},
       });
 
       render(mainFilesApp, mainFilesElement);

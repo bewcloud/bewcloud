@@ -68,26 +68,25 @@ export default function ListFiles(
     const isActive = sortBy === column;
 
     if (isActive) {
-      // Show active sort icon with rotation
-      const rotation = sortOrder === 'asc' ? '' : 'rotate-180';
       return (
         <img
-          src='/images/sort-up.svg'
-          class={`white drop-shadow-md w-4 h-4 ${rotation}`}
+          src={sortOrder === 'asc' ? '/public/images/sort-up.svg' : '/public/images/sort-down.svg'}
+          class='white drop-shadow-md w-4 h-4'
           width={16}
           height={16}
-          alt={`Sort ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+          alt={sortOrder === 'asc' ? 'Arrow pointing up' : 'Arrow pointing down'}
+          title={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
         />
       );
     } else {
-      // Show neutral sort icon only on hover
       return (
         <img
-          src='/images/sort-none.svg'
+          src='/public/images/sort-none.svg'
           class='white drop-shadow-md w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity'
           width={16}
           height={16}
-          alt='Sort'
+          alt='Two arrows side by side, one pointing up, the other pointing down'
+          title={`Sort by ${column} ascending`}
         />
       );
     }
@@ -96,16 +95,16 @@ export default function ListFiles(
   function renderSortableHeader(
     label: string,
     column: SortColumn,
-    className?: string,
+    extraClassName?: string,
   ): ComponentChildren {
     const isActive = sortBy === column;
 
     if (!onClickSort) {
-      return <th scope='col' class={`px-6 py-4 font-medium text-white ${className || ''}`}>{label}</th>;
+      return <th scope='col' class={`px-6 py-4 font-medium text-white ${extraClassName || ''}`}>{label}</th>;
     }
 
     return (
-      <th scope='col' class={`px-6 py-4 font-medium text-white ${className || ''}`}>
+      <th scope='col' class={`px-6 py-4 font-medium text-white ${extraClassName || ''}`}>
         <button
           class={`group flex items-center justify-between w-full text-left hover:text-blue-300 ${
             isActive ? 'text-blue-400' : ''

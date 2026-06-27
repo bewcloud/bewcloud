@@ -1,4 +1,5 @@
 import { useSignal } from '@preact/signals';
+import { sortDirectories, sortFiles } from '/public/ts/utils/files.ts';
 import SearchFiles from "./SearchFiles.js";
 import ListFiles from "./ListFiles.js";
 import FilesBreadcrumb from "./FilesBreadcrumb.js";
@@ -14,7 +15,9 @@ export default function MainFiles({
   baseUrl,
   isFileSharingAllowed,
   areDirectoryDownloadsAllowed,
-  fileShareId
+  fileShareId,
+  initialSortBy = 'name',
+  initialSortOrder = 'asc'
 }) {
   const isAdding = useSignal(false);
   const isUploading = useSignal(false);
@@ -24,6 +27,8 @@ export default function MainFiles({
   const directories = useSignal(initialDirectories);
   const files = useSignal(initialFiles);
   const path = useSignal(initialPath);
+  const sortBy = useSignal(initialSortBy);
+  const sortOrder = useSignal(initialSortOrder);
   const chosenDirectories = useSignal([]);
   const chosenFiles = useSignal([]);
   const isAnyItemChosen = chosenDirectories.value.length > 0 || chosenFiles.value.length > 0;
@@ -35,6 +40,35 @@ export default function MainFiles({
   const moveDirectoryOrFileModal = useSignal(null);
   const createShareModal = useSignal(null);
   const manageShareModal = useSignal(null);
+  function onClickSort(column) {
+    let newSortOrder = 'asc';
+    if (sortBy.value === column) {
+      newSortOrder = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    } else {
+      newSortOrder = 'asc';
+    }
+    sortBy.value = column;
+    sortOrder.value = newSortOrder;
+    const sortOptions = {
+      sortBy: column,
+      sortOrder: newSortOrder
+    };
+    directories.value = sortDirectories(directories.value, sortOptions);
+    files.value = sortFiles(files.value, sortOptions);
+    const url = new URL(window.location.href);
+    url.searchParams.set('sortBy', column);
+    url.searchParams.set('sortOrder', newSortOrder);
+    window.history.replaceState({}, '', url.toString());
+    if (!fileShareId) {
+      fetch('/api/files/update-sort', {
+        method: 'POST',
+        body: JSON.stringify({
+          sortBy: column,
+          sortOrder: newSortOrder
+        })
+      }).catch(console.error);
+    }
+  }
   const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
   async function uploadFileSingle(chosenFile, parentPath) {
     const requestBody = new FormData();
@@ -604,7 +638,9 @@ export default function MainFiles({
     class: "flex items-center justify-end"
   }, h(FilesBreadcrumb, {
     path: path.value,
-    fileShareId: fileShareId
+    fileShareId: fileShareId,
+    sortBy: sortBy.value,
+    sortOrder: sortOrder.value
   }), !fileShareId ? h("section", {
     class: "relative inline-block text-left ml-2"
   }, h("div", null, h("button", {
@@ -659,7 +695,10 @@ export default function MainFiles({
     onClickCreateShare: isFileSharingAllowed ? onClickCreateShare : undefined,
     onClickOpenManageShare: isFileSharingAllowed ? onClickOpenManageShare : undefined,
     onClickDownloadDirectory: areDirectoryDownloadsAllowed ? onClickDownloadDirectory : undefined,
-    fileShareId: fileShareId
+    fileShareId: fileShareId,
+    sortBy: sortBy.value,
+    sortOrder: sortOrder.value,
+    onClickSort: onClickSort
   }), h("span", {
     class: `flex justify-end items-center text-sm mt-1 mx-2 text-slate-100`
   }, isDeleting.value ? h(Fragment, null, h("img", {

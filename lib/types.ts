@@ -19,6 +19,10 @@ export interface User {
       id: string;
       utcOffset: number;
     };
+    file_sorting?: {
+      sort_by: string;
+      sort_order: string;
+    };
   };
   created_at: Date;
 }

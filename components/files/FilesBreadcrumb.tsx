@@ -1,4 +1,4 @@
-import { SortColumn, SortOrder } from '/lib/utils/files.ts';
+import { SortColumn, SortOrder } from '/public/ts/utils/files.ts';
 
 interface FilesBreadcrumbProps {
   path: string;
@@ -40,13 +40,17 @@ export default function FilesBreadcrumb({
   }
 
   const pathParts = path.slice(1, -1).split('/');
-  const sortParams = `&sortBy=${sortBy}&sortOrder=${sortOrder}`;
+  const commonSearchParams = new URLSearchParams();
+  commonSearchParams.set('sortBy', sortBy);
+  commonSearchParams.set('sortOrder', sortOrder);
 
   return (
     <h3 class='text-base font-semibold text-white whitespace-nowrap mr-2'>
-      {!isShowingNotes && !isShowingPhotos ? <a href={`/${routePath}?path=/${sortParams}`}>All files</a> : null}
-      {isShowingNotes ? <a href={`/notes?path=/Notes/${sortParams}`}>All notes</a> : null}
-      {isShowingPhotos ? <a href={`/photos?path=/Photos/${sortParams}`}>All photos</a> : null}
+      {!isShowingNotes && !isShowingPhotos
+        ? <a href={`/${routePath}?path=/&${commonSearchParams.toString()}`}>All files</a>
+        : null}
+      {isShowingNotes ? <a href={`/notes?path=/Notes/&${commonSearchParams.toString()}`}>All notes</a> : null}
+      {isShowingPhotos ? <a href={`/photos?path=/Photos/&${commonSearchParams.toString()}`}>All photos</a> : null}
       {pathParts.map((part, index) => {
         // Ignore the first directory in special ones
         if (index === 0 && (isShowingNotes || isShowingPhotos)) {
@@ -71,7 +75,12 @@ export default function FilesBreadcrumb({
         return (
           <>
             <span class='ml-2 text-xs'>/</span>
-            <a href={`/${routePath}?path=/${encodeURIComponent(fullPathForPart.join('/'))}/${sortParams}`} class='ml-2'>
+            <a
+              href={`/${routePath}?path=/${
+                encodeURIComponent(fullPathForPart.join('/'))
+              }/&${commonSearchParams.toString()}`}
+              class='ml-2'
+            >
               {decodeURIComponent(part)}
             </a>
           </>

@@ -95,45 +95,6 @@ export default function MainFiles(
   const createShareModal = useSignal<{ isOpen: boolean; filePath: string; password?: string } | null>(null);
   const manageShareModal = useSignal<{ isOpen: boolean; fileShareId: string } | null>(null);
 
-  // Helper functions for sorting persistence
-  function getSortingKey(path: string): string {
-    return `file-sort-${path}`;
-  }
-
-  function loadSortingPreference(path: string): { sortBy: SortColumn; sortOrder: SortOrder } {
-    if (typeof window === 'undefined') {
-      return { sortBy: initialSortBy, sortOrder: initialSortOrder };
-    }
-
-    try {
-      const saved = localStorage.getItem(getSortingKey(path));
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.sortBy && parsed.sortOrder) {
-          return { sortBy: parsed.sortBy, sortOrder: parsed.sortOrder };
-        }
-      }
-    } catch (error) {
-      console.error('Error loading sorting preference:', error);
-    }
-    return { sortBy: initialSortBy, sortOrder: initialSortOrder };
-  }
-
-  // Initialize sorting from localStorage (prefer saved, fallback to URL params)
-  const savedPreference = loadSortingPreference(initialPath);
-  sortBy.value = savedPreference.sortBy;
-  sortOrder.value = savedPreference.sortOrder;
-
-  function saveSortingPreference(path: string, sortBy: SortColumn, sortOrder: SortOrder) {
-    if (typeof window === 'undefined') return;
-
-    try {
-      localStorage.setItem(getSortingKey(path), JSON.stringify({ sortBy, sortOrder }));
-    } catch (error) {
-      console.error('Error saving sorting preference:', error);
-    }
-  }
-
   function onClickSort(column: SortColumn) {
     let newSortOrder: SortOrder = 'asc';
 
@@ -150,12 +111,17 @@ export default function MainFiles(
     directories.value = sortDirectories(directories.value, sortOptions);
     files.value = sortFiles(files.value, sortOptions);
 
-    saveSortingPreference(path.value, column, newSortOrder);
-
     const url = new URL(window.location.href);
     url.searchParams.set('sortBy', column);
     url.searchParams.set('sortOrder', newSortOrder);
     window.history.replaceState({}, '', url.toString());
+
+    if (!fileShareId) {
+      fetch('/api/files/update-sort', {
+        method: 'POST',
+        body: JSON.stringify({ sortBy: column, sortOrder: newSortOrder }),
+      }).catch(console.error);
+    }
   }
 
   // 10 MB chunks keep each request faster.
@@ -232,7 +198,6 @@ export default function MainFiles(
       }
     }
   }
-
 
   function onClickUploadFile(uploadDirectory = false) {
     const fileInput = document.createElement('input');

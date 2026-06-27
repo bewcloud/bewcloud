@@ -4,7 +4,7 @@ import '@std/dotenv/load';
 
 import { createSessionResponse, dataToText } from '/lib/auth.ts';
 import { UserModel } from '/lib/models/user.ts';
-import { generateRandomCode } from '/lib/utils/misc.ts';
+import { generateRandomCode } from '/public/ts/utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 import SimpleCache from '/lib/interfaces/simple-cache.ts';
 
@@ -169,7 +169,7 @@ export class OidcModel {
       throw new Error(`Missing user/${emailAttribute}`);
     }
 
-    const isSignupAllowed = await AppConfig.isSignupAllowed();
+    const isSignupAllowed = await AppConfig.isSignupAllowed({ viaSingleSignOn: true });
     const isThereAnAdmin = await UserModel.isThereAnAdmin();
 
     // Confirm the user exists (or signup if allowed)
@@ -181,10 +181,16 @@ export class OidcModel {
     }
 
     if (!user) {
+      if (!config.auth.allowSignupsViaSingleSignOn) {
+        throw new Error('Sign up via SSO is not allowed!');
+      }
+
       throw new Error('There was a problem signing up or logging in!');
     }
 
-    let urlToRedirectTo = '/dashboard';
+    const firstEnabledApp = config.core.enabledApps[0];
+
+    let urlToRedirectTo = `/${firstEnabledApp}`;
 
     if (urlSearchParams.has('state')) {
       const state = this.parseState(urlSearchParams.get('state')!);

@@ -1,0 +1,91 @@
+import page, { RequestHandlerParams } from '/lib/page.ts';
+import { Jimp } from 'jimp';
+
+import { FileModel } from '/lib/models/files.ts';
+import { AppConfig } from '/lib/config.ts';
+
+const MIN_WIDTH = 25;
+const MIN_HEIGHT = 25;
+const MAX_WIDTH = 2048;
+const MAX_HEIGHT = 2048;
+
+async function get({ request, user, match }: RequestHandlerParams): Promise<Response> {
+  const { fileName } = match.pathname.groups;
+
+  if (!fileName) {
+    throw new Error('NotFound');
+  }
+
+  if (!(await AppConfig.isAppEnabled('photos'))) {
+    throw new Error('Photos app is not enabled');
+  }
+
+  const searchParams = new URL(request.url).searchParams;
+
+  let currentPath = searchParams.get('path') || '/';
+
+  // Send invalid paths back to root
+  if (!currentPath.startsWith('/') || currentPath.includes('../')) {
+    currentPath = '/';
+  }
+
+  // Always append a trailing slash
+  if (!currentPath.endsWith('/')) {
+    currentPath = `${currentPath}/`;
+  }
+
+  const fileResult = await FileModel.get(user!.id, currentPath, decodeURIComponent(fileName));
+
+  if (!fileResult.success) {
+    throw new Error('NotFound');
+  }
+
+  const width = parseInt(searchParams.get('width') || '500', 10);
+  const height = parseInt(searchParams.get('height') || '500', 10);
+
+  if (
+    fileResult.contentType?.split('/')[0] !== 'image' || isNaN(width) || isNaN(height) ||
+    width > MAX_WIDTH || height > MAX_HEIGHT || width < MIN_WIDTH || height < MIN_HEIGHT
+  ) {
+    return new Response('Bad Request', { status: 400 });
+  }
+
+  try {
+    const image = await Jimp.read(
+      fileResult.contents!.buffer.slice(
+        fileResult.contents!.byteOffset,
+        fileResult.contents!.byteLength + fileResult.contents!.byteOffset,
+      ) as ArrayBuffer,
+    );
+
+    image.scaleToFit({ w: width, h: height });
+
+    const resizedImageContents = await image.getBuffer(fileResult.contentType! as 'image/jpeg' | 'image/png');
+
+    return new Response(Uint8Array.from(resizedImageContents), {
+      status: 200,
+      headers: {
+        'cache-control': `max-age=${604_800}`, // Tell browsers to cache for 1 week (60 * 60 * 24 * 7 = 604_800)
+        'content-type': fileResult.contentType!,
+        'content-length': resizedImageContents.byteLength.toString(),
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    // Serve original if we can't make a thumbnail
+    return new Response(fileResult.contents! as BodyInit, {
+      status: 200,
+      headers: {
+        'cache-control': `max-age=${604_800}`, // Tell browsers to cache for 1 week (60 * 60 * 24 * 7 = 604_800)
+        'content-type': fileResult.contentType!,
+        'content-length': fileResult.contents!.byteLength.toString(),
+      },
+    });
+  }
+}
+
+export default page({
+  get,
+  accessMode: 'user',
+});

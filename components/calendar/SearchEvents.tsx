@@ -2,8 +2,9 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Calendar, CalendarEvent } from '/lib/models/calendar.ts';
-import { RequestBody, ResponseBody } from '/routes/api/calendar/search-events.tsx';
-import { getColorAsHex } from '/lib/utils/calendar.ts';
+import { RequestBody, ResponseBody } from '/pages/api/calendar/search-events.ts';
+import { getColorAsHex } from '/public/ts/utils/calendar.ts';
+
 interface SearchEventsProps {
   calendars: Calendar[];
   onClickOpenEvent: (calendarEvent: CalendarEvent) => void;
@@ -13,8 +14,8 @@ export default function SearchEvents({ calendars, onClickOpenEvent }: SearchEven
   const isSearching = useSignal<boolean>(false);
   const areResultsVisible = useSignal<boolean>(false);
   const calendarEvents = useSignal<CalendarEvent[]>([]);
-  const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
-  const closeTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
+  const searchTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const closeTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
@@ -105,12 +106,12 @@ export default function SearchEvents({ calendars, onClickOpenEvent }: SearchEven
         onFocus={() => onFocus()}
         onBlur={() => onBlur()}
       />
-      {isSearching.value ? <img src='/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
+      {isSearching.value ? <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
       {areResultsVisible.value
         ? (
           <section class='relative inline-block text-left ml-2 text-xs'>
             <section
-              class={`absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none`}
+              class={`absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none`}
               role='menu'
               aria-orientation='vertical'
               aria-labelledby='view-button'

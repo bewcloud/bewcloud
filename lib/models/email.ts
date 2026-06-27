@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import '@std/dotenv/load';
 
-import { escapeHtml } from '/lib/utils/misc.ts';
+import { escapeHtml } from '/public/ts/utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 
 const SMTP_USERNAME = Deno.env.get('SMTP_USERNAME') || '';
@@ -15,14 +15,30 @@ export class EmailModel {
       throw new Error('config.email.from, config.email.host, or config.email.port is not set');
     }
 
+    let tlsMode = emailConfig.tlsMode;
+    if (tlsMode === 'auto') {
+      tlsMode = Number(emailConfig.port) === 465 ? 'immediate' : 'starttls';
+    }
+
     const transporterConfig = {
       host: emailConfig.host,
       port: emailConfig.port,
-      secure: Number(emailConfig.port) === 465,
-      auth: {
-        user: SMTP_USERNAME,
-        pass: SMTP_PASSWORD,
-      },
+
+      secure: tlsMode === 'immediate',
+      requireTLS: tlsMode === 'starttls',
+      ignoreTLS: tlsMode === 'none',
+      tls: emailConfig.tlsVerify === false
+        ? { rejectUnauthorized: false }
+        : emailConfig.tlsVerify !== true
+        ? { servername: emailConfig.tlsVerify }
+        : {},
+
+      auth: (SMTP_USERNAME || SMTP_PASSWORD)
+        ? {
+          user: SMTP_USERNAME,
+          pass: SMTP_PASSWORD,
+        }
+        : null,
     };
 
     const transporter = nodemailer.createTransport(transporterConfig);
@@ -59,7 +75,6 @@ export class EmailModel {
     <style type="text/css" rel="stylesheet" media="all">
     /* Base ------------------------------ */
     
-    @import url("https://fonts.googleapis.com/css?family=Nunito+Sans:400,700&display=swap");
     body {
       width: 100% !important;
       height: 100%;
@@ -95,7 +110,8 @@ export class EmailModel {
     body,
     td,
     th {
-      font-family: "Nunito Sans", Helvetica, Arial, sans-serif;
+      /* Source: https://fontsarena.com/blog/operating-systems-default-sans-serif-fonts/ */
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Oxygen, Cantarell, sans-serif;
     }
     
     h1 {

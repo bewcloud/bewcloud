@@ -1,5 +1,6 @@
 import { Expense, SupportedCurrencySymbol } from '/lib/types.ts';
-import { formatNumber } from '/lib/utils/misc.ts';
+import { formatNumber } from '/public/ts/utils/misc.ts';
+
 interface ListExpensesProps {
   expenses: Expense[];
   currency: SupportedCurrencySymbol;
@@ -47,14 +48,14 @@ export default function ListExpenses(
                     class='text-white border-t border-slate-700 hover:bg-slate-600 transition-colors even:bg-slate-700 odd:bg-slate-800 cursor-pointer flex md:table-row flex-row flex-wrap my-4 mx-4 md:my-0 md:mx-0 rounded md:rounded-none shadow-md md:shadow-none relative py-4 md:py-0 px-6 md:px-0'
                     onClick={() => onClickEditExpense(expense.id)}
                   >
-                    <td class='md:px-6 md:py-3 flex-[50] mx-2 md:mx-0'>{expense.description}</td>
-                    <td class='md:px-6 md:py-3 flex-[20] mx-2 md:mx-0 text-gray-400 md:text-gray-300'>
+                    <td class='md:px-6 md:py-3 flex-50 mx-2 md:mx-0'>{expense.description}</td>
+                    <td class='md:px-6 md:py-3 flex-20 mx-2 md:mx-0 text-gray-400 md:text-gray-300'>
                       {expense.budget}
                     </td>
-                    <td class='md:px-6 md:py-3 flex-[15] mx-2 md:mx-0 text-gray-400 md:text-gray-300'>
+                    <td class='md:px-6 md:py-3 flex-15 mx-2 md:mx-0 text-gray-400 md:text-gray-300'>
                       {dateFormat.format(new Date(expense.date))}
                     </td>
-                    <td class='md:px-6 md:py-3 flex-[15] mx-2 md:mx-0 font-bold md:font-semibold'>
+                    <td class='md:px-6 md:py-3 flex-15 mx-2 md:mx-0 font-bold md:font-semibold'>
                       {formatNumber(currency, expense.cost)}
                     </td>
                   </tr>

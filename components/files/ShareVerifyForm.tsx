@@ -6,7 +6,7 @@ export default function ShareVerifyForm(
   { error }: ShareVerifyFormProps,
 ) {
   return (
-    <section class='max-w-md w-full mb-12'>
+    <section class='max-w-md w-full mb-12 mx-auto'>
       <section class='mb-6'>
         <h2 class='mt-6 text-center text-3xl font-extrabold text-white'>
           File Share Authentication

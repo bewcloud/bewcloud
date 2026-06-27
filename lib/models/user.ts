@@ -1,6 +1,6 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { User, UserSession, VerificationCode } from '/lib/types.ts';
-import { generateRandomCode } from '/lib/utils/misc.ts';
+import { generateRandomCode } from '/public/ts/utils/misc.ts';
 import { AppConfig } from '/lib/config.ts';
 
 const db = new Database();
@@ -30,6 +30,21 @@ export class UserModel {
     const user = (await db.query<User>(sql`SELECT * FROM "bewcloud_users" WHERE "id" = $1 LIMIT 1`, [
       id,
     ]))[0];
+
+    return user;
+  }
+
+  static async getByPasskeyCredentialId(credentialId: string) {
+    const user = (await db.query<User>(
+      sql`SELECT * FROM "bewcloud_users"
+        WHERE EXISTS (
+          SELECT 1 FROM jsonb_array_elements("extra"->'multi_factor_auth_methods') AS method
+          WHERE method->>'type' = 'passkey'
+            AND method->'metadata'->'passkey'->>'credential_id' = $1
+        )
+        LIMIT 1`,
+      [credentialId],
+    ))[0];
 
     return user;
   }

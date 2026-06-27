@@ -11,6 +11,7 @@ const config: PartialDeep<Config> = {
     // allowedCookieDomains: ['example.com', 'example.net'], // Can be set to allow more than the baseUrl's domain for session cookies
     // skipCookieDomainSecurity: true, // If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel
     // enableSingleSignOn: false, // If true, single sign-on will be enabled
+    // allowSignupsViaSingleSignOn: false, // If true, signups via single sign-on will be allowed, overriding allowSignups
     // singleSignOnUrl: '', // The Discovery URL (AKA Issuer) of the identity/single sign-on provider
     // singleSignOnEmailAttribute: 'email', // The attribute to prefer as email of the identity/single sign-on provider
     // singleSignOnScopes: ['openid', 'email'], // The scopes to request from the identity/single sign-on provider
@@ -19,9 +20,11 @@ const config: PartialDeep<Config> = {
   //   rootPath: 'data-files',
   //   allowPublicSharing: false, // If true, public file sharing will be allowed (still requires a user to enable sharing for a given file or directory)
   //   allowDirectoryDownloads: false, // If true, directories can be downloaded as zip files
+  //   maxUploadSizeInMegabytes: 100, // The maximum upload size in megabytes. Overrides the core.maxRequestSizeInMegabytes setting on /dav and /api/files/upload endpoints.
   // },
   // core: {
-  //   enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'], // dashboard and files cannot be disabled
+  //   enabledApps: ['dashboard', 'files', 'news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'], // The apps to show, in order of appearance in the header. The first app will be the default one shown after logging in. At least one is required.
+  //   maxRequestSizeInMegabytes: 12, // The maximum request size in megabytes.
   // },
   // visuals: {
   //   title: 'My own cloud',
@@ -32,6 +35,8 @@ const config: PartialDeep<Config> = {
   //   from: 'help@bewcloud.com',
   //   host: 'localhost',
   //   port: 465,
+  //   tlsMode: 'auto', // "auto" means "immediate" on port 465, "starttls" otherwise.
+  //   tlsVerify: true, // Whether to verify the TLS certificate. If a string is used the hostname will be verified using that name.
   // },
   // contacts: {
   //   enableCardDavServer: true,

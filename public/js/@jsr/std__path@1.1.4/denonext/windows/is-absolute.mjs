@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/windows/is-absolute */
+import{CHAR_COLON as i}from"../_common/constants.mjs";import{assertPath as s}from"../_common/assert_path.mjs";import{isPathSeparator as t,isWindowsDeviceRoot as f}from"./_util.mjs";function a(r){s(r);let e=r.length;if(e===0)return!1;let o=r.charCodeAt(0);return t(o)?!0:!!(f(o)&&e>2&&r.charCodeAt(1)===i&&t(r.charCodeAt(2)))}export{a as isAbsolute};
+//is-absolute.mjs.map

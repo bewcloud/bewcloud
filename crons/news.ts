@@ -1,6 +1,6 @@
 import Database, { sql } from '/lib/interfaces/database.ts';
 import { NewsFeed } from '/lib/types.ts';
-import { concurrentPromises } from '/lib/utils/misc.ts';
+import { concurrentPromises } from '/public/ts/utils/misc.ts';
 import { FeedModel } from '/lib/models/news.ts';
 
 const db = new Database();

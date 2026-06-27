@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
-import { RequestBody, ResponseBody } from '/routes/api/files/get-directories.tsx';
+import { RequestBody, ResponseBody } from '/pages/api/files/get-directories.ts';
 import { Directory } from '/lib/types.ts';
 
 interface MoveDirectoryOrFileModalProps {
@@ -78,7 +78,7 @@ export default function MoveDirectoryOrFileModal(
   return (
     <>
       <section
-        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900 bg-opacity-60`}
+        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900/60`}
       >
       </section>
 
@@ -123,7 +123,7 @@ export default function MoveDirectoryOrFileModal(
             {isLoading.value
               ? (
                 <>
-                  <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Loading...
+                  <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Loading...
                 </>
               )
               : null}

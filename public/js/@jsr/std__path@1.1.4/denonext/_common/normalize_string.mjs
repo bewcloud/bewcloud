@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/_common/normalize_string */
+import{CHAR_DOT as h,CHAR_FORWARD_SLASH as A}from"./constants.mjs";function C(s,d,g,c){let e="",i=0,t=-1,n=0,f;for(let l=0;l<=s.length;++l){if(l<s.length)f=s.charCodeAt(l);else{if(c(f))break;f=A}if(c(f)){if(!(t===l-1||n===1))if(t!==l-1&&n===2){if(e.length<2||i!==2||e.charCodeAt(e.length-1)!==h||e.charCodeAt(e.length-2)!==h){if(e.length>2){let o=e.lastIndexOf(g);o===-1?(e="",i=0):(e=e.slice(0,o),i=e.length-1-e.lastIndexOf(g)),t=l,n=0;continue}else if(e.length===2||e.length===1){e="",i=0,t=l,n=0;continue}}d&&(e.length>0?e+=`${g}..`:e="..",i=2)}else e.length>0?e+=g+s.slice(t+1,l):e=s.slice(t+1,l),i=l-t-1;t=l,n=0}else f===h&&n!==-1?++n:n=-1}return e}export{C as normalizeString};
+//normalize_string.mjs.map

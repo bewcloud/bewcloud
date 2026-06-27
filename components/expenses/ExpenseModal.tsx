@@ -2,12 +2,12 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Budget, Expense } from '/lib/types.ts';
-import { formatInputToNumber } from '/lib/utils/misc.ts';
+import { formatInputToNumber } from '/public/ts/utils/misc.ts';
 
 import {
   RequestBody as SuggestionsRequestBody,
   ResponseBody as SuggestionsResponse,
-} from '/routes/api/expenses/auto-complete.tsx';
+} from '/pages/api/expenses/auto-complete.ts';
 
 interface ExpenseModalProps {
   isOpen: boolean;
@@ -98,7 +98,7 @@ export default function ExpenseModal(
   return (
     <>
       <section
-        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900 bg-opacity-60`}
+        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900/60`}
       >
       </section>
 

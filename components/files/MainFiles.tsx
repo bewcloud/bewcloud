@@ -1,39 +1,40 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/lib/utils/files.ts';
-import { ResponseBody as UploadResponseBody } from '/routes/api/files/upload.tsx';
-import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/routes/api/files/rename.tsx';
-import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/routes/api/files/move.tsx';
-import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/routes/api/files/delete.tsx';
+import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
+import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
+import { ResponseBody as ChunkUploadResponseBody } from '/pages/api/files/upload-chunk.ts';
+import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/pages/api/files/rename.ts';
+import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/pages/api/files/move.ts';
+import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/pages/api/files/delete.ts';
 import {
   RequestBody as CreateDirectoryRequestBody,
   ResponseBody as CreateDirectoryResponseBody,
-} from '/routes/api/files/create-directory.tsx';
+} from '/pages/api/files/create-directory.ts';
 import {
   RequestBody as RenameDirectoryRequestBody,
   ResponseBody as RenameDirectoryResponseBody,
-} from '/routes/api/files/rename-directory.tsx';
+} from '/pages/api/files/rename-directory.ts';
 import {
   RequestBody as MoveDirectoryRequestBody,
   ResponseBody as MoveDirectoryResponseBody,
-} from '/routes/api/files/move-directory.tsx';
+} from '/pages/api/files/move-directory.ts';
 import {
   RequestBody as DeleteDirectoryRequestBody,
   ResponseBody as DeleteDirectoryResponseBody,
-} from '/routes/api/files/delete-directory.tsx';
+} from '/pages/api/files/delete-directory.ts';
 import {
   RequestBody as CreateShareRequestBody,
   ResponseBody as CreateShareResponseBody,
-} from '/routes/api/files/create-share.tsx';
+} from '/pages/api/files/create-share.ts';
 import {
   RequestBody as UpdateShareRequestBody,
   ResponseBody as UpdateShareResponseBody,
-} from '/routes/api/files/update-share.tsx';
+} from '/pages/api/files/update-share.ts';
 import {
   RequestBody as DeleteShareRequestBody,
   ResponseBody as DeleteShareResponseBody,
-} from '/routes/api/files/delete-share.tsx';
+} from '/pages/api/files/delete-share.ts';
 import SearchFiles from './SearchFiles.tsx';
 import ListFiles from './ListFiles.tsx';
 import FilesBreadcrumb from './FilesBreadcrumb.tsx';
@@ -70,6 +71,7 @@ export default function MainFiles(
 ) {
   const isAdding = useSignal<boolean>(false);
   const isUploading = useSignal<boolean>(false);
+  const uploadProgress = useSignal<string>('');
   const isDeleting = useSignal<boolean>(false);
   const isUpdating = useSignal<boolean>(false);
   const directories = useSignal<Directory[]>(initialDirectories);
@@ -136,31 +138,101 @@ export default function MainFiles(
     let newSortOrder: SortOrder = 'asc';
 
     if (sortBy.value === column) {
-      // Toggle sort order if clicking the same column
       newSortOrder = sortOrder.value === 'asc' ? 'desc' : 'asc';
     } else {
-      // Default to ascending for new columns
       newSortOrder = 'asc';
     }
 
-    // Update the state
     sortBy.value = column;
     sortOrder.value = newSortOrder;
 
-    // Apply sorting to current data
     const sortOptions = { sortBy: column, sortOrder: newSortOrder };
     directories.value = sortDirectories(directories.value, sortOptions);
     files.value = sortFiles(files.value, sortOptions);
 
-    // Save to localStorage
     saveSortingPreference(path.value, column, newSortOrder);
 
-    // Update URL without navigating (for bookmark/refresh support)
     const url = new URL(window.location.href);
     url.searchParams.set('sortBy', column);
     url.searchParams.set('sortOrder', newSortOrder);
     window.history.replaceState({}, '', url.toString());
   }
+
+  // 10 MB chunks keep each request faster.
+  const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
+
+  async function uploadFileSingle(chosenFile: File, parentPath: string) {
+    const requestBody = new FormData();
+    requestBody.set('path_in_view', path.value);
+    requestBody.set('parent_path', parentPath);
+    requestBody.set('name', chosenFile.name);
+    requestBody.set('contents', chosenFile);
+
+    const response = await fetch(`/api/files/upload`, {
+      method: 'POST',
+      body: requestBody,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload file. ${response.statusText} ${await response.text()}`);
+    }
+
+    const result = await response.json() as UploadResponseBody;
+
+    if (!result.success) {
+      throw new Error('Failed to upload file!');
+    }
+
+    files.value = [...result.newFiles];
+    directories.value = [...result.newDirectories];
+  }
+
+  async function uploadFileChunked(chosenFile: File, parentPath: string) {
+    const totalChunks = Math.ceil(chosenFile.size / CHUNK_SIZE_BYTES);
+    const uploadId = crypto.randomUUID();
+    // Capture once — the user may navigate away during a long upload, which would change path.value and cause the final response to refresh the wrong directory listing.
+    const pathInView = path.value;
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      uploadProgress.value = `Uploading ${chosenFile.name} (${chunkIndex + 1}/${totalChunks})…`;
+
+      const start = chunkIndex * CHUNK_SIZE_BYTES;
+      const end = Math.min(start + CHUNK_SIZE_BYTES, chosenFile.size);
+      const chunkBlob = chosenFile.slice(start, end);
+
+      const requestBody = new FormData();
+      requestBody.set('upload_id', uploadId);
+      requestBody.set('chunk_index', String(chunkIndex));
+      requestBody.set('total_chunks', String(totalChunks));
+      requestBody.set('path_in_view', pathInView);
+      requestBody.set('parent_path', parentPath);
+      requestBody.set('name', chosenFile.name);
+      requestBody.set('chunk', chunkBlob);
+
+      const response = await fetch(`/api/files/upload-chunk`, {
+        method: 'POST',
+        body: requestBody,
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to upload chunk ${chunkIndex + 1}/${totalChunks}. ${response.statusText} ${await response.text()}`,
+        );
+      }
+
+      const result = await response.json() as ChunkUploadResponseBody;
+
+      if (!result.success) {
+        throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
+      }
+
+      if (result.isComplete) {
+        files.value = [...result.newFiles!];
+        directories.value = [...result.newDirectories!];
+      }
+    }
+  }
+
 
   function onClickUploadFile(uploadDirectory = false) {
     const fileInput = document.createElement('input');
@@ -181,6 +253,7 @@ export default function MainFiles(
       const chosenFiles = Array.from(chosenFilesList);
 
       isUploading.value = true;
+      uploadProgress.value = '';
 
       for (const chosenFile of chosenFiles) {
         if (!chosenFile) {
@@ -189,38 +262,22 @@ export default function MainFiles(
 
         areNewOptionsOpen.value = false;
 
-        const requestBody = new FormData();
-        requestBody.set('path_in_view', path.value);
-        requestBody.set('parent_path', path.value);
-        requestBody.set('name', chosenFile.name);
-        requestBody.set('contents', chosenFile);
-
-        // Keep directory structure if the file comes from a chosen directory
+        // Resolve the parent path, keeping any sub-directory structure from directory uploads
+        let fileParentPath = path.value;
         if (chosenFile.webkitRelativePath) {
           const directoryPath = chosenFile.webkitRelativePath.replace(chosenFile.name, '');
-
           // We don't need to worry about path joining here, the API will handle it (and make sure it's secure)
-          requestBody.set('parent_path', `${path.value}${directoryPath}`);
+          fileParentPath = `${path.value}${directoryPath}`;
         }
 
+        uploadProgress.value = '';
+
         try {
-          const response = await fetch(`/api/files/upload`, {
-            method: 'POST',
-            body: requestBody,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Failed to upload file. ${response.statusText} ${await response.text()}`);
+          if (chosenFile.size >= CHUNK_SIZE_BYTES) {
+            await uploadFileChunked(chosenFile, fileParentPath);
+          } else {
+            await uploadFileSingle(chosenFile, fileParentPath);
           }
-
-          const result = await response.json() as UploadResponseBody;
-
-          if (!result.success) {
-            throw new Error('Failed to upload file!');
-          }
-
-          files.value = [...result.newFiles];
-          directories.value = [...result.newDirectories];
         } catch (error) {
           console.error(error);
         }
@@ -817,7 +874,7 @@ export default function MainFiles(
                       onClick={() => toggleBulkOptionsDropdown()}
                     >
                       <img
-                        src={`/images/${areBulkOptionsOpen.value ? 'hide-options' : 'show-options'}.svg`}
+                        src={`/public/images/${areBulkOptionsOpen.value ? 'hide-options' : 'show-options'}.svg`}
                         alt='Bulk actions'
                         class={`white w-5 max-w-5`}
                         width={20}
@@ -827,7 +884,7 @@ export default function MainFiles(
                   </div>
 
                   <div
-                    class={`absolute left-0 z-10 mt-2 w-44 origin-top-left rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none ${
+                    class={`absolute left-0 z-10 mt-2 w-44 origin-top-left rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none ${
                       !areBulkOptionsOpen.value ? 'hidden' : ''
                     }`}
                     role='menu'
@@ -873,7 +930,7 @@ export default function MainFiles(
                     onClick={() => toggleNewOptionsDropdown()}
                   >
                     <img
-                      src='/images/add.svg'
+                      src='/public/images/add.svg'
                       alt='Add new file or directory'
                       class={`white ${isAdding.value || isUploading.value ? 'animate-spin' : ''}`}
                       width={20}
@@ -883,7 +940,7 @@ export default function MainFiles(
                 </div>
 
                 <div
-                  class={`absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none ${
+                  class={`absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none ${
                     !areNewOptionsOpen.value ? 'hidden' : ''
                   }`}
                   role='menu'
@@ -950,28 +1007,29 @@ export default function MainFiles(
           {isDeleting.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Deleting...
               </>
             )
             : null}
           {isAdding.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
               </>
             )
             : null}
           {isUploading.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Uploading...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
+                {uploadProgress.value || 'Uploading...'}
               </>
             )
             : null}
           {isUpdating.value
             ? (
               <>
-                <img src='/images/loading.svg' class='white mr-2' width={18} height={18} />Updating...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Updating...
               </>
             )
             : null}

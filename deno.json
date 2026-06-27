@@ -1,13 +1,21 @@
 {
-  "lock": false,
+  "lock": true,
   "tasks": {
+    "execute-with-permissions": "deno run --allow-env --allow-net --allow-sys=networkInterfaces,hostname,cpus,homedir --allow-read=.,/ --allow-write=data-files,/ --allow-run",
     "check": "deno fmt --check && deno lint && deno check .",
-    "cli": "echo \"import '\\$fresh/src/dev/cli.ts'\" | deno run --unstable -A -",
-    "manifest": "deno task cli manifest $(pwd)",
-    "start": "deno run -A --watch=static/,routes/,lib/,components/,islands/ dev.ts",
-    "build": "deno run -A dev.ts build",
-    "preview": "deno run -A main.ts",
-    "test": "deno test -A --check"
+    "build": "deno task download-frontend-imports && deno task build-babel && deno task build-tailwind",
+    "build-babel": "deno run --allow-env --allow-ffi --allow-sys --allow-read --allow-write=public/components npm:@babel/cli@7.28.6/babel ./components --out-dir ./public/components --extensions \".ts,.tsx\"",
+    "build-tailwind": "deno install --allow-scripts npm:tailwindcss@4.3.0 npm:@tailwindcss/cli@4.3.0 && deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css --allow-scripts npm:@tailwindcss/cli@4.3.0 -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css",
+    "preview": "deno task execute-with-permissions ./main.ts",
+    "test": "IS_TESTING=true deno test --parallel --allow-all --check",
+    "migrate-db": "deno task execute-with-permissions ./migrate-db.ts",
+    "watch-app": "deno task execute-with-permissions --watch --watch-exclude=./public/css/tailwind.css,./public/components ./main.ts",
+    "watch-babel": "deno run --allow-env --allow-ffi --allow-sys --allow-read --allow-write=public/components npm:@babel/cli@7.28.6/babel ./components --out-dir ./public/components --extensions \".ts,.tsx\" --watch",
+    "watch-tailwind": "deno install --allow-scripts npm:tailwindcss@4.3.0 npm:@tailwindcss/cli@4.3.0 && deno run --allow-env --allow-read --allow-sys --allow-ffi --vendor --unstable-detect-cjs --allow-write=public/css --allow-scripts npm:@tailwindcss/cli@4.3.0 -w -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css",
+    "download-frontend-imports": "deno run --allow-read=./deno.json,./public/js --allow-write=./public/js --allow-net=esm.sh ./download-frontend-imports.ts",
+    "start": {
+      "dependencies": ["watch-tailwind", "watch-babel", "watch-app"]
+    }
   },
   "fmt": {
     "useTabs": false,
@@ -15,51 +23,78 @@
     "indentWidth": 2,
     "singleQuote": true,
     "proseWrap": "preserve",
-    "exclude": ["README.md", "lib/models/dav.js"]
+    "exclude": ["README.md", "lib/models/dav.js", "public/css/tailwind.css"]
   },
   "lint": {
     "rules": {
-      "tags": ["fresh", "recommended"],
-      "exclude": ["no-explicit-any", "no-empty-interface", "no-window", "no-unused-vars"]
+      "tags": ["recommended"],
+      "exclude": ["no-explicit-any", "no-window"]
     },
     "exclude": ["lib/models/dav.js"]
   },
-  "exclude": ["./_fresh/*", "./node_modules/*", "**/_fresh/*"],
-  "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "preact" },
+  "exclude": ["./node_modules/*", "./public/js/*", "./public/components/*"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "dom.asynciterable",
+      "deno.ns"
+    ]
+  },
   "nodeModulesDir": "auto",
   "imports": {
     "/": "./",
     "./": "./",
 
-    "fresh/": "https://deno.land/x/fresh@1.7.3/",
-    "$fresh/": "https://deno.land/x/fresh@1.7.3/",
+    "sass": "https://deno.land/x/denosass@1.0.6/mod.ts",
+    "@libs/xml": "https://deno.land/x/xml@2.1.3/mod.ts",
 
+    "chart.js": "https://esm.sh/chart.js@4.5.1",
+    "chart.js/auto": "https://esm.sh/chart.js@4.5.1/auto",
+    "preact": "https://esm.sh/preact@10.29.0",
+    "preact/jsx-runtime": "https://esm.sh/preact@10.29.0/jsx-runtime",
+    "preact/hooks": "https://esm.sh/preact@10.29.0/hooks",
+    "preact-render-to-string": "https://esm.sh/preact-render-to-string@6.6.7?deps=preact@10.29.0",
+    "@preact/signals": "https://esm.sh/*@preact/signals@2.9.0?deps=preact@10.29.0",
+    "@preact/signals-core": "https://esm.sh/*@preact/signals-core@1.14.1?deps=preact@10.29.0",
+    "@simplewebauthn/browser": "https://esm.sh/@simplewebauthn/browser@13.3.0",
+    "@std/path": "https://esm.sh/jsr/@std/path@1.1.4",
+
+    "deno/emit": "jsr:@deno/emit@0.46.0",
     "postgres": "jsr:@db/postgres@0.19.5",
     "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@0.1.56",
-    "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@1.0.4",
-    "@hexagon/croner": "jsr:@hexagon/croner@9.1.0",
+    "@hexagon/croner": "jsr:@hexagon/croner@10.0.1",
     "@mikaelporttila/rss": "jsr:@mikaelporttila/rss@1.1.3",
-    "@libs/qrcode": "jsr:@libs/qrcode@3.0.0",
-    "@libs/xml": "jsr:@libs/xml@7.0.2",
-    "@simplewebauthn/server": "jsr:@simplewebauthn/server@13.2.1",
-    "@simplewebauthn/browser": "jsr:@simplewebauthn/browser@13.2.0",
-    "@std/assert": "jsr:@std/assert@1.0.14",
-    "@std/dotenv": "jsr:@std/dotenv@0.225.5",
+    "@libs/qrcode": "jsr:@libs/qrcode@3.0.1",
+    "@simplewebauthn/server": "jsr:@simplewebauthn/server@13.3.0",
+    "@std/assert": "jsr:@std/assert@1.0.19",
+    "@std/dotenv": "jsr:@std/dotenv@0.225.6",
     "@std/encoding": "jsr:@std/encoding@1.0.10",
-    "@std/http": "jsr:@std/http@1.0.20",
-    "@std/path": "jsr:@std/path@1.1.2",
+    "@std/http": "jsr:@std/http@1.1.0",
 
-    "chart.js": "npm:chart.js@4.5.0",
+    "jimp": "npm:jimp@1.6.0",
     "mrmime": "npm:mrmime@2.0.1",
-    "nodemailer": "npm:nodemailer@7.0.6",
-    "openid-client": "npm:openid-client@6.8.0",
-    "otpauth": "npm:otpauth@9.4.1",
-    "preact": "npm:preact@10.27.2",
-    "sharp": "npm:sharp@0.34.4",
-    "tailwindcss": "npm:tailwindcss@3.4.17",
-    "tailwindcss/": "npm:/tailwindcss@3.4.17/",
-    "tailwindcss/plugin": "npm:/tailwindcss@3.4.17/plugin.js",
-    "vite": "npm:vite@7.1.7",
-    "@preact/signals": "npm:@preact/signals@2.3.1"
-  }
+    "nodemailer": "npm:nodemailer@8.0.4",
+    "openid-client": "npm:openid-client@6.8.2",
+    "otpauth": "npm:otpauth@9.5.0",
+    "tailwindcss": "npm:tailwindcss@4.3.0",
+    "@tailwindcss/cli": "npm:@tailwindcss/cli@4.3.0",
+    "@babel/cli": "npm:@babel/cli@7.28.6",
+    "@babel/core": "npm:@babel/core@7.29.0",
+    "@babel/plugin-transform-react-jsx": "npm:@babel/plugin-transform-react-jsx@7.28.6",
+    "@babel/preset-react": "npm:@babel/preset-react@7.28.5",
+    "@babel/preset-typescript": "npm:@babel/preset-typescript@7.28.5"
+  },
+  "frontendImports": [
+    "chart.js",
+    "chart.js/auto",
+    "preact",
+    "preact/hooks",
+    "@preact/signals",
+    "@preact/signals-core",
+    "@simplewebauthn/browser",
+    "@std/path"
+  ]
 }

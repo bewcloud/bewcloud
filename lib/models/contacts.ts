@@ -1,6 +1,6 @@
 import { createDAVClient } from '/lib/models/dav.js';
 import { AppConfig } from '/lib/config.ts';
-import { parseVCard } from '/lib/utils/contacts.ts';
+import { parseVCard } from '/public/ts/utils/contacts.ts';
 
 interface DAVObject extends Record<string, any> {
   data?: string;

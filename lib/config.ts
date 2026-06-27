@@ -1,3 +1,4 @@
+import { isAbsolute, join, toFileUrl } from '@std/path';
 import { UserModel } from './models/user.ts';
 import { Config, OptionalApp } from './types.ts';
 
@@ -15,6 +16,7 @@ export class AppConfig {
         allowedCookieDomains: [],
         skipCookieDomainSecurity: false,
         enableSingleSignOn: false,
+        allowSignupsViaSingleSignOn: false,
         singleSignOnUrl: '',
         singleSignOnEmailAttribute: 'email',
         singleSignOnScopes: ['openid', 'email'],
@@ -23,9 +25,11 @@ export class AppConfig {
         rootPath: 'data-files',
         allowPublicSharing: false,
         allowDirectoryDownloads: false,
+        maxUploadSizeInMegabytes: 100,
       },
       core: {
-        enabledApps: ['news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'],
+        enabledApps: ['dashboard', 'files', 'news', 'notes', 'photos', 'expenses', 'contacts', 'calendar'],
+        maxRequestSizeInMegabytes: 12,
       },
       visuals: {
         title: '',
@@ -36,6 +40,8 @@ export class AppConfig {
         from: 'help@bewcloud.com',
         host: 'localhost',
         port: 465,
+        tlsMode: 'auto',
+        tlsVerify: true,
       },
       contacts: {
         enableCardDavServer: true,
@@ -60,7 +66,7 @@ export class AppConfig {
     };
 
     try {
-      const configFromFile: Config = (await import(`${Deno.cwd()}/bewcloud.config.ts`)).default;
+      const configFromFile: Config = (await import(toFileUrl(join(Deno.cwd(), 'bewcloud.config.ts')).href)).default;
 
       this.config = {
         ...config,
@@ -96,6 +102,10 @@ export class AppConfig {
 
       console.info('\nConfig loaded from bewcloud.config.ts', JSON.stringify(this.config, null, 2), '\n');
 
+      if (this.config.core.enabledApps.length === 0) {
+        throw new Error('At least one app must be enabled. Please check the config.core.enabledApps array.');
+      }
+
       return;
     } catch (error) {
       console.error('Error loading config from bewcloud.config.ts. Using default config instead.', error);
@@ -110,11 +120,12 @@ export class AppConfig {
     return this.config;
   }
 
-  static async isSignupAllowed(): Promise<boolean> {
+  static async isSignupAllowed({ viaSingleSignOn = false }: { viaSingleSignOn?: boolean } = {}): Promise<boolean> {
     await this.loadConfig();
 
-    const areSignupsAllowed = this.config.auth.allowSignups;
-
+    const areSignupsAllowed = viaSingleSignOn && !this.config.auth.allowSignups
+      ? this.config.auth.allowSignupsViaSingleSignOn
+      : this.config.auth.allowSignups;
     const areThereAdmins = await UserModel.isThereAnAdmin();
 
     if (areSignupsAllowed || !areThereAdmins) {
@@ -189,9 +200,11 @@ export class AppConfig {
   static async getFilesRootPath(): Promise<string> {
     await this.loadConfig();
 
-    const filesRootPath = `${Deno.cwd()}/${this.config.files.rootPath}`;
-
-    return filesRootPath;
+    if (isAbsolute(this.config.files.rootPath)) {
+      return this.config.files.rootPath;
+    } else {
+      return join(Deno.cwd(), this.config.files.rootPath);
+    }
   }
 
   static async getEmailConfig(): Promise<Config['email']> {

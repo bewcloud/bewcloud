@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/posix/normalize */
+import{assertArg as n}from"../_common/normalize.mjs";import{normalizeString as f}from"../_common/normalize_string.mjs";import{isPosixPathSeparator as i}from"./_util.mjs";import{fromFileUrl as m}from"./from-file-url.mjs";function g(r){r instanceof URL&&(r=m(r)),n(r);let o=i(r.charCodeAt(0)),e=i(r.charCodeAt(r.length-1));return r=f(r,!o,"/",i),r.length===0&&!o&&(r="."),r.length>0&&e&&(r+="/"),o?`/${r}`:r}export{g as normalize};
+//normalize.mjs.map

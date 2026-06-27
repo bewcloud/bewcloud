@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/windows/extname */
+import{CHAR_COLON as c,CHAR_DOT as m}from"../_common/constants.mjs";import{assertPath as a}from"../_common/assert_path.mjs";import{isPathSeparator as d,isWindowsDeviceRoot as C}from"./_util.mjs";import{fromFileUrl as u}from"./from-file-url.mjs";function P(e){e instanceof URL&&(e=u(e)),a(e);let l=0,t=-1,f=0,o=-1,s=!0,i=0;e.length>=2&&e.charCodeAt(1)===c&&C(e.charCodeAt(0))&&(l=f=2);for(let r=e.length-1;r>=l;--r){let n=e.charCodeAt(r);if(d(n)){if(!s){f=r+1;break}continue}o===-1&&(s=!1,o=r+1),n===m?t===-1?t=r:i!==1&&(i=1):t!==-1&&(i=-1)}return t===-1||o===-1||i===0||i===1&&t===o-1&&t===f+1?"":e.slice(t,o)}export{P as extname};
+//extname.mjs.map

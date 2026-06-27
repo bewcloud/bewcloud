@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
-import { RequestBody, ResponseBody } from '/routes/api/files/get-share.tsx';
+import { RequestBody, ResponseBody } from '/pages/api/files/get-share.ts';
 import { FileShare } from '/lib/types.ts';
 
 interface ManageShareModalProps {
@@ -62,7 +62,7 @@ export default function ManageShareModal(
   return (
     <>
       <section
-        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900 bg-opacity-60`}
+        class={`fixed ${isOpen ? 'block' : 'hidden'} z-40 w-screen h-screen inset-0 bg-gray-900/60`}
       >
       </section>
 

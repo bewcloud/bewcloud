@@ -2,16 +2,15 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { RequestBody, ResponseBody } from '/routes/api/files/search.tsx';
-interface SearchFilesProps {}
+import { RequestBody, ResponseBody } from '/pages/api/files/search.ts';
 
-export default function SearchFiles({}: SearchFilesProps) {
+export default function SearchFiles() {
   const isSearching = useSignal<boolean>(false);
   const areResultsVisible = useSignal<boolean>(false);
   const matchingDirectories = useSignal<Directory[]>([]);
   const matchingFiles = useSignal<DirectoryFile[]>([]);
-  const searchTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
-  const closeTimeout = useSignal<ReturnType<typeof setTimeout>>(0);
+  const searchTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const closeTimeout = useSignal<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const dateFormatOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
@@ -107,12 +106,12 @@ export default function SearchFiles({}: SearchFilesProps) {
         onFocus={() => onFocus()}
         onBlur={() => onBlur()}
       />
-      {isSearching.value ? <img src='/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
+      {isSearching.value ? <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} /> : null}
       {areResultsVisible.value
         ? (
           <section class='relative inline-block text-left ml-2 text-sm'>
             <section
-              class={`absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-slate-600 shadow-lg ring-1 ring-black ring-opacity-15 focus:outline-none overflow-y-scroll max-h-[80%] min-h-56`}
+              class={`absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-slate-600 shadow-lg ring-1 ring-black/15 focus:outline-none overflow-y-scroll max-h-[80%] min-h-56`}
               role='menu'
               aria-orientation='vertical'
               aria-labelledby='view-button'

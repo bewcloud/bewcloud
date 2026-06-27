@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.4/windows/join */
+import{assertPath as c}from"../_common/assert_path.mjs";import{isPathSeparator as n}from"./_util.mjs";import{normalize as m}from"./normalize.mjs";import{fromFileUrl as d}from"./from-file-url.mjs";function g(o,...e){if(o instanceof URL&&(o=d(o)),e=o?[o,...e]:e,e.forEach(i=>c(i)),e=e.filter(i=>i.length>0),e.length===0)return".";let l=!0,r=0,t=e[0];if(n(t.charCodeAt(0))){++r;let i=t.length;i>1&&n(t.charCodeAt(1))&&(++r,i>2&&(n(t.charCodeAt(2))?++r:l=!1))}let f=e.join("\\");if(l){for(;r<f.length&&n(f.charCodeAt(r));++r);r>=2&&(f=`\\${f.slice(r)}`)}return m(f)}export{g as join};
+//join.mjs.map

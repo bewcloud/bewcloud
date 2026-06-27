@@ -1,5 +1,5 @@
 import { MultiFactorAuthMethodType } from '/lib/types.ts';
-import PasswordlessPasskeyLogin from '/islands/auth/PasswordlessPasskeyLogin.tsx';
+import PasswordlessPasskeyLogin from '/components/auth/PasswordlessPasskeyLogin.tsx';
 
 interface MultiFactorAuthVerifyFormProps {
   email: string;
@@ -16,7 +16,7 @@ export default function MultiFactorAuthVerifyForm(
   const hasEmail = availableMethods.includes('email');
 
   return (
-    <section class='max-w-md w-full mb-12'>
+    <section class='max-w-md w-full mb-12 mx-auto'>
       <section class='mb-6'>
         <h2 class='mt-6 text-center text-3xl font-extrabold text-white'>
           Multi-Factor Authentication

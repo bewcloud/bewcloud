@@ -4,7 +4,7 @@ import { FeedModel } from '/lib/models/news.ts';
 import { AppConfig } from '/lib/config.ts';
 import { NewsFeed } from '/lib/types.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import Loading from '/components/Loading.ts';
 
 const titlePrefix = 'News Feeds';
@@ -50,7 +50,7 @@ function defaultHtmlContent({ userFeeds }: { userFeeds: NewsFeed[] }) {
 
     if (feedsElement) {
       const feedsApp = h(Feeds, {
-        initialFeeds: ${JSON.stringify(userFeeds || [])},
+        initialFeeds: ${serializeForInlineScript(userFeeds || [])},
       });
 
       render(feedsApp, feedsElement);

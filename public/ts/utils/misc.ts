@@ -52,6 +52,10 @@ export function escapeXml(unsafe: string) {
   return escapeHtml(unsafe).replaceAll('\r', '&#13;');
 }
 
+export function serializeForInlineScript(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 export function generateRandomCode(length = 6) {
   const getRandomDigit = () => Math.floor(Math.random() * (10)); // 0-9
 

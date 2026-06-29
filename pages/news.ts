@@ -3,7 +3,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { AppConfig } from '/lib/config.ts';
 import { ArticleModel } from '/lib/models/news.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { NewsFeedArticle } from '/lib/types.ts';
 import Loading from '/components/Loading.ts';
 
@@ -50,7 +50,7 @@ function defaultHtmlContent({ userArticles }: { userArticles: NewsFeedArticle[] 
 
     if (articlesElement) {
       const articlesApp = h(Articles, {
-        initialArticles: ${JSON.stringify(userArticles || [])},
+        initialArticles: ${serializeForInlineScript(userArticles || [])},
       });
 
       render(articlesApp, articlesElement);

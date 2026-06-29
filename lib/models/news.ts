@@ -211,7 +211,7 @@ export class ArticleModel {
       ],
     );
 
-    return articles;
+    return sanitizeArticles(articles);
   }
 
   static async listUnread(userId: string) {
@@ -222,7 +222,7 @@ export class ArticleModel {
       ],
     );
 
-    return articles;
+    return sanitizeArticles(articles);
   }
 
   static async listByFeedId(feedId: string) {
@@ -233,7 +233,7 @@ export class ArticleModel {
       ],
     );
 
-    return articles;
+    return sanitizeArticles(articles);
   }
 
   static async get(id: string, userId: string) {
@@ -304,6 +304,15 @@ export class ArticleModel {
       ],
     );
   }
+}
+
+function sanitizeArticles(articles: NewsFeedArticle[]): Promise<NewsFeedArticle[]> {
+  return Promise.all(
+    articles.map(async (article) => ({
+      ...article,
+      article_summary: await parseTextFromHtml(article.article_summary),
+    })),
+  );
 }
 
 async function fetchNewsArticles(newsFeed: NewsFeed): Promise<Feed['entries'] | JsonFeed['items']> {

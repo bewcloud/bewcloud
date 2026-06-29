@@ -221,6 +221,8 @@ export async function getUrlInfo(url: string): Promise<{ title: string; htmlBody
   return { title, htmlBody, textBody };
 }
 
+const DANGEROUS_HTML_SELECTORS = 'script, style, iframe, object, embed, link[rel="import"]';
+
 export async function parseTextFromHtml(html: string): Promise<string> {
   if (!html || !html.trim()) {
     return '';
@@ -229,6 +231,8 @@ export async function parseTextFromHtml(html: string): Promise<string> {
   await initParser();
 
   const document = new DOMParser().parseFromString(html, 'text/html');
+
+  document?.querySelectorAll(DANGEROUS_HTML_SELECTORS).forEach((element) => element.remove());
 
   // Extract text from body to avoid any artifacts from the document wrapper
   const text = (document?.querySelector('body')?.textContent || document?.textContent || '')

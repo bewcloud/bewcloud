@@ -10,10 +10,20 @@ import {
   generateHash,
   generateRandomCode,
   isRunningLocally,
+  serializeForInlineScript,
   splitArrayInChunks,
   validateEmail,
   validateUrl,
 } from './misc.ts';
+
+Deno.test('that serializeForInlineScript escapes angle brackets', () => {
+  const payload = { summary: 'foo</script><script>alert(1)</script>' };
+  const serialized = serializeForInlineScript(payload);
+
+  assertEquals(serialized.includes('</script>'), false);
+  assertEquals(serialized.includes('\\u003c'), true);
+  assertEquals(JSON.parse(serialized.replace(/\\u003c/g, '<')), payload);
+});
 
 Deno.test('that escapeHtml works', () => {
   const tests: { input: string; expected: string }[] = [

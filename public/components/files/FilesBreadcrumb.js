@@ -2,7 +2,9 @@ export default function FilesBreadcrumb({
   path,
   isShowingNotes,
   isShowingPhotos,
-  fileShareId
+  fileShareId,
+  sortBy = 'name',
+  sortOrder = 'asc'
 }) {
   let routePath = fileShareId ? `file-share/${fileShareId}` : 'files';
   let rootPath = '/';
@@ -22,14 +24,17 @@ export default function FilesBreadcrumb({
     }, "All ", itemPluralLabel);
   }
   const pathParts = path.slice(1, -1).split('/');
+  const commonSearchParams = new URLSearchParams();
+  commonSearchParams.set('sortBy', sortBy);
+  commonSearchParams.set('sortOrder', sortOrder);
   return h("h3", {
     class: "text-base font-semibold text-white whitespace-nowrap mr-2"
   }, !isShowingNotes && !isShowingPhotos ? h("a", {
-    href: `/${routePath}?path=/`
+    href: `/${routePath}?path=/&${commonSearchParams.toString()}`
   }, "All files") : null, isShowingNotes ? h("a", {
-    href: `/notes?path=/Notes/`
+    href: `/notes?path=/Notes/&${commonSearchParams.toString()}`
   }, "All notes") : null, isShowingPhotos ? h("a", {
-    href: `/photos?path=/Photos/`
+    href: `/photos?path=/Photos/&${commonSearchParams.toString()}`
   }, "All photos") : null, pathParts.map((part, index) => {
     if (index === 0 && (isShowingNotes || isShowingPhotos)) {
       return null;
@@ -48,7 +53,7 @@ export default function FilesBreadcrumb({
     return h(Fragment, null, h("span", {
       class: "ml-2 text-xs"
     }, "/"), h("a", {
-      href: `/${routePath}?path=/${encodeURIComponent(fullPathForPart.join('/'))}/`,
+      href: `/${routePath}?path=/${encodeURIComponent(fullPathForPart.join('/'))}/&${commonSearchParams.toString()}`,
       class: "ml-2"
     }, decodeURIComponent(part)));
   }));

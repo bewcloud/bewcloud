@@ -62,7 +62,6 @@ export class DirectoryModel {
     }
 
     directories.sort(sortDirectoriesByName);
-
     return directories;
   }
 
@@ -208,7 +207,6 @@ export class FileModel {
     }
 
     files.sort(sortFilesByName);
-
     return files;
   }
 
@@ -640,7 +638,11 @@ export async function ensureFileSharePathIsValidAndSecurelyAccessible(
 
   const resolvedFullPath = `${resolve(fullPath)}/`;
 
-  if (!resolvedFullPath.startsWith(fileShareRootPath)) {
+  // Normalize path separators for consistent comparison on Windows
+  const normalizedFileShareRootPath = fileShareRootPath.replace(/\\/g, '/');
+  const normalizedResolvedFullPath = resolvedFullPath.replace(/\\/g, '/');
+
+  if (!normalizedResolvedFullPath.startsWith(normalizedFileShareRootPath)) {
     throw new Error('Invalid file path');
   }
 }

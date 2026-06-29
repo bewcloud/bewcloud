@@ -1,6 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
+import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
 import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
 import { ResponseBody as ChunkUploadResponseBody } from '/pages/api/files/upload-chunk.ts';
 import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/pages/api/files/rename.ts';
@@ -51,6 +52,8 @@ interface MainFilesProps {
   isFileSharingAllowed: boolean;
   areDirectoryDownloadsAllowed: boolean;
   fileShareId?: string;
+  initialSortBy?: SortColumn;
+  initialSortOrder?: SortOrder;
 }
 
 export default function MainFiles(
@@ -62,6 +65,8 @@ export default function MainFiles(
     isFileSharingAllowed,
     areDirectoryDownloadsAllowed,
     fileShareId,
+    initialSortBy = 'name',
+    initialSortOrder = 'asc',
   }: MainFilesProps,
 ) {
   const isAdding = useSignal<boolean>(false);
@@ -72,6 +77,8 @@ export default function MainFiles(
   const directories = useSignal<Directory[]>(initialDirectories);
   const files = useSignal<DirectoryFile[]>(initialFiles);
   const path = useSignal<string>(initialPath);
+  const sortBy = useSignal<SortColumn>(initialSortBy);
+  const sortOrder = useSignal<SortOrder>(initialSortOrder);
   const chosenDirectories = useSignal<Pick<Directory, 'parent_path' | 'directory_name'>[]>([]);
   const chosenFiles = useSignal<Pick<DirectoryFile, 'parent_path' | 'file_name'>[]>([]);
   const isAnyItemChosen = chosenDirectories.value.length > 0 || chosenFiles.value.length > 0;
@@ -87,6 +94,35 @@ export default function MainFiles(
   >(null);
   const createShareModal = useSignal<{ isOpen: boolean; filePath: string; password?: string } | null>(null);
   const manageShareModal = useSignal<{ isOpen: boolean; fileShareId: string } | null>(null);
+
+  function onClickSort(column: SortColumn) {
+    let newSortOrder: SortOrder = 'asc';
+
+    if (sortBy.value === column) {
+      newSortOrder = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    } else {
+      newSortOrder = 'asc';
+    }
+
+    sortBy.value = column;
+    sortOrder.value = newSortOrder;
+
+    const sortOptions = { sortBy: column, sortOrder: newSortOrder };
+    directories.value = sortDirectories(directories.value, sortOptions);
+    files.value = sortFiles(files.value, sortOptions);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('sortBy', column);
+    url.searchParams.set('sortOrder', newSortOrder);
+    window.history.replaceState({}, '', url.toString());
+
+    if (!fileShareId) {
+      fetch('/api/files/update-sort', {
+        method: 'POST',
+        body: JSON.stringify({ sortBy: column, sortOrder: newSortOrder }),
+      }).catch(console.error);
+    }
+  }
 
   // 10 MB chunks keep each request faster.
   const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
@@ -838,7 +874,12 @@ export default function MainFiles(
         </section>
 
         <section class='flex items-center justify-end'>
-          <FilesBreadcrumb path={path.value} fileShareId={fileShareId} />
+          <FilesBreadcrumb
+            path={path.value}
+            fileShareId={fileShareId}
+            sortBy={sortBy.value}
+            sortOrder={sortOrder.value}
+          />
 
           {!fileShareId
             ? (
@@ -920,6 +961,9 @@ export default function MainFiles(
           onClickOpenManageShare={isFileSharingAllowed ? onClickOpenManageShare : undefined}
           onClickDownloadDirectory={areDirectoryDownloadsAllowed ? onClickDownloadDirectory : undefined}
           fileShareId={fileShareId}
+          sortBy={sortBy.value}
+          sortOrder={sortOrder.value}
+          onClickSort={onClickSort}
         />
 
         <span

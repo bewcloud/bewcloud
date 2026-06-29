@@ -366,6 +366,7 @@ const routes: Routes = {
   apiFilesRename: createPageRouteHandler('api/files/rename.ts', '/api/files/rename'),
   apiFilesSearch: createPageRouteHandler('api/files/search.ts', '/api/files/search'),
   apiFilesUpdateShare: createPageRouteHandler('api/files/update-share.ts', '/api/files/update-share'),
+  apiFilesUpdateSort: createPageRouteHandler('api/files/update-sort.ts', '/api/files/update-sort'),
   apiFilesUpload: createPageRouteHandler('api/files/upload.ts', '/api/files/upload'),
   apiFilesUploadChunk: createPageRouteHandler('api/files/upload-chunk.ts', '/api/files/upload-chunk'),
 

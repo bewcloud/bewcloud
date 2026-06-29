@@ -18,7 +18,10 @@ export default function ListFiles({
   onClickDownloadDirectory,
   isShowingNotes,
   isShowingPhotos,
-  fileShareId
+  fileShareId,
+  sortBy = 'name',
+  sortOrder = 'asc',
+  onClickSort
 }) {
   const dateFormatOptions = {
     year: 'numeric',
@@ -29,6 +32,47 @@ export default function ListFiles({
     minute: '2-digit'
   };
   const dateFormat = new Intl.DateTimeFormat('en-GB', dateFormatOptions);
+  function renderSortIcon(column) {
+    const isActive = sortBy === column;
+    if (isActive) {
+      return h("img", {
+        src: sortOrder === 'asc' ? '/public/images/sort-up.svg' : '/public/images/sort-down.svg',
+        class: "white drop-shadow-md w-4 h-4",
+        width: 16,
+        height: 16,
+        alt: sortOrder === 'asc' ? 'Arrow pointing up' : 'Arrow pointing down',
+        title: sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'
+      });
+    } else {
+      return h("img", {
+        src: "/public/images/sort-none.svg",
+        class: "white drop-shadow-md w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity",
+        width: 16,
+        height: 16,
+        alt: "Two arrows side by side, one pointing up, the other pointing down",
+        title: `Sort by ${column} ascending`
+      });
+    }
+  }
+  function renderSortableHeader(label, column, extraClassName) {
+    const isActive = sortBy === column;
+    if (!onClickSort) {
+      return h("th", {
+        scope: "col",
+        class: `px-6 py-4 font-medium text-white ${extraClassName || ''}`
+      }, label);
+    }
+    return h("th", {
+      scope: "col",
+      class: `px-6 py-4 font-medium text-white ${extraClassName || ''}`
+    }, h("button", {
+      class: `group flex items-center justify-between w-full text-left hover:text-blue-300 ${isActive ? 'text-blue-400' : ''}`,
+      onClick: () => onClickSort(column),
+      type: "button"
+    }, h("span", null, label), h("span", {
+      class: "ml-1"
+    }, renderSortIcon(column))));
+  }
   let routePath = fileShareId ? `file-share/${fileShareId}` : 'files';
   let itemSingleLabel = 'file';
   let itemPluralLabel = 'files';
@@ -67,16 +111,7 @@ export default function ListFiles({
     type: "checkbox",
     onClick: () => chooseAllItems(),
     checked: isAnyItemChosen
-  })), h("th", {
-    scope: "col",
-    class: "px-6 py-4 font-medium text-white"
-  }, "Name"), h("th", {
-    scope: "col",
-    class: "px-6 py-4 font-medium text-white w-64"
-  }, "Last update"), isShowingNotes || isShowingPhotos ? null : h("th", {
-    scope: "col",
-    class: "px-6 py-4 font-medium text-white w-32"
-  }, "Size"), isShowingPhotos || fileShareId ? null : h("th", {
+  })), renderSortableHeader('Name', 'name'), renderSortableHeader('Last update', 'updated_at', 'w-64'), isShowingNotes || isShowingPhotos ? null : renderSortableHeader('Size', 'size_in_bytes', 'w-32'), isShowingPhotos || fileShareId ? null : h("th", {
     scope: "col",
     class: "px-6 py-4 font-medium text-white w-24"
   }))), h("tbody", {
@@ -95,7 +130,7 @@ export default function ListFiles({
     })), h("td", {
       class: "flex gap-3 px-6 py-4"
     }, h("a", {
-      href: `/${routePath}?path=${encodeURIComponent(fullPath)}`,
+      href: `/${routePath}?path=${encodeURIComponent(fullPath)}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
       class: "flex items-center font-normal text-white"
     }, h("img", {
       src: `/public/images/${fullPath === TRASH_PATH ? 'trash.svg' : 'directory.svg'}`,

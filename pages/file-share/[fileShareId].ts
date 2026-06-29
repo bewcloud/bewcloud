@@ -12,6 +12,7 @@ import { AppConfig } from '/lib/config.ts';
 import { html } from '/public/ts/utils/misc.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import Loading from '/components/Loading.ts';
+import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
 
 interface Data {
   shareDirectories: Directory[];
@@ -47,6 +48,17 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
   }
 
   const searchParams = new URL(request.url).searchParams;
+
+  const validSortColumns = ['name', 'updated_at', 'size_in_bytes'];
+  const validSortOrders = ['asc', 'desc'];
+
+  const urlSortBy = searchParams.get('sortBy');
+  const urlSortOrder = searchParams.get('sortOrder');
+
+  const initialSortBy = ((urlSortBy && validSortColumns.includes(urlSortBy)) ? urlSortBy : 'name') as SortColumn;
+
+  const initialSortOrder =
+    ((urlSortOrder && validSortOrders.includes(urlSortOrder)) ? urlSortOrder : 'asc') as SortOrder;
 
   let currentPath = searchParams.get('path') || '/';
 
@@ -116,6 +128,10 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
     parent_path: file.parent_path.replace(fileSharePathDirectory, '/'),
   }));
 
+  const sortOptions = { sortBy: initialSortBy, sortOrder: initialSortOrder };
+  shareDirectories = sortDirectories(shareDirectories, sortOptions);
+  shareFiles = sortFiles(shareFiles, sortOptions);
+
   const publicCurrentPath = currentPath.replace(fileShare.file_path, '/');
 
   const htmlContent = defaultHtmlContent({
@@ -124,6 +140,8 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
     currentPath: publicCurrentPath,
     baseUrl,
     fileShareId,
+    initialSortBy,
+    initialSortOrder,
   });
 
   return basicLayoutResponse(htmlContent, {
@@ -136,13 +154,17 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
   });
 }
 
-function defaultHtmlContent({ shareDirectories, shareFiles, currentPath, baseUrl, fileShareId }: {
-  shareDirectories: Directory[];
-  shareFiles: DirectoryFile[];
-  currentPath: string;
-  baseUrl: string;
-  fileShareId: string;
-}) {
+function defaultHtmlContent(
+  { shareDirectories, shareFiles, currentPath, baseUrl, fileShareId, initialSortBy, initialSortOrder }: {
+    shareDirectories: Directory[];
+    shareFiles: DirectoryFile[];
+    currentPath: string;
+    baseUrl: string;
+    fileShareId: string;
+    initialSortBy: SortColumn;
+    initialSortOrder: SortOrder;
+  },
+) {
   return html`
     <main id="main">
       <section id="main-files">
@@ -170,6 +192,8 @@ function defaultHtmlContent({ shareDirectories, shareFiles, currentPath, baseUrl
         isFileSharingAllowed: true,
         areDirectoryDownloadsAllowed: false,
         fileShareId: ${JSON.stringify(fileShareId)},
+        initialSortBy: ${JSON.stringify(initialSortBy)},
+        initialSortOrder: ${JSON.stringify(initialSortOrder)},
       });
 
       render(mainFilesApp, mainFilesElement);

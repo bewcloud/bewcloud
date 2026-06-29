@@ -6,6 +6,7 @@ import { AppConfig } from '/lib/config.ts';
 import { html } from '/public/ts/utils/misc.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import Loading from '/components/Loading.ts';
+import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
 
 async function get({ request, user, match, session, isRunningLocally }: RequestHandlerParams) {
   const baseUrl = (await AppConfig.getConfig()).auth.baseUrl;
@@ -35,21 +36,27 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
   const urlSortBy = searchParams.get('sortBy');
   const urlSortOrder = searchParams.get('sortOrder');
 
-  const initialSortBy = (urlSortBy && validSortColumns.includes(urlSortBy))
-    ? urlSortBy
-    : (savedSorting?.sort_by && validSortColumns.includes(savedSorting.sort_by))
-    ? savedSorting.sort_by
-    : 'name';
+  const initialSortBy =
+    ((urlSortBy && validSortColumns.includes(urlSortBy))
+      ? urlSortBy
+      : (savedSorting?.sort_by && validSortColumns.includes(savedSorting.sort_by))
+      ? savedSorting.sort_by
+      : 'name') as SortColumn;
 
-  const initialSortOrder = (urlSortOrder && validSortOrders.includes(urlSortOrder))
-    ? urlSortOrder
-    : (savedSorting?.sort_order && validSortOrders.includes(savedSorting.sort_order))
-    ? savedSorting.sort_order
-    : 'asc';
+  const initialSortOrder =
+    ((urlSortOrder && validSortOrders.includes(urlSortOrder))
+      ? urlSortOrder
+      : (savedSorting?.sort_order && validSortOrders.includes(savedSorting.sort_order))
+      ? savedSorting.sort_order
+      : 'asc') as SortOrder;
 
-  const userDirectories = await DirectoryModel.list(user!.id, currentPath);
+  let userDirectories = await DirectoryModel.list(user!.id, currentPath);
 
-  const userFiles = await FileModel.list(user!.id, currentPath);
+  let userFiles = await FileModel.list(user!.id, currentPath);
+
+  const sortOptions = { sortBy: initialSortBy, sortOrder: initialSortOrder };
+  userDirectories = sortDirectories(userDirectories, sortOptions);
+  userFiles = sortFiles(userFiles, sortOptions);
 
   const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
   const areDirectoryDownloadsAllowed = await AppConfig.areDirectoryDownloadsAllowed();

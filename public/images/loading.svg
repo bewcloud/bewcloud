@@ -15,6 +15,7 @@
       repeatCount="indefinite"
       keyTimes="0;1"
       values="0 50 51;360 50 51"
-    ></animateTransform>
+    >
+    </animateTransform>
   </path>
 </svg>

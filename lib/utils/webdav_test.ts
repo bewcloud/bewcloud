@@ -1,21 +1,31 @@
 import { assertEquals } from '@std/assert';
 import { parse, stringify } from '@libs/xml';
 
-import { addDavPrefixToKeys, getProperDestinationPath, getPropertyNames } from './webdav.ts';
+import {
+  addDavPrefixToKeys,
+  getProperDestinationPath,
+  getPropertyNames,
+  mapFileSystemErrorToStatus,
+} from './webdav.ts';
 
 Deno.test('that getProperDestinationPath works', () => {
   const tests: { input: string; expected?: string }[] = [
     {
       input: `http://127.0.0.1/dav/12345-abcde-67890`,
-      expected: 'dav/12345-abcde-67890',
+      expected: '12345-abcde-67890',
     },
     {
       input: `http://127.0.0.1/dav/spaced-%20uid`,
-      expected: 'dav/spaced- uid',
+      expected: 'spaced- uid',
     },
     {
       input: `http://127.0.0.1/dav/something-deeper/spaced-%C3%A7uid`,
-      expected: 'dav/something-deeper/spaced-çuid',
+      expected: 'something-deeper/spaced-çuid',
+    },
+    {
+      // Regression test for #155: the Destination header's /dav/ prefix must also be stripped.
+      input: `https://storage.yukis.eu/dav/Choraufnahmen/Noten2`,
+      expected: 'Choraufnahmen/Noten2',
     },
   ];
 
@@ -24,6 +34,23 @@ Deno.test('that getProperDestinationPath works', () => {
     if (test.expected) {
       assertEquals(output, test.expected);
     }
+  }
+});
+
+Deno.test('that mapFileSystemErrorToStatus works', () => {
+  const tests: { input: unknown; expected: number }[] = [
+    { input: new Deno.errors.PermissionDenied('denied'), expected: 403 },
+    { input: new Deno.errors.NotFound('missing'), expected: 404 },
+    { input: new Deno.errors.AlreadyExists('exists'), expected: 409 },
+    { input: new Deno.errors.NotADirectory('not a dir'), expected: 409 },
+    { input: new Deno.errors.FilesystemLoop('loop'), expected: 508 },
+    { input: Object.assign(new Error('no space'), { code: 'ENOSPC' }), expected: 507 },
+    { input: new Error('unexpected'), expected: 500 },
+  ];
+
+  for (const test of tests) {
+    const output = mapFileSystemErrorToStatus(test.input);
+    assertEquals(output, test.expected);
   }
 });
 

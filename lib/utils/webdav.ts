@@ -2,7 +2,63 @@ import { join } from '@std/path';
 import { lookup } from 'mrmime';
 
 export function getProperDestinationPath(url: string) {
-  return decodeURIComponent(new URL(url).pathname.slice(1));
+  const decodedPathname = decodeURIComponent(new URL(url).pathname);
+  return decodedPathname.replace(/^\/dav\//, '');
+}
+
+// Pulls lock tokens out of an `If` header (RFC 4918 §10.4), ignoring its etag/resource-tag parts.
+export function getLockTokensFromIfHeader(ifHeader: string | null): string[] {
+  if (!ifHeader) {
+    return [];
+  }
+
+  return [...ifHeader.matchAll(/<([^>]+)>/g)].map((match) => match[1]);
+}
+
+const webDavStatusTexts: Record<number, string> = {
+  403: 'Forbidden',
+  404: 'Not Found',
+  409: 'Conflict',
+  412: 'Precondition Failed',
+  500: 'Internal Server Error',
+  507: 'Insufficient Storage',
+  508: 'Loop Detected',
+};
+
+export function mapFileSystemErrorToStatus(error: unknown): number {
+  if (error instanceof Deno.errors.PermissionDenied) {
+    return 403;
+  }
+
+  if (error instanceof Deno.errors.AlreadyExists) {
+    return 409;
+  }
+
+  if (error instanceof Deno.errors.NotADirectory) {
+    return 409;
+  }
+
+  if (error instanceof Deno.errors.FilesystemLoop) {
+    return 508;
+  }
+
+  if (error instanceof Deno.errors.NotFound) {
+    return 404;
+  }
+
+  if (error instanceof Error && (error as { code?: string }).code === 'ENOSPC') {
+    return 507;
+  }
+
+  return 500;
+}
+
+export function handleWebDavError(error: unknown, statusOverride?: number): Response {
+  console.error(error);
+
+  const status = statusOverride ?? mapFileSystemErrorToStatus(error);
+
+  return new Response(webDavStatusTexts[status] || 'Internal Server Error', { status });
 }
 
 export function addDavPrefixToKeys(object: Record<string, any>, prefix = 'D:'): Record<string, any> {

@@ -1,14 +1,16 @@
 import page, { RequestHandlerParams } from '/lib/page.ts';
-import { join } from '@std/path';
+import { dirname, join } from '@std/path';
 import { parse, stringify } from '@libs/xml';
 
 import { AppConfig } from '/lib/config.ts';
-import Locker from '/lib/interfaces/locker.ts';
+import { acquireLock, findBlockingLock, refreshLock, releaseLock } from '/lib/interfaces/webdav-locks.ts';
 import {
   addDavPrefixToKeys,
   buildPropFindResponse,
+  getLockTokensFromIfHeader,
   getProperDestinationPath,
   getPropertyNames,
+  handleWebDavError,
 } from '/lib/utils/webdav.ts';
 import { ensureUserPathIsValidAndSecurelyAccessible, FileModel } from '/lib/models/files.ts';
 
@@ -43,7 +45,7 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
     const headers = new Headers({
       DAV: '1, 2',
       'Ms-Author-Via': 'DAV',
-      Allow: 'OPTIONS, DELETE, PROPFIND',
+      Allow: 'OPTIONS, GET, HEAD, PUT, DELETE, COPY, MOVE, MKCOL, PROPFIND, LOCK, UNLOCK',
       'Content-Length': '0',
       Date: new Date().toUTCString(),
     });
@@ -68,24 +70,26 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
         },
       });
     } catch (error) {
-      console.error(error);
+      return handleWebDavError(error);
     }
-
-    return new Response('Not Found', { status: 404 });
   }
 
   if (request.method === 'DELETE') {
     try {
       await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 
+      const presentedTokens = getLockTokensFromIfHeader(request.headers.get('if'));
+
+      if (findBlockingLock(userId, filePath, presentedTokens)) {
+        return new Response('Locked', { status: 423 });
+      }
+
       await Deno.remove(join(rootPath, filePath));
 
       return new Response(null, { status: 204 });
     } catch (error) {
-      console.error(error);
+      return handleWebDavError(error);
     }
-
-    return new Response('Not Found', { status: 404 });
   }
 
   if (request.method === 'PUT') {
@@ -95,6 +99,12 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
 
     try {
       await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
+
+      const presentedTokens = getLockTokensFromIfHeader(request.headers.get('if'));
+
+      if (findBlockingLock(userId, filePath, presentedTokens)) {
+        return new Response('Locked', { status: 423 });
+      }
 
       const newFile = await Deno.open(join(rootPath, filePath), {
         create: true,
@@ -106,114 +116,197 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
 
       return new Response('Created', { status: 201 });
     } catch (error) {
-      console.error(error);
+      return handleWebDavError(error);
     }
-
-    return new Response('Not Found', { status: 404 });
   }
 
-  if (request.method === 'COPY') {
+  if (request.method === 'COPY' || request.method === 'MOVE') {
     const newFilePath = request.headers.get('destination');
-    if (newFilePath) {
-      try {
-        await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
-        await ensureUserPathIsValidAndSecurelyAccessible(userId, getProperDestinationPath(newFilePath));
 
-        await Deno.copyFile(join(rootPath, filePath), join(rootPath, getProperDestinationPath(newFilePath)));
-        return new Response('Created', { status: 201 });
-      } catch (error) {
-        console.error(error);
-      }
+    if (!newFilePath) {
+      return new Response('Bad Request', { status: 400 });
     }
 
-    return new Response('Bad Request', { status: 400 });
-  }
+    const destinationPath = getProperDestinationPath(newFilePath);
 
-  if (request.method === 'MOVE') {
-    const newFilePath = request.headers.get('destination');
-    if (newFilePath) {
-      try {
-        await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
-        await ensureUserPathIsValidAndSecurelyAccessible(userId, getProperDestinationPath(newFilePath));
+    try {
+      await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
+      await ensureUserPathIsValidAndSecurelyAccessible(userId, destinationPath);
 
-        await Deno.rename(join(rootPath, filePath), join(rootPath, getProperDestinationPath(newFilePath)));
-        return new Response('Created', { status: 201 });
-      } catch (error) {
-        console.error(error);
+      const presentedTokens = getLockTokensFromIfHeader(request.headers.get('if'));
+
+      if (request.method === 'MOVE' && findBlockingLock(userId, filePath, presentedTokens)) {
+        return new Response('Locked', { status: 423 });
       }
-    }
 
-    return new Response('Not Found', { status: 404 });
+      if (findBlockingLock(userId, destinationPath, presentedTokens)) {
+        return new Response('Locked', { status: 423 });
+      }
+
+      const sourceAbsolutePath = join(rootPath, filePath);
+      const destinationAbsolutePath = join(rootPath, destinationPath);
+
+      try {
+        await Deno.stat(sourceAbsolutePath);
+      } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+          return handleWebDavError(error, 404);
+        }
+        throw error;
+      }
+
+      try {
+        await Deno.stat(dirname(destinationAbsolutePath));
+      } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+          return handleWebDavError(error, 409);
+        }
+        throw error;
+      }
+
+      const isOverwriteDisallowed = request.headers.get('overwrite') === 'F';
+
+      let destinationExists = true;
+      try {
+        await Deno.stat(destinationAbsolutePath);
+      } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+          destinationExists = false;
+        } else {
+          throw error;
+        }
+      }
+
+      if (destinationExists && isOverwriteDisallowed) {
+        return new Response('Precondition Failed', { status: 412 });
+      }
+
+      if (request.method === 'COPY') {
+        await Deno.copyFile(sourceAbsolutePath, destinationAbsolutePath);
+      } else {
+        await Deno.rename(sourceAbsolutePath, destinationAbsolutePath);
+      }
+
+      return new Response(destinationExists ? null : 'Created', {
+        status: destinationExists ? 204 : 201,
+      });
+    } catch (error) {
+      return handleWebDavError(error);
+    }
   }
 
   if (request.method === 'MKCOL') {
     try {
       await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
-      await Deno.mkdir(join(rootPath, filePath), { recursive: true });
+
+      const presentedTokens = getLockTokensFromIfHeader(request.headers.get('if'));
+
+      if (findBlockingLock(userId, filePath, presentedTokens)) {
+        return new Response('Locked', { status: 423 });
+      }
+
+      await Deno.mkdir(join(rootPath, filePath));
       return new Response('Created', { status: 201 });
     } catch (error) {
-      console.error(error);
+      const statusOverride = error instanceof Deno.errors.NotFound ? 409 : undefined;
+      return handleWebDavError(error, statusOverride);
     }
-
-    return new Response('Not Found', { status: 404 });
   }
 
   if (request.method === 'LOCK') {
-    const depthString = request.headers.get('depth');
-    const depth = depthString ? parseInt(depthString, 10) : null;
-    const xml = await request.clone().text();
-    const parsedXml = parse(xml) as Record<string, any>;
+    try {
+      await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 
-    const lockToken = crypto.randomUUID();
-    const lock = new Locker(`dav:${lockToken}`);
+      const depthHeader = request.headers.get('depth');
 
-    await lock.acquire();
+      if (depthHeader && depthHeader !== '0' && depthHeader !== 'infinity') {
+        return new Response('Bad Request', { status: 400 });
+      }
 
-    const responseXml: Record<string, any> = {
-      xml: {
-        '@version': '1.0',
-        '@encoding': 'UTF-8',
-      },
-      prop: {
-        '@xmlns:D': 'DAV:',
-        lockdiscovery: {
-          activelock: {
-            locktype: { write: null },
-            lockscope: { exclusive: null },
-            depth,
-            owner: {
-              href: parsedXml['D:lockinfo']?.['D:owner']?.['D:href'],
+      const depth: 'infinity' | '0' = depthHeader === '0' ? '0' : 'infinity';
+      const presentedTokens = getLockTokensFromIfHeader(request.headers.get('if'));
+      const body = await request.clone().text();
+
+      let token: string;
+      let ownerHref: string | undefined;
+
+      if (!body && presentedTokens.length > 0) {
+        const refreshed = refreshLock(userId, filePath, presentedTokens);
+
+        if (!refreshed) {
+          return new Response('Conflict', { status: 409 });
+        }
+
+        token = refreshed.token;
+      } else {
+        await Deno.stat(join(rootPath, filePath));
+
+        const parsedXml = parse(body) as Record<string, any>;
+        ownerHref = parsedXml['D:lockinfo']?.['D:owner']?.['D:href'];
+
+        const acquired = acquireLock(userId, filePath, depth);
+
+        if (!acquired) {
+          return new Response('Locked', { status: 423 });
+        }
+
+        token = acquired.token;
+      }
+
+      const lockRootHref = filePath === '/' ? '/dav/' : `/dav/${filePath}`;
+
+      const responseXml: Record<string, any> = {
+        xml: {
+          '@version': '1.0',
+          '@encoding': 'UTF-8',
+        },
+        prop: {
+          '@xmlns:D': 'DAV:',
+          lockdiscovery: {
+            activelock: {
+              locktype: { write: null },
+              lockscope: { exclusive: null },
+              depth,
+              owner: { href: ownerHref },
+              timeout: 'Second-600',
+              locktoken: { href: token },
+              lockroot: { href: lockRootHref },
             },
-            timeout: 'Second-600',
-            locktoken: { href: lockToken },
-            lockroot: { href: filePath },
           },
         },
-      },
-    };
+      };
 
-    const responseString = stringify(addDavPrefixToKeys(responseXml));
+      const responseString = stringify(addDavPrefixToKeys(responseXml));
 
-    return new Response(responseString, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Lock-Token': `<${lockToken}>`,
-        'Content-Length': responseString.length.toString(),
-        Date: new Date().toUTCString(),
-      },
-    });
+      return new Response(responseString, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'Lock-Token': `<${token}>`,
+          'Content-Length': responseString.length.toString(),
+          Date: new Date().toUTCString(),
+        },
+      });
+    } catch (error) {
+      return handleWebDavError(error);
+    }
   }
 
   if (request.method === 'UNLOCK') {
-    const lockToken = request.headers.get('Lock-Token');
-    const lock = new Locker(`dav:${lockToken}`);
-    lock.release();
+    try {
+      await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 
-    return new Response(null, {
-      status: 204,
-      headers: { Date: new Date().toUTCString() },
-    });
+      const lockTokenHeader = request.headers.get('lock-token') || '';
+      const [, presentedToken] = lockTokenHeader.match(/<([^>]+)>/) || [];
+
+      if (!presentedToken || !releaseLock(userId, filePath, presentedToken)) {
+        return new Response('Conflict', { status: 409 });
+      }
+
+      return new Response(null, { status: 204 });
+    } catch (error) {
+      return handleWebDavError(error);
+    }
   }
 
   if (request.method === 'PROPFIND') {

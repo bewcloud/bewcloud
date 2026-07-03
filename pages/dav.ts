@@ -1,4 +1,5 @@
 import page, { RequestHandlerParams } from '/lib/page.ts';
+import { copy as copyRecursively } from '@std/fs';
 import { dirname, join } from '@std/path';
 import { parse, stringify } from '@libs/xml';
 
@@ -84,7 +85,7 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
         return new Response('Locked', { status: 423 });
       }
 
-      await Deno.remove(join(rootPath, filePath));
+      await Deno.remove(join(rootPath, filePath), { recursive: true });
 
       return new Response(null, { status: 204 });
     } catch (error) {
@@ -146,8 +147,9 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
       const sourceAbsolutePath = join(rootPath, filePath);
       const destinationAbsolutePath = join(rootPath, destinationPath);
 
+      let sourceStat: Deno.FileInfo;
       try {
-        await Deno.stat(sourceAbsolutePath);
+        sourceStat = await Deno.stat(sourceAbsolutePath);
       } catch (error) {
         if (error instanceof Deno.errors.NotFound) {
           return handleWebDavError(error, 404);
@@ -181,8 +183,22 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
         return new Response('Precondition Failed', { status: 412 });
       }
 
+      if (destinationExists) {
+        await Deno.remove(destinationAbsolutePath, { recursive: true });
+      }
+
       if (request.method === 'COPY') {
-        await Deno.copyFile(sourceAbsolutePath, destinationAbsolutePath);
+        if (sourceStat.isDirectory) {
+          const isShallowCopy = request.headers.get('depth') === '0';
+
+          if (isShallowCopy) {
+            await Deno.mkdir(destinationAbsolutePath);
+          } else {
+            await copyRecursively(sourceAbsolutePath, destinationAbsolutePath);
+          }
+        } else {
+          await Deno.copyFile(sourceAbsolutePath, destinationAbsolutePath);
+        }
       } else {
         await Deno.rename(sourceAbsolutePath, destinationAbsolutePath);
       }
@@ -199,6 +215,12 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
     try {
       await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);
 
+      const body = await request.clone().text();
+
+      if (body) {
+        return new Response('Unsupported Media Type', { status: 415 });
+      }
+
       const presentedTokens = getLockTokensFromIfHeader(request.headers.get('if'));
 
       if (findBlockingLock(userId, filePath, presentedTokens)) {
@@ -208,7 +230,11 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
       await Deno.mkdir(join(rootPath, filePath));
       return new Response('Created', { status: 201 });
     } catch (error) {
-      const statusOverride = error instanceof Deno.errors.NotFound ? 409 : undefined;
+      const statusOverride = error instanceof Deno.errors.NotFound
+        ? 409
+        : error instanceof Deno.errors.AlreadyExists
+        ? 405
+        : undefined;
       return handleWebDavError(error, statusOverride);
     }
   }
@@ -228,6 +254,7 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
       const body = await request.clone().text();
 
       let token: string;
+      let lockRootPath = filePath;
       let ownerHref: string | undefined;
 
       if (!body && presentedTokens.length > 0) {
@@ -238,6 +265,7 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
         }
 
         token = refreshed.token;
+        lockRootPath = refreshed.path;
       } else {
         await Deno.stat(join(rootPath, filePath));
 
@@ -253,7 +281,7 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
         token = acquired.token;
       }
 
-      const lockRootHref = filePath === '/' ? '/dav/' : `/dav/${filePath}`;
+      const lockRootHref = lockRootPath === '/' ? '/dav/' : `/dav/${lockRootPath}`;
 
       const responseXml: Record<string, any> = {
         xml: {
@@ -313,16 +341,20 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
     const depthString = request.headers.get('depth');
     const depth = depthString ? parseInt(depthString, 10) : null;
     const xml = await request.clone().text();
-    let properties: string[] = [];
+    let properties: string[] = ['allprop'];
 
-    try {
-      const parsedXml = parse(xml) as Record<string, any>;
+    if (xml) {
+      if (/xmlns:[\w-]+\s*=\s*("|')\1/.test(xml)) {
+        return new Response('Bad Request', { status: 400 });
+      }
 
-      properties = getPropertyNames(parsedXml);
-    } catch (error) {
-      console.error('Error parsing XML: ', error);
+      try {
+        const parsedXml = parse(xml) as Record<string, any>;
 
-      properties = ['allprop'];
+        properties = getPropertyNames(parsedXml);
+      } catch (error) {
+        return handleWebDavError(error, 400);
+      }
     }
 
     await ensureUserPathIsValidAndSecurelyAccessible(userId, filePath);

@@ -79,16 +79,32 @@ export function acquireLock(userId: string, path: string, depth: 'infinity' | '0
   return { token };
 }
 
-export function refreshLock(userId: string, path: string, presentedTokens: string[]): { token: string } | null {
-  const lock = locksByKey.get(buildKey(userId, path));
+// A lock can be refreshed via a member URI too (e.g. a file inside a Depth: infinity-locked collection).
+export function refreshLock(
+  userId: string,
+  path: string,
+  presentedTokens: string[],
+): { token: string; path: string } | null {
+  const exactLock = locksByKey.get(buildKey(userId, path));
 
-  if (!lock || isExpired(lock) || !presentedTokens.includes(lock.token)) {
-    return null;
+  if (exactLock && !isExpired(exactLock) && presentedTokens.includes(exactLock.token)) {
+    exactLock.expiresAt = new Date(Date.now() + LOCK_TIMEOUT_IN_MILLISECONDS);
+    return { token: exactLock.token, path: exactLock.path };
   }
 
-  lock.expiresAt = new Date(Date.now() + LOCK_TIMEOUT_IN_MILLISECONDS);
+  for (const ancestorPath of getAncestorPaths(path).reverse()) {
+    const ancestorLock = locksByKey.get(buildKey(userId, ancestorPath));
 
-  return { token: lock.token };
+    if (
+      ancestorLock && ancestorLock.depth === 'infinity' && !isExpired(ancestorLock) &&
+      presentedTokens.includes(ancestorLock.token)
+    ) {
+      ancestorLock.expiresAt = new Date(Date.now() + LOCK_TIMEOUT_IN_MILLISECONDS);
+      return { token: ancestorLock.token, path: ancestorLock.path };
+    }
+  }
+
+  return null;
 }
 
 export function releaseLock(userId: string, path: string, presentedToken: string): boolean {

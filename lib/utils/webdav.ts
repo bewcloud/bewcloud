@@ -18,8 +18,10 @@ export function getLockTokensFromIfHeader(ifHeader: string | null): string[] {
 const webDavStatusTexts: Record<number, string> = {
   403: 'Forbidden',
   404: 'Not Found',
+  405: 'Method Not Allowed',
   409: 'Conflict',
   412: 'Precondition Failed',
+  415: 'Unsupported Media Type',
   500: 'Internal Server Error',
   507: 'Insufficient Storage',
   508: 'Loop Detected',

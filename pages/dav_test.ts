@@ -137,13 +137,39 @@ Deno.test('that MKCOL returns 409 and does not create anything when the parent i
   assertEquals(parentWasCreated, false);
 });
 
-Deno.test('that MKCOL returns 409 for a collection that already exists', async () => {
+Deno.test('that MKCOL returns 405 for a resource that already exists (RFC4918 9.3.1)', async () => {
   const { user, userRootPath } = await setUpUser();
   await Deno.mkdir(join(userRootPath, 'existing-folder'));
 
   const response = await callDav('MKCOL', 'existing-folder', user);
 
-  assertEquals(response.status, 409);
+  assertEquals(response.status, 405);
+});
+
+Deno.test('that MKCOL rejects a request body with 415 Unsupported Media Type', async () => {
+  const { user } = await setUpUser();
+
+  const response = await callDav('MKCOL', 'new-folder', user, { body: '<not-a-valid-mkcol-body/>' });
+
+  assertEquals(response.status, 415);
+});
+
+Deno.test('that DELETE recursively removes a non-empty directory', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.mkdir(join(userRootPath, 'folder', 'nested'), { recursive: true });
+  await Deno.writeTextFile(join(userRootPath, 'folder', 'nested', 'file.txt'), 'content');
+
+  const response = await callDav('DELETE', 'folder', user);
+
+  assertEquals(response.status, 204);
+
+  let stillExists = true;
+  try {
+    await Deno.stat(join(userRootPath, 'folder'));
+  } catch {
+    stillExists = false;
+  }
+  assertEquals(stillExists, false);
 });
 
 Deno.test('that COPY creates a new destination file and keeps the source', async () => {
@@ -219,6 +245,63 @@ Deno.test("that COPY/MOVE return 409 when the destination's parent collection do
     headers: { destination: 'http://localhost:8000/dav/no-such-folder/destination.txt' },
   });
   assertEquals(moveResponse.status, 409);
+});
+
+Deno.test('that COPY of a directory recursively copies its contents by default', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.mkdir(join(userRootPath, 'source', 'nested'), { recursive: true });
+  await Deno.writeTextFile(join(userRootPath, 'source', 'file.txt'), 'top-level');
+  await Deno.writeTextFile(join(userRootPath, 'source', 'nested', 'inner.txt'), 'nested');
+
+  const response = await callDav('COPY', 'source', user, {
+    headers: { destination: 'http://localhost:8000/dav/destination' },
+  });
+
+  assertEquals(response.status, 201);
+  assertEquals(await Deno.readTextFile(join(userRootPath, 'destination', 'file.txt')), 'top-level');
+  assertEquals(await Deno.readTextFile(join(userRootPath, 'destination', 'nested', 'inner.txt')), 'nested');
+});
+
+Deno.test('that COPY of a directory with Depth: 0 only creates the destination collection', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.mkdir(join(userRootPath, 'source'));
+  await Deno.writeTextFile(join(userRootPath, 'source', 'file.txt'), 'content');
+
+  const response = await callDav('COPY', 'source', user, {
+    headers: { destination: 'http://localhost:8000/dav/destination', depth: '0' },
+  });
+
+  assertEquals(response.status, 201);
+  const destinationEntries = [...Deno.readDirSync(join(userRootPath, 'destination'))];
+  assertEquals(destinationEntries.length, 0);
+});
+
+Deno.test('that COPY/MOVE onto an existing destination collection replace it (RFC4918 8.8.4)', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.writeTextFile(join(userRootPath, 'source.txt'), 'new content');
+  await Deno.mkdir(join(userRootPath, 'destination'));
+  await Deno.writeTextFile(join(userRootPath, 'destination', 'stale.txt'), 'stale');
+
+  const response = await callDav('COPY', 'source.txt', user, {
+    headers: { destination: 'http://localhost:8000/dav/destination' },
+  });
+
+  assertEquals(response.status, 204);
+  const stat = await Deno.stat(join(userRootPath, 'destination'));
+  assertEquals(stat.isFile, true);
+});
+
+Deno.test('that MOVE of a directory moves all of its contents', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.mkdir(join(userRootPath, 'source', 'nested'), { recursive: true });
+  await Deno.writeTextFile(join(userRootPath, 'source', 'nested', 'inner.txt'), 'nested');
+
+  const response = await callDav('MOVE', 'source', user, {
+    headers: { destination: 'http://localhost:8000/dav/destination' },
+  });
+
+  assertEquals(response.status, 201);
+  assertEquals(await Deno.readTextFile(join(userRootPath, 'destination', 'nested', 'inner.txt')), 'nested');
 });
 
 Deno.test('that COPY/MOVE respect "Overwrite: F" and fail with 412 without touching the destination', async () => {
@@ -402,6 +485,21 @@ Deno.test('that acquiring a lock within an already Depth: infinity-locked ancest
   assertEquals(response.status, 423);
 });
 
+Deno.test('that a Depth: infinity lock can be refreshed indirectly via a member URI', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.mkdir(join(userRootPath, 'folder'));
+  await Deno.writeTextFile(join(userRootPath, 'folder', 'nested.txt'), 'content');
+  const folderLock = await lockPath('folder', user, 'infinity');
+  const folderToken = getLockTokenFromResponse(folderLock);
+
+  const refreshResponse = await callDav('LOCK', 'folder/nested.txt', user, {
+    headers: { if: `(<${folderToken}>)` },
+  });
+
+  assertEquals(refreshResponse.status, 200);
+  assertEquals(getLockTokenFromResponse(refreshResponse), folderToken);
+});
+
 Deno.test('that OPTIONS advertises class 2 (locking) and the actually-supported methods', async () => {
   const { user } = await setUpUser();
 
@@ -424,4 +522,24 @@ Deno.test('that PROPFIND returns 207 for an existing directory and 404 for a mis
 
   const notFoundResponse = await callDav('PROPFIND', 'does-not-exist', user, { headers: { depth: '1' } });
   assertEquals(notFoundResponse.status, 404);
+});
+
+Deno.test('that PROPFIND with non-well-formed XML returns 400', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.writeTextFile(join(userRootPath, 'file.txt'), 'content');
+
+  const response = await callDav('PROPFIND', 'file.txt', user, { body: '<foo>' });
+
+  assertEquals(response.status, 400);
+});
+
+Deno.test('that PROPFIND with an invalid empty namespace declaration returns 400', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.writeTextFile(join(userRootPath, 'file.txt'), 'content');
+
+  const response = await callDav('PROPFIND', 'file.txt', user, {
+    body: '<D:propfind xmlns:D="DAV:"><D:prop><bar:foo xmlns:bar=""/></D:prop></D:propfind>',
+  });
+
+  assertEquals(response.status, 400);
 });

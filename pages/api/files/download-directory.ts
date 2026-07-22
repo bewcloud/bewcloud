@@ -38,25 +38,37 @@ async function get({ request, user }: RequestHandlerParams) {
     const userRootPath = join(filesRootPath, user!.id);
     const fullDirectoryPath = join(userRootPath, directoryPath);
 
-    // Use the zip command to create the archive
+    // Use the zip command to create the archive, streaming its stdout straight to the client
+    // instead of buffering the whole archive in memory. `-1` = fastest compression.
     const zipProcess = new Deno.Command('zip', {
-      args: ['-r', '-', '.'],
+      args: ['-r', '-1', '-', '.'],
       cwd: fullDirectoryPath,
       stdout: 'piped',
       stderr: 'piped',
     });
 
-    const { code, stdout, stderr } = await zipProcess.output();
+    const child = zipProcess.spawn();
 
-    if (code !== 0) {
-      const errorText = new TextDecoder().decode(stderr);
+    // Consume stderr in the background so a full stderr buffer can't block the child
+    new Response(child.stderr).text().then((text) => {
+      if (text.trim()) {
+        console.error('Zip command stderr:', text);
+      }
+    }).catch(() => {});
 
-      console.error('Zip command failed:', errorText);
+    // Reap the process in the background to avoid a lingering child
+    child.status.catch(() => {});
 
-      return new Response('Error creating zip archive', { status: 500 });
-    }
+    // Kill the child if the client disconnects mid-download, to avoid an orphaned `zip` process
+    request.signal.addEventListener('abort', () => {
+      try {
+        child.kill();
+      } catch {
+        // Already exited, ignore
+      }
+    });
 
-    return new Response(stdout, {
+    return new Response(child.stdout, {
       status: 200,
       headers: {
         'content-type': 'application/zip',

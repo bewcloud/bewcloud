@@ -796,7 +796,7 @@ async function getDirectorySizeFallback(path: string): Promise<number> {
 }
 
 // NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
-async function getDirectorySize(path: string): Promise<number> {
+export async function getDirectorySize(path: string): Promise<number> {
   try {
     const controller = new AbortController();
     const commandTimeout = setTimeout(() => controller.abort(), 5_000);

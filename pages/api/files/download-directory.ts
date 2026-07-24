@@ -49,6 +49,11 @@ async function get({ request, user }: RequestHandlerParams) {
         return new Response('Not a directory', { status: 400 });
       }
     } catch (error) {
+      if (error instanceof Deno.errors.PermissionDenied) {
+        console.error('Permission denied accessing directory for zip download:', error);
+        return new Response('Forbidden', { status: 403 });
+      }
+
       console.error('Directory not accessible for zip download:', error);
       return new Response('Directory not found', { status: 404 });
     }

@@ -89,7 +89,7 @@ async function get({ request, user }: RequestHandlerParams) {
         console.error('Failed to read zip stderr:', error);
       }
     };
-    consumeStderr();
+    const stderrPromise = consumeStderr();
 
     // Kill the child if the client disconnects mid-download, to avoid an orphaned `zip` process
     request.signal.addEventListener('abort', () => {
@@ -107,7 +107,7 @@ async function get({ request, user }: RequestHandlerParams) {
         const { done, value } = await stdoutReader.read();
 
         if (done) {
-          const status = await child.status;
+          const [status] = await Promise.all([child.status, stderrPromise]);
 
           if (!status.success) {
             console.error(`Zip command exited with code ${status.code}: ${stderrText}`);

@@ -61,9 +61,14 @@ async function get({ request, user, match }: RequestHandlerParams) {
       `:href>/caldav/`,
     );
 
+    const headers = new Headers(response.headers);
+    // fetch() already decompressed; do not re-advertise Content-Encoding to clients
+    headers.delete('content-encoding');
+    headers.delete('content-length');
+
     return new Response(parsedBodyResponseText, {
       status: response.status,
-      headers: response.headers,
+      headers,
     });
   } catch (error) {
     console.error(error);

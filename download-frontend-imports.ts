@@ -121,8 +121,8 @@ async function main() {
 
   // These are some extra imports that are harder to match from analyzing the imported files (just related to @std/path)
   urlMap.set('@std/path/internals', {
-    url: 'https://esm.sh/@jsr/std__internal@^1.0.12/os',
-    fileName: '@jsr/std__internal@^1.0.12/os',
+    url: 'https://esm.sh/@jsr/std__internal@^1.0.14/os',
+    fileName: '@jsr/std__internal@^1.0.14/os',
   });
 
   const osPaths = [
@@ -147,12 +147,12 @@ async function main() {
   ];
   for (const path of osPaths) {
     urlMap.set(`@std/path/posix/${path}`, {
-      url: `https://esm.sh/@jsr/std__path@1.1.4/denonext/posix/${path}.mjs`,
-      fileName: `@jsr/std__path@1.1.4/denonext/posix/${path}.mjs`,
+      url: `https://esm.sh/@jsr/std__path@1.1.6/denonext/posix/${path}.mjs`,
+      fileName: `@jsr/std__path@1.1.6/denonext/posix/${path}.mjs`,
     });
     urlMap.set(`@std/path/windows/${path}`, {
-      url: `https://esm.sh/@jsr/std__path@1.1.4/denonext/windows/${path}.mjs`,
-      fileName: `@jsr/std__path@1.1.4/denonext/windows/${path}.mjs`,
+      url: `https://esm.sh/@jsr/std__path@1.1.6/denonext/windows/${path}.mjs`,
+      fileName: `@jsr/std__path@1.1.6/denonext/windows/${path}.mjs`,
     });
   }
 
@@ -163,6 +163,7 @@ async function main() {
     'strip_trailing_separators',
     'dirname',
     'constants',
+    'env',
     'format',
     'from_file_url',
     'glob_to_reg_exp',
@@ -173,8 +174,8 @@ async function main() {
   ];
   for (const path of commonPaths) {
     urlMap.set(`@std/path/common/${path}`, {
-      url: `https://esm.sh/@jsr/std__path@1.1.4/denonext/_common/${path}.mjs`,
-      fileName: `@jsr/std__path@1.1.4/denonext/_common/${path}.mjs`,
+      url: `https://esm.sh/@jsr/std__path@1.1.6/denonext/_common/${path}.mjs`,
+      fileName: `@jsr/std__path@1.1.6/denonext/_common/${path}.mjs`,
     });
   }
 

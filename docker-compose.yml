@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:v4.12.0
+    image: ghcr.io/bewcloud/bewcloud:v4.13.0
     # NOTE: uncomment below (and comment above) only if you pulled the repo and want to build the image locally
     # build:
     #   context: .
@@ -17,7 +17,7 @@ services:
       - ./bewcloud.config.ts:/app/bewcloud.config.ts
 
   postgresql:
-    image: postgres:18.1
+    image: postgres:18.4
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=fake
@@ -36,7 +36,7 @@ services:
 
   # NOTE: If you don't want to use the CardDav/CalDav servers, you can comment/remove this service.
   radicale:
-    image: tomsquest/docker-radicale:3.6.0.0
+    image: tomsquest/docker-radicale:3.7.6.0
     # NOTE: uncomment below only if you need to connect to the CardDav/CalDav servers from outside the container
     # ports:
     #   - 127.0.0.1:5232:5232

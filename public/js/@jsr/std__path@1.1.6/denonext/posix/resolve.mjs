@@ -1,0 +1,3 @@
+/* esm.sh - @jsr/std__path@1.1.6/posix/resolve */
+import{normalizeString as n}from"../_common/normalize_string.mjs";import{assertPath as a}from"../_common/assert_path.mjs";import{cwd as s}from"../_common/env.mjs";import{isPosixPathSeparator as l}from"./_util.mjs";function p(...i){let e="",t=!1;for(let o=i.length-1;o>=-1&&!t;o--){let r;o>=0?r=i[o]:r=s("Resolved a relative path without a current working directory (CWD)"),a(r),r.length!==0&&(e=`${r}/${e}`,t=l(r.charCodeAt(0)))}return e=n(e,!t,"/",l),t?e.length>0?`/${e}`:"/":e.length>0?e:"."}export{p as resolve};
+//resolve.mjs.map

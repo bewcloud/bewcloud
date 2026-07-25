@@ -163,7 +163,7 @@ export async function logoutUser(request: Request) {
 
   const cookies = getCookies(request.headers);
 
-  const result = await getDataFromCookie(cookies[COOKIE_NAME]);
+  const result = await getDataFromCookie(cookies[COOKIE_NAME] ?? '');
 
   if (!result || !result.tokenData?.session_id || !result.user) {
     throw new Error('Invalid session');

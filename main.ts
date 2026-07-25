@@ -140,6 +140,7 @@ export const abortController = new AbortController();
 
 const PORT = Deno.env.get('PORT') || 8000;
 
+// --unstable-no-legacy-abort required on CLI until denoland/deno#36307 (deno.json unstable entry is a no-op)
 Deno.serve({ port: PORT as number, signal: abortController.signal }, handler);
 
 startCrons();

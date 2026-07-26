@@ -138,6 +138,16 @@ function defaultHtmlContent(
 
       document.getElementById('loading')?.remove();
     }
+
+    if ('serviceWorker' in navigator) {
+      (async () => {
+        try {
+          await navigator.serviceWorker.register('/public/sw.js', { scope: '/' });
+        } catch (error) {
+          console.error(error);
+        }
+      })();
+    }
     </script>
   `;
 }

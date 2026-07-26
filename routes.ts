@@ -222,9 +222,19 @@ const routes: Routes = {
           if (relativePath.startsWith('js/')) {
             response.headers.set('content-type', 'application/javascript; charset=utf-8');
           }
+
+          // The upload service worker is served from under /public/, but needs root scope to observe navigations/API requests across the whole app, not just /public/.
+          if (relativePath === 'sw.js') {
+            response.headers.set('content-type', 'application/javascript; charset=utf-8');
+            response.headers.set('service-worker-allowed', '/');
+          }
         }
 
-        response.headers.set('cache-control', `max-age=${oneDayInSeconds}, public`);
+        // Never cache the service worker script itself: a stale cached copy would keep running for up to a day after a fix is deployed, since the browser won't even ask the server.
+        response.headers.set(
+          'cache-control',
+          relativePath === 'sw.js' ? 'no-cache' : `max-age=${oneDayInSeconds}, public`,
+        );
         return response;
       } catch (error) {
         if ((error as Error).toString().includes('NotFound')) {

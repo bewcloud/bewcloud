@@ -57,6 +57,12 @@ async function post({ request, user, match, session, isRunningLocally }: Request
   try {
     action = getFormDataField(formData, 'action') as Action;
 
+    if (getFormDataField(formData, 'request-new-code')) {
+      action = 'change-email';
+      formData.set('action', 'change-email');
+      formData.delete('verification-code');
+    }
+
     if (action !== 'change-email' && action !== 'verify-change-email') {
       formData.set('email', user!.email);
     }
@@ -83,6 +89,8 @@ async function post({ request, user, match, session, isRunningLocally }: Request
 
         await EmailModel.sendVerificationEmail(email, verificationCode);
 
+        formData.set('action', 'verify-change-email');
+
         successTitle = 'Verify your email!';
         successMessage = 'You have received a code in your new email. Use it to verify it here.';
       } else {
@@ -95,6 +103,10 @@ async function post({ request, user, match, session, isRunningLocally }: Request
         user!.email = email;
 
         await UserModel.update(user!);
+
+        formData.set('action', 'change-email');
+        formData.delete('email');
+        formData.delete('verification-code');
 
         successTitle = 'Email updated!';
         successMessage = 'Email updated successfully.';

@@ -1,0 +1,24 @@
+---
+apiVersion: v2
+ype: application
+name: bew
+version: 0.1.0
+description: bew is a light alternative of nextcloud
+appVersion: "v4.13.1"
+icon: https://bewcloud.com/images/logo.svg
+maintainers:
+  - name: bubu
+    email: bubu9841@gmail.com
+kubeVersion: '>= 1.18'
+home: hhttps://github.com/bewcloud/bewcloud
+keywords:
+  - bew
+  - bewcloud
+  - cloud
+  - storage
+sources:
+  - https://github.com/bewcloud/bewcloud
+dependencies:
+  - name: common
+    repository: https://rubxkube.github.io/common-charts
+    version: v0.6.0

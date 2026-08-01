@@ -1,6 +1,6 @@
 ---
 apiVersion: v2
-ype: application
+type: application
 name: bew
 version: 0.1.0
 description: bew is a light alternative of nextcloud

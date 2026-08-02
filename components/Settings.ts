@@ -163,6 +163,11 @@ export default function Settings(
 
   const multiFactorAuthMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
 
+  const emailFormAction: Action = notice?.title === 'Verify your email!' ||
+      (getFormDataField(formData, 'action') === 'verify-change-email' && notice?.title !== 'Email updated!')
+    ? 'verify-change-email'
+    : 'change-email';
+
   return html`
     <section class="mx-auto max-w-7xl my-8">
       ${error
@@ -184,9 +189,17 @@ export default function Settings(
       <h2 class="text-2xl mb-4 text-left px-4 max-w-3xl mx-auto lg:min-w-96">Change your email</h2>
 
       <form method="POST" class="mb-12">
-        ${formFields('change-email', formData).map((field) => generateFieldHtml(field, formData)).join('')}
-        <section class="flex justify-end mt-8 mb-4">
-          <button class="button-secondary" type="submit">Change email</button>
+        ${formFields(emailFormAction, formData).map((field) => generateFieldHtml(field, formData)).join('')}
+        <section class="flex justify-end ${emailFormAction === 'verify-change-email' ? 'gap-8' : 'gap-2'} mt-8 mb-4">
+          ${emailFormAction === 'verify-change-email'
+            ? html`
+              <button class="button" type="submit">Verify email</button>
+              <button class="button-secondary order-first" type="submit" name="request-new-code" value="1"
+                formnovalidate>Request new code</button>
+            `
+            : html`
+              <button class="button-secondary" type="submit">Change email</button>
+            `}
         </section>
       </form>
 

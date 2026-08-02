@@ -70,6 +70,7 @@ function defaultHtmlContent({ userDirectories, userPhotos, currentPath }: {
     window.Fragment = Fragment;
 
     import MainPhotos from '/public/components/photos/MainPhotos.js';
+    import { registerUploadServiceWorker } from '/public/ts/service-worker.ts';
 
     const mainPhotosElement = document.getElementById('main-photos');
 
@@ -84,6 +85,8 @@ function defaultHtmlContent({ userDirectories, userPhotos, currentPath }: {
 
       document.getElementById('loading')?.remove();
     }
+
+    registerUploadServiceWorker();
     </script>
   `;
 }

@@ -1,7 +1,6 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
 import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/pages/api/files/delete.ts';
 import {
   RequestBody as CreateDirectoryRequestBody,
@@ -11,6 +10,7 @@ import {
   RequestBody as DeleteDirectoryRequestBody,
   ResponseBody as DeleteDirectoryResponseBody,
 } from '/pages/api/files/delete-directory.ts';
+import { useUploadQueue } from '/components/files/useUploadQueue.ts';
 import ListFiles from '/components/files/ListFiles.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
 import CreateDirectoryModal from '/components/files/CreateDirectoryModal.tsx';
@@ -32,6 +32,13 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
   const isNewNoteModalOpen = useSignal<boolean>(false);
   const isNewDirectoryModalOpen = useSignal<boolean>(false);
 
+  const { isUploading: isCreatingNote, enqueueUpload } = useUploadQueue({
+    isEnabled: true,
+    path,
+    files,
+    directories,
+  });
+
   function onClickCreateNote() {
     if (isNewNoteModalOpen.value) {
       isNewNoteModalOpen.value = false;
@@ -41,48 +48,21 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
     isNewNoteModalOpen.value = true;
   }
 
-  async function onClickSaveNote(newNoteName: string) {
-    if (isAdding.value) {
-      return;
-    }
-
+  function onClickSaveNote(newNoteName: string) {
     if (!newNoteName) {
       return;
     }
 
     areNewOptionsOption.value = false;
-    isAdding.value = true;
+    isNewNoteModalOpen.value = false;
 
-    const requestBody = new FormData();
-    requestBody.set('parent_path', path.value);
-    requestBody.set('path_in_view', path.value);
-    requestBody.set('name', `${newNoteName}.md`);
-    requestBody.set('contents', `# ${newNoteName}\n\nStart your new note!\n`);
+    const noteFile = new File(
+      [`# ${newNoteName}\n\nStart your new note!\n`],
+      `${newNoteName}.md`,
+      { type: 'text/markdown' },
+    );
 
-    try {
-      const response = await fetch(`/api/files/upload`, {
-        method: 'POST',
-        body: requestBody,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create note. ${response.statusText} ${await response.text()}`);
-      }
-
-      const result = await response.json() as UploadResponseBody;
-
-      if (!result.success) {
-        throw new Error('Failed to create note!');
-      }
-
-      files.value = [...result.newFiles];
-
-      isNewNoteModalOpen.value = false;
-    } catch (error) {
-      console.error(error);
-    }
-
-    isAdding.value = false;
+    enqueueUpload([{ file: noteFile, parentPath: path.value }]);
   }
 
   function onCloseCreateNote() {
@@ -242,7 +222,7 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
                 <img
                   src='/public/images/add.svg'
                   alt='Add new note or directory'
-                  class={`white ${isAdding.value ? 'animate-spin' : ''}`}
+                  class={`white ${isAdding.value || isCreatingNote.value ? 'animate-spin' : ''}`}
                   width={20}
                   height={20}
                 />
@@ -298,14 +278,14 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
               </>
             )
             : null}
-          {isAdding.value
+          {isAdding.value || isCreatingNote.value
             ? (
               <>
                 <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Creating...
               </>
             )
             : null}
-          {!isDeleting.value && !isAdding.value ? <>&nbsp;</> : null}
+          {!isDeleting.value && !isAdding.value && !isCreatingNote.value ? <>&nbsp;</> : null}
         </span>
       </section>
 

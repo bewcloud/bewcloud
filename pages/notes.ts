@@ -65,6 +65,7 @@ function defaultHtmlContent({ userDirectories, userNotes, currentPath }: {
     window.Fragment = Fragment;
 
     import MainNotes from '/public/components/notes/MainNotes.js';
+    import { registerUploadServiceWorker } from '/public/ts/service-worker.ts';
 
     const mainNotesElement = document.getElementById('main-notes');
 
@@ -79,6 +80,8 @@ function defaultHtmlContent({ userDirectories, userNotes, currentPath }: {
 
       document.getElementById('loading')?.remove();
     }
+
+    registerUploadServiceWorker();
     </script>
   `;
 

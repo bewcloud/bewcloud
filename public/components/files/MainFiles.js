@@ -1,5 +1,6 @@
 import { useSignal } from '@preact/signals';
 import { sortDirectories, sortFiles } from '/public/ts/utils/files.ts';
+import { useUploadQueue } from './useUploadQueue.ts';
 import SearchFiles from "./SearchFiles.js";
 import ListFiles from "./ListFiles.js";
 import FilesBreadcrumb from "./FilesBreadcrumb.js";
@@ -20,8 +21,6 @@ export default function MainFiles({
   initialSortOrder = 'asc'
 }) {
   const isAdding = useSignal(false);
-  const isUploading = useSignal(false);
-  const uploadProgress = useSignal('');
   const isDeleting = useSignal(false);
   const isUpdating = useSignal(false);
   const directories = useSignal(initialDirectories);
@@ -40,6 +39,16 @@ export default function MainFiles({
   const moveDirectoryOrFileModal = useSignal(null);
   const createShareModal = useSignal(null);
   const manageShareModal = useSignal(null);
+  const {
+    isUploading,
+    uploadProgress,
+    enqueueUpload
+  } = useUploadQueue({
+    isEnabled: !fileShareId,
+    path,
+    files,
+    directories
+  });
   function onClickSort(column) {
     let newSortOrder = 'asc';
     if (sortBy.value === column) {
@@ -69,61 +78,6 @@ export default function MainFiles({
       }).catch(console.error);
     }
   }
-  const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
-  async function uploadFileSingle(chosenFile, parentPath) {
-    const requestBody = new FormData();
-    requestBody.set('path_in_view', path.value);
-    requestBody.set('parent_path', parentPath);
-    requestBody.set('name', chosenFile.name);
-    requestBody.set('contents', chosenFile);
-    const response = await fetch(`/api/files/upload`, {
-      method: 'POST',
-      body: requestBody
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to upload file. ${response.statusText} ${await response.text()}`);
-    }
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error('Failed to upload file!');
-    }
-    files.value = [...result.newFiles];
-    directories.value = [...result.newDirectories];
-  }
-  async function uploadFileChunked(chosenFile, parentPath) {
-    const totalChunks = Math.ceil(chosenFile.size / CHUNK_SIZE_BYTES);
-    const uploadId = crypto.randomUUID();
-    const pathInView = path.value;
-    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-      uploadProgress.value = `Uploading ${chosenFile.name} (${chunkIndex + 1}/${totalChunks})…`;
-      const start = chunkIndex * CHUNK_SIZE_BYTES;
-      const end = Math.min(start + CHUNK_SIZE_BYTES, chosenFile.size);
-      const chunkBlob = chosenFile.slice(start, end);
-      const requestBody = new FormData();
-      requestBody.set('upload_id', uploadId);
-      requestBody.set('chunk_index', String(chunkIndex));
-      requestBody.set('total_chunks', String(totalChunks));
-      requestBody.set('path_in_view', pathInView);
-      requestBody.set('parent_path', parentPath);
-      requestBody.set('name', chosenFile.name);
-      requestBody.set('chunk', chunkBlob);
-      const response = await fetch(`/api/files/upload-chunk`, {
-        method: 'POST',
-        body: requestBody
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}. ${response.statusText} ${await response.text()}`);
-      }
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
-      }
-      if (result.isComplete) {
-        files.value = [...result.newFiles];
-        directories.value = [...result.newDirectories];
-      }
-    }
-  }
   function onClickUploadFile(uploadDirectory = false) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -134,33 +88,24 @@ export default function MainFiles({
       fileInput.directory = true;
     }
     fileInput.click();
-    fileInput.onchange = async event => {
+    fileInput.onchange = event => {
       const chosenFilesList = event.target?.files;
       const chosenFiles = Array.from(chosenFilesList);
-      isUploading.value = true;
-      uploadProgress.value = '';
-      for (const chosenFile of chosenFiles) {
-        if (!chosenFile) {
-          continue;
-        }
-        areNewOptionsOpen.value = false;
-        let fileParentPath = path.value;
-        if (chosenFile.webkitRelativePath) {
-          const directoryPath = chosenFile.webkitRelativePath.replace(chosenFile.name, '');
-          fileParentPath = `${path.value}${directoryPath}`;
-        }
-        uploadProgress.value = '';
-        try {
-          if (chosenFile.size >= CHUNK_SIZE_BYTES) {
-            await uploadFileChunked(chosenFile, fileParentPath);
-          } else {
-            await uploadFileSingle(chosenFile, fileParentPath);
-          }
-        } catch (error) {
-          console.error(error);
-        }
+      if (chosenFiles.length === 0) {
+        return;
       }
-      isUploading.value = false;
+      areNewOptionsOpen.value = false;
+      function getFileParentPath(chosenFile) {
+        if (!chosenFile.webkitRelativePath) {
+          return path.value;
+        }
+        const directoryPath = chosenFile.webkitRelativePath.replace(chosenFile.name, '');
+        return `${path.value}${directoryPath}`;
+      }
+      enqueueUpload(chosenFiles.map(chosenFile => ({
+        file: chosenFile,
+        parentPath: getFileParentPath(chosenFile)
+      })));
     };
   }
   function onClickCreateDirectory() {

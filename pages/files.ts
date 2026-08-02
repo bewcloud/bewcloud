@@ -119,6 +119,7 @@ function defaultHtmlContent(
     window.Fragment = Fragment;
 
     import MainFiles from '/public/components/files/MainFiles.js';
+    import { registerUploadServiceWorker } from '/public/ts/service-worker.ts';
 
     const mainFilesElement = document.getElementById('main-files');
 
@@ -139,15 +140,7 @@ function defaultHtmlContent(
       document.getElementById('loading')?.remove();
     }
 
-    if ('serviceWorker' in navigator) {
-      (async () => {
-        try {
-          await navigator.serviceWorker.register('/public/sw.js', { scope: '/' });
-        } catch (error) {
-          console.error(error);
-        }
-      })();
-    }
+    registerUploadServiceWorker();
     </script>
   `;
 }

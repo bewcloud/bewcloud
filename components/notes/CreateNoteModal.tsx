@@ -2,7 +2,7 @@ import { useSignal } from '@preact/signals';
 
 interface CreateNoteModalProps {
   isOpen: boolean;
-  onClickSave: (newNoteName: string) => Promise<void>;
+  onClickSave: (newNoteName: string) => void;
   onClose: () => void;
 }
 

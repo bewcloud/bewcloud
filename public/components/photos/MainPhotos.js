@@ -1,4 +1,5 @@
 import { useSignal } from '@preact/signals';
+import { useUploadQueue } from '/components/files/useUploadQueue.ts';
 import CreateDirectoryModal from "/public/components/files/CreateDirectoryModal.js";
 import ListFiles from "/public/components/files/ListFiles.js";
 import FilesBreadcrumb from "/public/components/files/FilesBreadcrumb.js";
@@ -9,50 +10,38 @@ export default function MainPhotos({
   initialPath
 }) {
   const isAdding = useSignal(false);
-  const isUploading = useSignal(false);
   const directories = useSignal(initialDirectories);
   const files = useSignal(initialFiles);
   const path = useSignal(initialPath);
   const areNewOptionsOption = useSignal(false);
   const isNewDirectoryModalOpen = useSignal(false);
+  const {
+    isUploading,
+    uploadProgress,
+    enqueueUpload
+  } = useUploadQueue({
+    isEnabled: true,
+    path,
+    files,
+    directories
+  });
   function onClickUploadFile() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
     fileInput.accept = 'image/*,video/*';
     fileInput.click();
-    fileInput.onchange = async event => {
+    fileInput.onchange = event => {
       const chosenFilesList = event.target?.files;
-      const chosenFiles = Array.from(chosenFilesList);
-      isUploading.value = true;
-      for (const chosenFile of chosenFiles) {
-        if (!chosenFile) {
-          continue;
-        }
-        areNewOptionsOption.value = false;
-        const requestBody = new FormData();
-        requestBody.set('parent_path', path.value);
-        requestBody.set('path_in_view', path.value);
-        requestBody.set('name', chosenFile.name);
-        requestBody.set('contents', chosenFile);
-        try {
-          const response = await fetch(`/api/files/upload`, {
-            method: 'POST',
-            body: requestBody
-          });
-          if (!response.ok) {
-            throw new Error(`Failed to upload photo. ${response.statusText} ${await response.text()}`);
-          }
-          const result = await response.json();
-          if (!result.success) {
-            throw new Error('Failed to upload photo!');
-          }
-          files.value = [...result.newFiles];
-        } catch (error) {
-          console.error(error);
-        }
+      const chosenFiles = Array.from(chosenFilesList).filter(Boolean);
+      if (chosenFiles.length === 0) {
+        return;
       }
-      isUploading.value = false;
+      areNewOptionsOption.value = false;
+      enqueueUpload(chosenFiles.map(chosenFile => ({
+        file: chosenFile,
+        parentPath: path.value
+      })));
     };
   }
   function onClickCreateDirectory() {
@@ -159,7 +148,7 @@ export default function MainPhotos({
     class: "white mr-2",
     width: 18,
     height: 18
-  }), "Uploading...") : null, !isAdding.value && !isUploading.value ? h(Fragment, null, "\xA0") : null)), h(CreateDirectoryModal, {
+  }), uploadProgress.value || 'Uploading...') : null, !isAdding.value && !isUploading.value ? h(Fragment, null, "\xA0") : null)), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,
     onClickSave: onClickSaveDirectory,
     onClose: onCloseCreateDirectory

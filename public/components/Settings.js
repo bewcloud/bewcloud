@@ -132,10 +132,10 @@ export default function Settings({
 
       <form method="POST" class="mb-12">
         ${formFields(emailFormAction, formData).map(field => generateFieldHtml(field, formData)).join('')}
-        <section class="flex justify-end gap-2 mt-8 mb-4">
+        <section class="flex justify-end ${emailFormAction === 'verify-change-email' ? 'gap-8' : 'gap-2'} mt-8 mb-4">
           ${emailFormAction === 'verify-change-email' ? html`
-              <button class="button-secondary" type="submit">Verify email</button>
-              <button class="button order-first" type="submit" name="request-new-code" value="1"
+              <button class="button" type="submit">Verify email</button>
+              <button class="button-secondary order-first" type="submit" name="request-new-code" value="1"
                 formnovalidate>Request new code</button>
             ` : html`
               <button class="button-secondary" type="submit">Change email</button>

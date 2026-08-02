@@ -720,6 +720,9 @@
   .gap-4 {
     gap: calc(var(--spacing) * 4);
   }
+  .gap-8 {
+    gap: calc(var(--spacing) * 8);
+  }
   .gap-px {
     gap: 1px;
   }

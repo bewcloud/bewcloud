@@ -20,6 +20,7 @@ export default function MainNotes({
   const isNewDirectoryModalOpen = useSignal(false);
   const {
     isUploading: isCreatingNote,
+    uploadError: createNoteError,
     enqueueUpload
   } = useUploadQueue({
     isEnabled: true,
@@ -214,7 +215,9 @@ export default function MainNotes({
     class: "white mr-2",
     width: 18,
     height: 18
-  }), "Creating...") : null, !isDeleting.value && !isAdding.value && !isCreatingNote.value ? h(Fragment, null, "\xA0") : null)), h(CreateDirectoryModal, {
+  }), "Creating...") : null, !isDeleting.value && !isAdding.value && !isCreatingNote.value ? h(Fragment, null, "\xA0") : null), createNoteError.value ? h("span", {
+    class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
+  }, "Creating the note failed \u2014 ", createNoteError.value) : null), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,
     onClickSave: onClickSaveDirectory,
     onClose: onCloseCreateDirectory

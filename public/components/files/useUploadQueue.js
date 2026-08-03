@@ -10,6 +10,7 @@ export function useUploadQueue({
 }) {
   const isUploading = useSignal(false);
   const uploadProgress = useSignal('');
+  const uploadError = useSignal('');
   useEffect(() => {
     if (!isEnabled || !('serviceWorker' in navigator)) {
       return;
@@ -27,6 +28,7 @@ export function useUploadQueue({
       uploadProgress.value = state.uploadProgress || '';
       if (state.error) {
         console.error(new Error(state.error));
+        uploadError.value = state.error;
       }
       if (state.newFiles && state.pathInView === path.value) {
         files.value = [...state.newFiles];
@@ -67,7 +69,7 @@ export function useUploadQueue({
     }
     const result = await response.json();
     if (!result.success) {
-      throw new Error('Failed to upload file!');
+      throw new Error(result.error || 'Failed to upload file!');
     }
     files.value = [...result.newFiles];
     directories.value = [...result.newDirectories];
@@ -98,7 +100,7 @@ export function useUploadQueue({
       }
       const result = await response.json();
       if (!result.success) {
-        throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
+        throw new Error(result.error || `Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
       }
       if (result.isComplete) {
         files.value = [...result.newFiles];
@@ -113,6 +115,7 @@ export function useUploadQueue({
     const pathInView = path.value;
     isUploading.value = true;
     uploadProgress.value = '';
+    uploadError.value = '';
     const serviceWorker = isEnabled ? navigator.serviceWorker?.controller : undefined;
     if (serviceWorker) {
       serviceWorker.postMessage({
@@ -135,6 +138,7 @@ export function useUploadQueue({
           }
         } catch (error) {
           console.error(error);
+          uploadError.value = `${item.file.name}: ${error instanceof Error ? error.message : String(error)}`;
         }
       }
       isUploading.value = false;
@@ -143,6 +147,7 @@ export function useUploadQueue({
   return {
     isUploading,
     uploadProgress,
+    uploadError,
     enqueueUpload
   };
 }

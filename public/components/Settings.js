@@ -2,7 +2,7 @@ import { generateFieldHtml, getFormDataField } from '/public/ts/utils/form.ts';
 import { convertObjectToFormData, currencyMap, escapeHtml, html } from '/public/ts/utils/misc.ts';
 import { getEnabledMultiFactorAuthMethodsFromUser } from '/public/ts/utils/multi-factor-auth.ts';
 import { getTimeZones } from '/public/ts/utils/calendar.ts';
-import Loading from '/components/Loading.ts';
+import Loading from "/public/components/Loading.js";
 export const actionWords = new Map([['change-email', 'change email'], ['verify-change-email', 'change email'], ['change-password', 'change password'], ['change-dav-password', 'change WebDav password'], ['delete-account', 'delete account'], ['change-currency', 'change currency'], ['change-timezone', 'change timezone']]);
 function formFields(action, formData, currency, timezoneId) {
   const fields = [{

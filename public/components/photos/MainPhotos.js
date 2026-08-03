@@ -19,6 +19,7 @@ export default function MainPhotos({
   const {
     isUploading,
     uploadProgress,
+    uploadError,
     enqueueUpload
   } = useUploadQueue({
     isEnabled: true,
@@ -150,7 +151,9 @@ export default function MainPhotos({
     class: "white mr-2",
     width: 18,
     height: 18
-  }), uploadProgress.value || 'Uploading...') : null, !isAdding.value && !isUploading.value ? h(Fragment, null, "\xA0") : null)), h(CreateDirectoryModal, {
+  }), uploadProgress.value || 'Uploading...') : null, !isAdding.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
+    class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
+  }, "Upload failed \u2014 ", uploadError.value) : null), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,
     onClickSave: onClickSaveDirectory,
     onClose: onCloseCreateDirectory

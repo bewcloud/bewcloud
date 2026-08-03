@@ -108,7 +108,7 @@ export function useUploadQueue({ isEnabled, path, files, directories, uploadSess
     const result = await response.json() as UploadResponseBody;
 
     if (!result.success) {
-      throw new Error('Failed to upload file!');
+      throw new Error(result.error || 'Failed to upload file!');
     }
 
     files.value = [...result.newFiles];
@@ -150,7 +150,7 @@ export function useUploadQueue({ isEnabled, path, files, directories, uploadSess
       const result = await response.json() as ChunkUploadResponseBody;
 
       if (!result.success) {
-        throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
+        throw new Error(result.error || `Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
       }
 
       if (result.isComplete) {

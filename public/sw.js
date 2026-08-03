@@ -2,6 +2,8 @@
 
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
 const BROADCAST_CHANNEL_NAME = 'bewcloud-uploads';
+// If the server dies mid-request (a restart/deploy), the socket can sit open with no RST and no response for minutes, so a plain fetch() neither resolves nor rejects: nothing left to catch, the queue never finishes, and the UI is stuck on "Uploading" forever. A timeout guarantees the request eventually fails instead.
+const REQUEST_TIMEOUT_MS = 2 * 60 * 1000;
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
@@ -42,6 +44,30 @@ function throwIfUploadSessionIsGone(response) {
   }
 }
 
+// fetch() tied to the job's own AbortController so the request cancels when the job is abandoned, plus a timeout so a server that's gone dark doesn't hang it forever.
+async function fetchForJob(job, url, options) {
+  const timeoutController = new AbortController();
+
+  if (job.abortController.signal.aborted) {
+    timeoutController.abort();
+  }
+
+  const onJobAbort = () => timeoutController.abort();
+  job.abortController.signal.addEventListener('abort', onJobAbort);
+
+  const timeoutId = setTimeout(
+    () => timeoutController.abort(new Error(`Request to ${url} timed out`)),
+    REQUEST_TIMEOUT_MS,
+  );
+
+  try {
+    return await fetch(url, { ...options, signal: timeoutController.signal });
+  } finally {
+    clearTimeout(timeoutId);
+    job.abortController.signal.removeEventListener('abort', onJobAbort);
+  }
+}
+
 async function uploadFileSingle(job, file, parentPath, pathInView) {
   const requestBody = new FormData();
   requestBody.set('path_in_view', pathInView);
@@ -50,11 +76,7 @@ async function uploadFileSingle(job, file, parentPath, pathInView) {
   requestBody.set('upload_session_tag', job.sessionTag);
   requestBody.set('contents', file);
 
-  const response = await fetch('/api/files/upload', {
-    method: 'POST',
-    body: requestBody,
-    signal: job.abortController.signal,
-  });
+  const response = await fetchForJob(job, '/api/files/upload', { method: 'POST', body: requestBody });
 
   throwIfUploadSessionIsGone(response);
 
@@ -65,7 +87,7 @@ async function uploadFileSingle(job, file, parentPath, pathInView) {
   const result = await response.json();
 
   if (!result.success) {
-    throw new Error('Failed to upload file!');
+    throw new Error(result.error || 'Failed to upload file!');
   }
 
   return { newFiles: result.newFiles, newDirectories: result.newDirectories };
@@ -95,11 +117,7 @@ async function uploadFileChunked(job, file, parentPath, pathInView) {
     requestBody.set('upload_session_tag', job.sessionTag);
     requestBody.set('chunk', chunkBlob);
 
-    const response = await fetch('/api/files/upload-chunk', {
-      method: 'POST',
-      body: requestBody,
-      signal: job.abortController.signal,
-    });
+    const response = await fetchForJob(job, '/api/files/upload-chunk', { method: 'POST', body: requestBody });
 
     throwIfUploadSessionIsGone(response);
 
@@ -112,7 +130,7 @@ async function uploadFileChunked(job, file, parentPath, pathInView) {
     const result = await response.json();
 
     if (!result.success) {
-      throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
+      throw new Error(result.error || `Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
     }
 
     if (result.isComplete) {

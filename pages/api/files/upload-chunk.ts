@@ -9,6 +9,7 @@ import { generateUploadSessionTag } from '/lib/auth.ts';
 export interface ResponseBody {
   success: boolean;
   isComplete: boolean;
+  error?: string;
   newFiles?: DirectoryFile[];
   newDirectories?: Directory[];
 }
@@ -137,7 +138,11 @@ async function post({ request, user, session }: RequestHandlerParams) {
 
       console.error(error);
 
-      const responseBody: ResponseBody = { success: false, isComplete: true };
+      const responseBody: ResponseBody = {
+        success: false,
+        isComplete: true,
+        error: error instanceof Deno.errors.AlreadyExists ? 'A file with this name already exists.' : undefined,
+      };
 
       return new Response(JSON.stringify(responseBody));
     }

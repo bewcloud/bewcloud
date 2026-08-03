@@ -7,6 +7,7 @@ import { generateUploadSessionTag } from '/lib/auth.ts';
 
 export interface ResponseBody {
   success: boolean;
+  error?: string;
   newFiles: DirectoryFile[];
   newDirectories: Directory[];
 }
@@ -46,7 +47,12 @@ async function post({ request, user, session }: RequestHandlerParams) {
   const newFiles = await FileModel.list(user!.id, pathInView);
   const newDirectories = await DirectoryModel.list(user!.id, pathInView);
 
-  const responseBody: ResponseBody = { success: createdFile, newFiles, newDirectories };
+  const responseBody: ResponseBody = {
+    success: createdFile.success,
+    error: createdFile.alreadyExists ? 'A file with this name already exists.' : undefined,
+    newFiles,
+    newDirectories,
+  };
 
   return new Response(JSON.stringify(responseBody));
 }

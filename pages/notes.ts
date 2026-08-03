@@ -6,6 +6,7 @@ import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import { html } from '/public/ts/utils/misc.ts';
 import Loading from '/components/Loading.ts';
+import { generateUploadSessionTag } from '/lib/auth.ts';
 
 async function get({ request, user, match, session, isRunningLocally }: RequestHandlerParams) {
   if (!(await AppConfig.isAppEnabled('notes'))) {
@@ -32,7 +33,12 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
 
   const userNotes = userFiles.filter((file) => file.file_name.endsWith('.md'));
 
-  const htmlContent = defaultHtmlContent({ userDirectories, userNotes, currentPath });
+  const htmlContent = defaultHtmlContent({
+    userDirectories,
+    userNotes,
+    currentPath,
+    uploadSessionTag: await generateUploadSessionTag(session?.tokenData?.session_id),
+  });
 
   return basicLayoutResponse(htmlContent, {
     currentPath: match.pathname.input,
@@ -45,10 +51,11 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
   });
 }
 
-function defaultHtmlContent({ userDirectories, userNotes, currentPath }: {
+function defaultHtmlContent({ userDirectories, userNotes, currentPath, uploadSessionTag }: {
   userDirectories: Directory[];
   userNotes: DirectoryFile[];
   currentPath: string;
+  uploadSessionTag: string;
 }) {
   const htmlContent = html`
     <main id="main">
@@ -74,6 +81,7 @@ function defaultHtmlContent({ userDirectories, userNotes, currentPath }: {
         initialDirectories: ${JSON.stringify(userDirectories || [])},
         initialFiles: ${JSON.stringify(userNotes || [])},
         initialPath: ${JSON.stringify(currentPath)},
+        uploadSessionTag: ${JSON.stringify(uploadSessionTag)},
       });
 
       render(mainNotesApp, mainNotesElement);

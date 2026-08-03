@@ -1,5 +1,5 @@
 import { useSignal } from '@preact/signals';
-import { useUploadQueue } from '/components/files/useUploadQueue.ts';
+import { useUploadQueue } from "/public/components/files/useUploadQueue.js";
 import ListFiles from "/public/components/files/ListFiles.js";
 import FilesBreadcrumb from "/public/components/files/FilesBreadcrumb.js";
 import CreateDirectoryModal from "/public/components/files/CreateDirectoryModal.js";
@@ -7,7 +7,8 @@ import CreateNoteModal from "./CreateNoteModal.js";
 export default function MainNotes({
   initialDirectories,
   initialFiles,
-  initialPath
+  initialPath,
+  uploadSessionTag
 }) {
   const isAdding = useSignal(false);
   const isDeleting = useSignal(false);
@@ -24,7 +25,8 @@ export default function MainNotes({
     isEnabled: true,
     path,
     files,
-    directories
+    directories,
+    uploadSessionTag
   });
   function onClickCreateNote() {
     if (isNewNoteModalOpen.value) {

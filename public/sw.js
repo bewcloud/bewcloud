@@ -5,7 +5,10 @@ const BROADCAST_CHANNEL_NAME = 'bewcloud-uploads';
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
-let currentJob = null; // { queue: [{ file, parentPath, pathInView }], uploadProgress }
+let currentJob = null; // { queue: [{ file, parentPath, pathInView }], uploadProgress, sessionTag, abortController }
+
+// A queue outlives the session that created it, so the upload endpoints refuse requests tagged with a session other than the one their cookie now belongs to. When that happens there's nothing left to retry: the rest of the queue is dropped instead of being uploaded as whoever is logged in now.
+class UploadSessionGoneError extends Error {}
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -20,18 +23,40 @@ function broadcastState(extra = {}) {
     type: 'STATE',
     isUploading: Boolean(currentJob),
     uploadProgress: currentJob?.uploadProgress || '',
+    sessionTag: currentJob?.sessionTag || '',
     ...extra,
   });
 }
 
-async function uploadFileSingle(file, parentPath, pathInView) {
+function abandonCurrentJob() {
+  currentJob?.abortController.abort();
+  currentJob = null;
+
+  broadcastState();
+}
+
+// A 403 is the endpoints refusing this queue's session tag, and a redirect means there's no session left at all (the request was bounced to the login page).
+function throwIfUploadSessionIsGone(response) {
+  if (response.status === 403 || response.redirected) {
+    throw new UploadSessionGoneError('upload cancelled, this session is no longer valid');
+  }
+}
+
+async function uploadFileSingle(job, file, parentPath, pathInView) {
   const requestBody = new FormData();
   requestBody.set('path_in_view', pathInView);
   requestBody.set('parent_path', parentPath);
   requestBody.set('name', file.name);
+  requestBody.set('upload_session_tag', job.sessionTag);
   requestBody.set('contents', file);
 
-  const response = await fetch('/api/files/upload', { method: 'POST', body: requestBody });
+  const response = await fetch('/api/files/upload', {
+    method: 'POST',
+    body: requestBody,
+    signal: job.abortController.signal,
+  });
+
+  throwIfUploadSessionIsGone(response);
 
   if (!response.ok) {
     throw new Error(`Failed to upload file. ${response.statusText} ${await response.text()}`);
@@ -46,14 +71,14 @@ async function uploadFileSingle(file, parentPath, pathInView) {
   return { newFiles: result.newFiles, newDirectories: result.newDirectories };
 }
 
-async function uploadFileChunked(file, parentPath, pathInView) {
+async function uploadFileChunked(job, file, parentPath, pathInView) {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE_BYTES);
   const uploadId = crypto.randomUUID();
 
   let completedResult = null;
 
   for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-    currentJob.uploadProgress = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
+    job.uploadProgress = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
     broadcastState();
 
     const start = chunkIndex * CHUNK_SIZE_BYTES;
@@ -67,9 +92,16 @@ async function uploadFileChunked(file, parentPath, pathInView) {
     requestBody.set('path_in_view', pathInView);
     requestBody.set('parent_path', parentPath);
     requestBody.set('name', file.name);
+    requestBody.set('upload_session_tag', job.sessionTag);
     requestBody.set('chunk', chunkBlob);
 
-    const response = await fetch('/api/files/upload-chunk', { method: 'POST', body: requestBody });
+    const response = await fetch('/api/files/upload-chunk', {
+      method: 'POST',
+      body: requestBody,
+      signal: job.abortController.signal,
+    });
+
+    throwIfUploadSessionIsGone(response);
 
     if (!response.ok) {
       throw new Error(
@@ -91,24 +123,41 @@ async function uploadFileChunked(file, parentPath, pathInView) {
   return completedResult;
 }
 
-async function processQueue() {
-  while (currentJob.queue.length > 0) {
-    const { file, parentPath, pathInView } = currentJob.queue.shift();
+async function processQueue(job) {
+  while (job.queue.length > 0) {
+    const { file, parentPath, pathInView } = job.queue.shift();
 
-    currentJob.uploadProgress = '';
+    job.uploadProgress = '';
     broadcastState();
 
     try {
       const result = file.size >= CHUNK_SIZE_BYTES
-        ? await uploadFileChunked(file, parentPath, pathInView)
-        : await uploadFileSingle(file, parentPath, pathInView);
+        ? await uploadFileChunked(job, file, parentPath, pathInView)
+        : await uploadFileSingle(job, file, parentPath, pathInView);
 
       if (result) {
         broadcastState({ ...result, pathInView });
       }
     } catch (error) {
+      // The job was already abandoned while this upload was in flight, so its aborted fetch has nothing left to report.
+      if (currentJob !== job) {
+        return;
+      }
+
+      if (error instanceof UploadSessionGoneError) {
+        const droppedCount = job.queue.length + 1;
+
+        console.error(error);
+        broadcastState({
+          error: `${file.name}: ${error.message} (${droppedCount} upload${droppedCount === 1 ? '' : 's'} dropped).`,
+        });
+        abandonCurrentJob();
+
+        return;
+      }
+
       console.error(error);
-      broadcastState({ error: String(error?.message || error) });
+      broadcastState({ error: `${file.name}: ${String(error?.message || error)}` });
     }
   }
 
@@ -123,11 +172,20 @@ self.addEventListener('message', (event) => {
     return;
   }
 
+  if (currentJob && message.sessionTag !== currentJob.sessionTag) {
+    abandonCurrentJob();
+  }
+
   if (message.type === 'ENQUEUE_UPLOAD') {
     const isNewJob = !currentJob;
 
     if (isNewJob) {
-      currentJob = { queue: [], uploadProgress: '' };
+      currentJob = {
+        queue: [],
+        uploadProgress: '',
+        sessionTag: message.sessionTag,
+        abortController: new AbortController(),
+      };
     }
 
     currentJob.queue.push(...message.items);
@@ -136,7 +194,7 @@ self.addEventListener('message', (event) => {
 
     if (isNewJob) {
       // 'message' events only keep this worker alive for as long as the handler is extended: without waitUntil, the browser can terminate the worker before processQueue's first fetch() even starts.
-      event.waitUntil(processQueue());
+      event.waitUntil(processQueue(currentJob));
     }
   } else if (message.type === 'QUERY_STATE') {
     broadcastState();

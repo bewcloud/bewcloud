@@ -4,6 +4,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { DirectoryModel, ensureUserPathIsValidAndSecurelyAccessible, FileModel } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
+import { generateUploadSessionTag } from '/lib/auth.ts';
 
 export interface ResponseBody {
   success: boolean;
@@ -41,7 +42,7 @@ async function cleanStaleUploads(userUploadDir: string): Promise<void> {
   }
 }
 
-async function post({ request, user }: RequestHandlerParams) {
+async function post({ request, user, session }: RequestHandlerParams) {
   if (
     !(await AppConfig.isAppEnabled('files')) && !(await AppConfig.isAppEnabled('photos')) &&
     !(await AppConfig.isAppEnabled('notes'))
@@ -58,9 +59,15 @@ async function post({ request, user }: RequestHandlerParams) {
   const parentPath = requestBody.get('parent_path') as string;
   const name = requestBody.get('name') as string;
   const chunk = requestBody.get('chunk') as File | null;
+  const uploadSessionTag = requestBody.get('upload_session_tag') as string;
 
   const chunkIndex = parseInt(chunkIndexStr, 10);
   const totalChunks = parseInt(totalChunksStr, 10);
+
+  // Uploads are queued in a service worker that outlives the page, so a queue left over from a previous session must not keep writing into whoever is logged in now. Untagged requests (WebDAV/basic auth) are left alone.
+  if (uploadSessionTag && uploadSessionTag !== await generateUploadSessionTag(session?.tokenData?.session_id)) {
+    return new Response('Forbidden', { status: 403 });
+  }
 
   if (
     !uploadId ||

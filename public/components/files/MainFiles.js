@@ -1,6 +1,6 @@
 import { useSignal } from '@preact/signals';
 import { sortDirectories, sortFiles } from '/public/ts/utils/files.ts';
-import { useUploadQueue } from './useUploadQueue.ts';
+import { useUploadQueue } from "./useUploadQueue.js";
 import SearchFiles from "./SearchFiles.js";
 import ListFiles from "./ListFiles.js";
 import FilesBreadcrumb from "./FilesBreadcrumb.js";
@@ -18,7 +18,8 @@ export default function MainFiles({
   areDirectoryDownloadsAllowed,
   fileShareId,
   initialSortBy = 'name',
-  initialSortOrder = 'asc'
+  initialSortOrder = 'asc',
+  uploadSessionTag
 }) {
   const isAdding = useSignal(false);
   const isDeleting = useSignal(false);
@@ -47,7 +48,8 @@ export default function MainFiles({
     isEnabled: !fileShareId,
     path,
     files,
-    directories
+    directories,
+    uploadSessionTag
   });
   function onClickSort(column) {
     let newSortOrder = 'asc';

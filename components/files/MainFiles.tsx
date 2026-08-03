@@ -53,6 +53,7 @@ interface MainFilesProps {
   fileShareId?: string;
   initialSortBy?: SortColumn;
   initialSortOrder?: SortOrder;
+  uploadSessionTag?: string;
 }
 
 export default function MainFiles(
@@ -66,6 +67,7 @@ export default function MainFiles(
     fileShareId,
     initialSortBy = 'name',
     initialSortOrder = 'asc',
+    uploadSessionTag,
   }: MainFilesProps,
 ) {
   const isAdding = useSignal<boolean>(false);
@@ -92,11 +94,12 @@ export default function MainFiles(
   const createShareModal = useSignal<{ isOpen: boolean; filePath: string; password?: string } | null>(null);
   const manageShareModal = useSignal<{ isOpen: boolean; fileShareId: string } | null>(null);
 
-  const { isUploading, uploadProgress, enqueueUpload } = useUploadQueue({
+  const { isUploading, uploadProgress, uploadError, enqueueUpload } = useUploadQueue({
     isEnabled: !fileShareId,
     path,
     files,
     directories,
+    uploadSessionTag,
   });
 
   function onClickSort(column: SortColumn) {
@@ -918,6 +921,14 @@ export default function MainFiles(
             : null}
           {!isDeleting.value && !isAdding.value && !isUploading.value && !isUpdating.value ? <>&nbsp;</> : null}
         </span>
+
+        {uploadError.value
+          ? (
+            <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
+              Upload failed — {uploadError.value}
+            </span>
+          )
+          : null}
       </section>
 
       {!fileShareId

@@ -20,9 +20,10 @@ interface MainNotesProps {
   initialDirectories: Directory[];
   initialFiles: DirectoryFile[];
   initialPath: string;
+  uploadSessionTag?: string;
 }
 
-export default function MainNotes({ initialDirectories, initialFiles, initialPath }: MainNotesProps) {
+export default function MainNotes({ initialDirectories, initialFiles, initialPath, uploadSessionTag }: MainNotesProps) {
   const isAdding = useSignal<boolean>(false);
   const isDeleting = useSignal<boolean>(false);
   const directories = useSignal<Directory[]>(initialDirectories);
@@ -32,11 +33,12 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
   const isNewNoteModalOpen = useSignal<boolean>(false);
   const isNewDirectoryModalOpen = useSignal<boolean>(false);
 
-  const { isUploading: isCreatingNote, enqueueUpload } = useUploadQueue({
+  const { isUploading: isCreatingNote, uploadError: createNoteError, enqueueUpload } = useUploadQueue({
     isEnabled: true,
     path,
     files,
     directories,
+    uploadSessionTag,
   });
 
   function onClickCreateNote() {
@@ -287,6 +289,14 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
             : null}
           {!isDeleting.value && !isAdding.value && !isCreatingNote.value ? <>&nbsp;</> : null}
         </span>
+
+        {createNoteError.value
+          ? (
+            <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
+              Creating the note failed — {createNoteError.value}
+            </span>
+          )
+          : null}
       </section>
 
       <CreateDirectoryModal

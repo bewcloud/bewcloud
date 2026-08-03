@@ -1,5 +1,5 @@
 import { useSignal } from '@preact/signals';
-import { useUploadQueue } from '/components/files/useUploadQueue.ts';
+import { useUploadQueue } from "/public/components/files/useUploadQueue.js";
 import CreateDirectoryModal from "/public/components/files/CreateDirectoryModal.js";
 import ListFiles from "/public/components/files/ListFiles.js";
 import FilesBreadcrumb from "/public/components/files/FilesBreadcrumb.js";
@@ -7,7 +7,8 @@ import ListPhotos from "/public/components/photos/ListPhotos.js";
 export default function MainPhotos({
   initialDirectories,
   initialFiles,
-  initialPath
+  initialPath,
+  uploadSessionTag
 }) {
   const isAdding = useSignal(false);
   const directories = useSignal(initialDirectories);
@@ -23,7 +24,8 @@ export default function MainPhotos({
     isEnabled: true,
     path,
     files,
-    directories
+    directories,
+    uploadSessionTag
   });
   function onClickUploadFile() {
     const fileInput = document.createElement('input');

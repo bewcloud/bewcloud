@@ -5,7 +5,8 @@ export function useUploadQueue({
   isEnabled,
   path,
   files,
-  directories
+  directories,
+  uploadSessionTag = ''
 }) {
   const isUploading = useSignal(false);
   const uploadProgress = useSignal('');
@@ -17,6 +18,9 @@ export function useUploadQueue({
     uploadChannel.onmessage = event => {
       const state = event.data;
       if (!state || state.type !== 'STATE') {
+        return;
+      }
+      if (state.sessionTag && state.sessionTag !== uploadSessionTag) {
         return;
       }
       isUploading.value = state.isUploading;
@@ -35,7 +39,8 @@ export function useUploadQueue({
       try {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({
-          type: 'QUERY_STATE'
+          type: 'QUERY_STATE',
+          sessionTag: uploadSessionTag
         });
       } catch (error) {
         console.error(error);
@@ -51,6 +56,7 @@ export function useUploadQueue({
     requestBody.set('path_in_view', pathInView);
     requestBody.set('parent_path', parentPath);
     requestBody.set('name', file.name);
+    requestBody.set('upload_session_tag', uploadSessionTag);
     requestBody.set('contents', file);
     const response = await fetch(`/api/files/upload`, {
       method: 'POST',
@@ -81,6 +87,7 @@ export function useUploadQueue({
       requestBody.set('path_in_view', pathInView);
       requestBody.set('parent_path', parentPath);
       requestBody.set('name', file.name);
+      requestBody.set('upload_session_tag', uploadSessionTag);
       requestBody.set('chunk', chunkBlob);
       const response = await fetch(`/api/files/upload-chunk`, {
         method: 'POST',
@@ -110,6 +117,7 @@ export function useUploadQueue({
     if (serviceWorker) {
       serviceWorker.postMessage({
         type: 'ENQUEUE_UPLOAD',
+        sessionTag: uploadSessionTag,
         items: items.map(item => ({
           ...item,
           pathInView

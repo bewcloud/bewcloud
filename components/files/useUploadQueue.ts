@@ -18,12 +18,14 @@ interface UseUploadQueueOptions {
   path: Signal<string>;
   files: Signal<DirectoryFile[]>;
   directories: Signal<Directory[]>;
+  uploadSessionTag?: string;
 }
 
 // Uploads run inside a service worker (public/sw.js) so they survive a page refresh. This tab just enqueues files and listens for progress here; on mount it also queries whether a job is already running (e.g. right after a refresh) to hydrate the UI from it.
-export function useUploadQueue({ isEnabled, path, files, directories }: UseUploadQueueOptions) {
+export function useUploadQueue({ isEnabled, path, files, directories, uploadSessionTag = '' }: UseUploadQueueOptions) {
   const isUploading = useSignal<boolean>(false);
   const uploadProgress = useSignal<string>('');
+  const uploadError = useSignal<string>('');
 
   useEffect(() => {
     if (!isEnabled || !('serviceWorker' in navigator)) {
@@ -41,9 +43,14 @@ export function useUploadQueue({ isEnabled, path, files, directories }: UseUploa
         newDirectories?: Directory[];
         pathInView?: string;
         error?: string;
+        sessionTag?: string;
       };
 
       if (!state || state.type !== 'STATE') {
+        return;
+      }
+
+      if (state.sessionTag && state.sessionTag !== uploadSessionTag) {
         return;
       }
 
@@ -52,6 +59,7 @@ export function useUploadQueue({ isEnabled, path, files, directories }: UseUploa
 
       if (state.error) {
         console.error(new Error(state.error));
+        uploadError.value = state.error;
       }
 
       // Only apply the file/directory listing from an upload if it matches this tab's own current path; another tab may have uploaded into a different directory.
@@ -67,7 +75,7 @@ export function useUploadQueue({ isEnabled, path, files, directories }: UseUploa
     async function queryUploadState() {
       try {
         const registration = await navigator.serviceWorker.ready;
-        registration.active?.postMessage({ type: 'QUERY_STATE' });
+        registration.active?.postMessage({ type: 'QUERY_STATE', sessionTag: uploadSessionTag });
       } catch (error) {
         console.error(error);
       }
@@ -85,6 +93,7 @@ export function useUploadQueue({ isEnabled, path, files, directories }: UseUploa
     requestBody.set('path_in_view', pathInView);
     requestBody.set('parent_path', parentPath);
     requestBody.set('name', file.name);
+    requestBody.set('upload_session_tag', uploadSessionTag);
     requestBody.set('contents', file);
 
     const response = await fetch(`/api/files/upload`, {
@@ -124,6 +133,7 @@ export function useUploadQueue({ isEnabled, path, files, directories }: UseUploa
       requestBody.set('path_in_view', pathInView);
       requestBody.set('parent_path', parentPath);
       requestBody.set('name', file.name);
+      requestBody.set('upload_session_tag', uploadSessionTag);
       requestBody.set('chunk', chunkBlob);
 
       const response = await fetch(`/api/files/upload-chunk`, {
@@ -160,12 +170,14 @@ export function useUploadQueue({ isEnabled, path, files, directories }: UseUploa
 
     isUploading.value = true;
     uploadProgress.value = '';
+    uploadError.value = '';
 
     const serviceWorker = isEnabled ? navigator.serviceWorker?.controller : undefined;
 
     if (serviceWorker) {
       serviceWorker.postMessage({
         type: 'ENQUEUE_UPLOAD',
+        sessionTag: uploadSessionTag,
         items: items.map((item) => ({ ...item, pathInView })),
       });
 
@@ -183,6 +195,7 @@ export function useUploadQueue({ isEnabled, path, files, directories }: UseUploa
           }
         } catch (error) {
           console.error(error);
+          uploadError.value = `${item.file.name}: ${error instanceof Error ? error.message : String(error)}`;
         }
       }
 
@@ -190,5 +203,5 @@ export function useUploadQueue({ isEnabled, path, files, directories }: UseUploa
     })();
   }
 
-  return { isUploading, uploadProgress, enqueueUpload };
+  return { isUploading, uploadProgress, uploadError, enqueueUpload };
 }

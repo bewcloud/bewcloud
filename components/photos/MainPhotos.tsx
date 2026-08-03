@@ -15,9 +15,12 @@ interface MainPhotosProps {
   initialDirectories: Directory[];
   initialFiles: DirectoryFile[];
   initialPath: string;
+  uploadSessionTag?: string;
 }
 
-export default function MainPhotos({ initialDirectories, initialFiles, initialPath }: MainPhotosProps) {
+export default function MainPhotos(
+  { initialDirectories, initialFiles, initialPath, uploadSessionTag }: MainPhotosProps,
+) {
   const isAdding = useSignal<boolean>(false);
   const directories = useSignal<Directory[]>(initialDirectories);
   const files = useSignal<DirectoryFile[]>(initialFiles);
@@ -25,11 +28,12 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
   const areNewOptionsOption = useSignal<boolean>(false);
   const isNewDirectoryModalOpen = useSignal<boolean>(false);
 
-  const { isUploading, uploadProgress, enqueueUpload } = useUploadQueue({
+  const { isUploading, uploadProgress, uploadError, enqueueUpload } = useUploadQueue({
     isEnabled: true,
     path,
     files,
     directories,
+    uploadSessionTag,
   });
 
   function onClickUploadFile() {
@@ -201,6 +205,14 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
             : null}
           {!isAdding.value && !isUploading.value ? <>&nbsp;</> : null}
         </span>
+
+        {uploadError.value
+          ? (
+            <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
+              Upload failed — {uploadError.value}
+            </span>
+          )
+          : null}
       </section>
 
       <CreateDirectoryModal

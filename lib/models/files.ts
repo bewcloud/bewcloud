@@ -215,7 +215,7 @@ export class FileModel {
     path: string,
     name: string,
     contents: string | ArrayBuffer,
-  ): Promise<boolean> {
+  ): Promise<{ success: boolean; alreadyExists?: boolean }> {
     await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
 
     const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
@@ -237,10 +237,10 @@ export class FileModel {
       }
     } catch (error) {
       console.error(error);
-      return false;
+      return { success: false, alreadyExists: error instanceof Deno.errors.AlreadyExists };
     }
 
-    return true;
+    return { success: true };
   }
 
   static async update(

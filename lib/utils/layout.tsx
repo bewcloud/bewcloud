@@ -81,7 +81,7 @@ export async function basicLayoutResponse(htmlContent: string, options: BasicLay
   const headers: HeadersInit = {
     'content-type': 'text/html; charset=utf-8',
     'content-security-policy':
-      `default-src 'self'; child-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'`,
+      `default-src 'self'; child-src 'none'; worker-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'`,
     'x-frame-options': 'DENY',
     'x-content-type-options': 'nosniff',
     'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',

@@ -222,9 +222,20 @@ const routes: Routes = {
           if (relativePath.startsWith('js/')) {
             response.headers.set('content-type', 'application/javascript; charset=utf-8');
           }
+
+          // The upload service worker is served from under /public/, but needs root scope to observe navigations/API requests across the whole app, not just /public/.
+          if (relativePath === 'sw.js') {
+            response.headers.set('content-type', 'application/javascript; charset=utf-8');
+            response.headers.set('service-worker-allowed', '/');
+          }
         }
 
-        response.headers.set('cache-control', `max-age=${oneDayInSeconds}, public`);
+        // Compiled component JS imports other compiled files by path, so a stale cached copy can reference a file that no longer exists after a rebuild (e.g. a renamed/removed component); same risk for the service worker script itself. 'no-cache' still lets the browser reuse the cached body via a 304 (serveFile sets an ETag), it just forces a revalidation request first.
+        const isServedFromComponentsPath = relativePath.startsWith('components/');
+        response.headers.set(
+          'cache-control',
+          (relativePath === 'sw.js' || isServedFromComponentsPath) ? 'no-cache' : `max-age=${oneDayInSeconds}, public`,
+        );
         return response;
       } catch (error) {
         if ((error as Error).toString().includes('NotFound')) {

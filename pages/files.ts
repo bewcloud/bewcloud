@@ -7,6 +7,7 @@ import { html } from '/public/ts/utils/misc.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import Loading from '/components/Loading.ts';
 import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
+import { generateUploadSessionTag } from '/lib/auth.ts';
 
 async function get({ request, user, match, session, isRunningLocally }: RequestHandlerParams) {
   const baseUrl = (await AppConfig.getConfig()).auth.baseUrl;
@@ -70,6 +71,7 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
     areDirectoryDownloadsAllowed,
     initialSortBy,
     initialSortOrder,
+    uploadSessionTag: await generateUploadSessionTag(session?.tokenData?.session_id),
   });
 
   return basicLayoutResponse(htmlContent, {
@@ -93,6 +95,7 @@ function defaultHtmlContent(
     areDirectoryDownloadsAllowed,
     initialSortBy,
     initialSortOrder,
+    uploadSessionTag,
   }: {
     userDirectories: Directory[];
     userFiles: DirectoryFile[];
@@ -102,6 +105,7 @@ function defaultHtmlContent(
     areDirectoryDownloadsAllowed: boolean;
     initialSortBy: string;
     initialSortOrder: string;
+    uploadSessionTag: string;
   },
 ) {
   return html`
@@ -119,6 +123,7 @@ function defaultHtmlContent(
     window.Fragment = Fragment;
 
     import MainFiles from '/public/components/files/MainFiles.js';
+    import { registerUploadServiceWorker } from '/public/ts/service-worker.ts';
 
     const mainFilesElement = document.getElementById('main-files');
 
@@ -132,12 +137,15 @@ function defaultHtmlContent(
         areDirectoryDownloadsAllowed: ${JSON.stringify(areDirectoryDownloadsAllowed)},
         initialSortBy: ${JSON.stringify(initialSortBy)},
         initialSortOrder: ${JSON.stringify(initialSortOrder)},
+        uploadSessionTag: ${JSON.stringify(uploadSessionTag)},
       });
 
       render(mainFilesApp, mainFilesElement);
 
       document.getElementById('loading')?.remove();
     }
+
+    registerUploadServiceWorker();
     </script>
   `;
 }

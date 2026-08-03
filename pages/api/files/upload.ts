@@ -3,14 +3,16 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
+import { generateUploadSessionTag } from '/lib/auth.ts';
 
 export interface ResponseBody {
   success: boolean;
+  error?: string;
   newFiles: DirectoryFile[];
   newDirectories: Directory[];
 }
 
-async function post({ request, user }: RequestHandlerParams) {
+async function post({ request, user, session }: RequestHandlerParams) {
   if (
     !(await AppConfig.isAppEnabled('files')) && !(await AppConfig.isAppEnabled('photos')) &&
     !(await AppConfig.isAppEnabled('notes'))
@@ -24,6 +26,12 @@ async function post({ request, user }: RequestHandlerParams) {
   const parentPath = requestBody.get('parent_path') as string;
   const name = requestBody.get('name') as string;
   const contents = requestBody.get('contents') as File | string;
+  const uploadSessionTag = requestBody.get('upload_session_tag') as string;
+
+  // Uploads are queued in a service worker that outlives the page, so a queue left over from a previous session must not keep writing into whoever is logged in now. Untagged requests (WebDAV/basic auth) are left alone.
+  if (uploadSessionTag && uploadSessionTag !== await generateUploadSessionTag(session?.tokenData?.session_id)) {
+    return new Response('Forbidden', { status: 403 });
+  }
 
   if (
     !parentPath || !pathInView || !name.trim() || !contents || !parentPath.startsWith('/') ||
@@ -39,7 +47,12 @@ async function post({ request, user }: RequestHandlerParams) {
   const newFiles = await FileModel.list(user!.id, pathInView);
   const newDirectories = await DirectoryModel.list(user!.id, pathInView);
 
-  const responseBody: ResponseBody = { success: createdFile, newFiles, newDirectories };
+  const responseBody: ResponseBody = {
+    success: createdFile.success,
+    error: createdFile.alreadyExists ? 'A file with this name already exists.' : undefined,
+    newFiles,
+    newDirectories,
+  };
 
   return new Response(JSON.stringify(responseBody));
 }

@@ -7,6 +7,7 @@ import { PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import { html } from '/public/ts/utils/misc.ts';
 import Loading from '/components/Loading.ts';
+import { generateUploadSessionTag } from '/lib/auth.ts';
 
 async function get({ request, user, match, session, isRunningLocally }: RequestHandlerParams) {
   if (!(await AppConfig.isAppEnabled('photos'))) {
@@ -37,7 +38,12 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
     return PHOTO_EXTENSIONS.some((extension) => lowercaseFileName.endsWith(extension));
   });
 
-  const htmlContent = defaultHtmlContent({ userDirectories, userPhotos, currentPath });
+  const htmlContent = defaultHtmlContent({
+    userDirectories,
+    userPhotos,
+    currentPath,
+    uploadSessionTag: await generateUploadSessionTag(session?.tokenData?.session_id),
+  });
 
   return basicLayoutResponse(htmlContent, {
     currentPath: match.pathname.input,
@@ -50,10 +56,11 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
   });
 }
 
-function defaultHtmlContent({ userDirectories, userPhotos, currentPath }: {
+function defaultHtmlContent({ userDirectories, userPhotos, currentPath, uploadSessionTag }: {
   userDirectories: Directory[];
   userPhotos: DirectoryFile[];
   currentPath: string;
+  uploadSessionTag: string;
 }) {
   return html`
     <main id="main">
@@ -70,6 +77,7 @@ function defaultHtmlContent({ userDirectories, userPhotos, currentPath }: {
     window.Fragment = Fragment;
 
     import MainPhotos from '/public/components/photos/MainPhotos.js';
+    import { registerUploadServiceWorker } from '/public/ts/service-worker.ts';
 
     const mainPhotosElement = document.getElementById('main-photos');
 
@@ -78,12 +86,15 @@ function defaultHtmlContent({ userDirectories, userPhotos, currentPath }: {
         initialDirectories: ${JSON.stringify(userDirectories || [])},
         initialFiles: ${JSON.stringify(userPhotos || [])},
         initialPath: ${JSON.stringify(currentPath)},
+        uploadSessionTag: ${JSON.stringify(uploadSessionTag)},
       });
 
       render(mainPhotosApp, mainPhotosElement);
 
       document.getElementById('loading')?.remove();
     }
+
+    registerUploadServiceWorker();
     </script>
   `;
 }

@@ -24,7 +24,7 @@ function applyCorsHeadersToResponse(origin: string, response: Response) {
   if (!headers.get('content-security-policy')) {
     headers.set(
       'Content-Security-Policy',
-      "default-src 'self'; child-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'",
+      "default-src 'self'; child-src 'none'; worker-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'",
     );
   }
   if (!headers.get('x-frame-options')) {

@@ -2,8 +2,6 @@ import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
-import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
-import { ResponseBody as ChunkUploadResponseBody } from '/pages/api/files/upload-chunk.ts';
 import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/pages/api/files/rename.ts';
 import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/pages/api/files/move.ts';
 import { RequestBody as DeleteRequestBody, ResponseBody as DeleteResponseBody } from '/pages/api/files/delete.ts';
@@ -35,6 +33,7 @@ import {
   RequestBody as DeleteShareRequestBody,
   ResponseBody as DeleteShareResponseBody,
 } from '/pages/api/files/delete-share.ts';
+import { useUploadQueue } from './useUploadQueue.ts';
 import SearchFiles from './SearchFiles.tsx';
 import ListFiles from './ListFiles.tsx';
 import FilesBreadcrumb from './FilesBreadcrumb.tsx';
@@ -54,6 +53,7 @@ interface MainFilesProps {
   fileShareId?: string;
   initialSortBy?: SortColumn;
   initialSortOrder?: SortOrder;
+  uploadSessionTag?: string;
 }
 
 export default function MainFiles(
@@ -67,11 +67,10 @@ export default function MainFiles(
     fileShareId,
     initialSortBy = 'name',
     initialSortOrder = 'asc',
+    uploadSessionTag,
   }: MainFilesProps,
 ) {
   const isAdding = useSignal<boolean>(false);
-  const isUploading = useSignal<boolean>(false);
-  const uploadProgress = useSignal<string>('');
   const isDeleting = useSignal<boolean>(false);
   const isUpdating = useSignal<boolean>(false);
   const directories = useSignal<Directory[]>(initialDirectories);
@@ -94,6 +93,14 @@ export default function MainFiles(
   >(null);
   const createShareModal = useSignal<{ isOpen: boolean; filePath: string; password?: string } | null>(null);
   const manageShareModal = useSignal<{ isOpen: boolean; fileShareId: string } | null>(null);
+
+  const { isUploading, uploadProgress, uploadError, enqueueUpload } = useUploadQueue({
+    isEnabled: !fileShareId,
+    path,
+    files,
+    directories,
+    uploadSessionTag,
+  });
 
   function onClickSort(column: SortColumn) {
     let newSortOrder: SortOrder = 'asc';
@@ -124,81 +131,6 @@ export default function MainFiles(
     }
   }
 
-  // 10 MB chunks keep each request faster.
-  const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
-
-  async function uploadFileSingle(chosenFile: File, parentPath: string) {
-    const requestBody = new FormData();
-    requestBody.set('path_in_view', path.value);
-    requestBody.set('parent_path', parentPath);
-    requestBody.set('name', chosenFile.name);
-    requestBody.set('contents', chosenFile);
-
-    const response = await fetch(`/api/files/upload`, {
-      method: 'POST',
-      body: requestBody,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload file. ${response.statusText} ${await response.text()}`);
-    }
-
-    const result = await response.json() as UploadResponseBody;
-
-    if (!result.success) {
-      throw new Error('Failed to upload file!');
-    }
-
-    files.value = [...result.newFiles];
-    directories.value = [...result.newDirectories];
-  }
-
-  async function uploadFileChunked(chosenFile: File, parentPath: string) {
-    const totalChunks = Math.ceil(chosenFile.size / CHUNK_SIZE_BYTES);
-    const uploadId = crypto.randomUUID();
-    // Capture once — the user may navigate away during a long upload, which would change path.value and cause the final response to refresh the wrong directory listing.
-    const pathInView = path.value;
-
-    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-      uploadProgress.value = `Uploading ${chosenFile.name} (${chunkIndex + 1}/${totalChunks})…`;
-
-      const start = chunkIndex * CHUNK_SIZE_BYTES;
-      const end = Math.min(start + CHUNK_SIZE_BYTES, chosenFile.size);
-      const chunkBlob = chosenFile.slice(start, end);
-
-      const requestBody = new FormData();
-      requestBody.set('upload_id', uploadId);
-      requestBody.set('chunk_index', String(chunkIndex));
-      requestBody.set('total_chunks', String(totalChunks));
-      requestBody.set('path_in_view', pathInView);
-      requestBody.set('parent_path', parentPath);
-      requestBody.set('name', chosenFile.name);
-      requestBody.set('chunk', chunkBlob);
-
-      const response = await fetch(`/api/files/upload-chunk`, {
-        method: 'POST',
-        body: requestBody,
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to upload chunk ${chunkIndex + 1}/${totalChunks}. ${response.statusText} ${await response.text()}`,
-        );
-      }
-
-      const result = await response.json() as ChunkUploadResponseBody;
-
-      if (!result.success) {
-        throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}!`);
-      }
-
-      if (result.isComplete) {
-        files.value = [...result.newFiles!];
-        directories.value = [...result.newDirectories!];
-      }
-    }
-  }
-
   function onClickUploadFile(uploadDirectory = false) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -212,43 +144,32 @@ export default function MainFiles(
     }
     fileInput.click();
 
-    fileInput.onchange = async (event) => {
+    fileInput.onchange = (event) => {
       const chosenFilesList = (event.target as HTMLInputElement)?.files!;
 
       const chosenFiles = Array.from(chosenFilesList);
 
-      isUploading.value = true;
-      uploadProgress.value = '';
-
-      for (const chosenFile of chosenFiles) {
-        if (!chosenFile) {
-          continue;
-        }
-
-        areNewOptionsOpen.value = false;
-
-        // Resolve the parent path, keeping any sub-directory structure from directory uploads
-        let fileParentPath = path.value;
-        if (chosenFile.webkitRelativePath) {
-          const directoryPath = chosenFile.webkitRelativePath.replace(chosenFile.name, '');
-          // We don't need to worry about path joining here, the API will handle it (and make sure it's secure)
-          fileParentPath = `${path.value}${directoryPath}`;
-        }
-
-        uploadProgress.value = '';
-
-        try {
-          if (chosenFile.size >= CHUNK_SIZE_BYTES) {
-            await uploadFileChunked(chosenFile, fileParentPath);
-          } else {
-            await uploadFileSingle(chosenFile, fileParentPath);
-          }
-        } catch (error) {
-          console.error(error);
-        }
+      if (chosenFiles.length === 0) {
+        return;
       }
 
-      isUploading.value = false;
+      areNewOptionsOpen.value = false;
+
+      function getFileParentPath(chosenFile: File) {
+        if (!chosenFile.webkitRelativePath) {
+          return path.value;
+        }
+
+        // Resolve the parent path, keeping any sub-directory structure from directory uploads.
+        // We don't need to worry about path joining here, the API will handle it (and make sure it's secure)
+        const directoryPath = chosenFile.webkitRelativePath.replace(chosenFile.name, '');
+        return `${path.value}${directoryPath}`;
+      }
+
+      enqueueUpload(chosenFiles.map((chosenFile) => ({
+        file: chosenFile,
+        parentPath: getFileParentPath(chosenFile),
+      })));
     };
   }
 
@@ -1000,6 +921,14 @@ export default function MainFiles(
             : null}
           {!isDeleting.value && !isAdding.value && !isUploading.value && !isUpdating.value ? <>&nbsp;</> : null}
         </span>
+
+        {uploadError.value
+          ? (
+            <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
+              Upload failed — {uploadError.value}
+            </span>
+          )
+          : null}
       </section>
 
       {!fileShareId

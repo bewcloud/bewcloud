@@ -1,11 +1,11 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
 import {
   RequestBody as CreateDirectoryRequestBody,
   ResponseBody as CreateDirectoryResponseBody,
 } from '/pages/api/files/create-directory.ts';
+import { useUploadQueue } from '/components/files/useUploadQueue.ts';
 import CreateDirectoryModal from '/components/files/CreateDirectoryModal.tsx';
 import ListFiles from '/components/files/ListFiles.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
@@ -15,16 +15,26 @@ interface MainPhotosProps {
   initialDirectories: Directory[];
   initialFiles: DirectoryFile[];
   initialPath: string;
+  uploadSessionTag?: string;
 }
 
-export default function MainPhotos({ initialDirectories, initialFiles, initialPath }: MainPhotosProps) {
+export default function MainPhotos(
+  { initialDirectories, initialFiles, initialPath, uploadSessionTag }: MainPhotosProps,
+) {
   const isAdding = useSignal<boolean>(false);
-  const isUploading = useSignal<boolean>(false);
   const directories = useSignal<Directory[]>(initialDirectories);
   const files = useSignal<DirectoryFile[]>(initialFiles);
   const path = useSignal<string>(initialPath);
   const areNewOptionsOption = useSignal<boolean>(false);
   const isNewDirectoryModalOpen = useSignal<boolean>(false);
+
+  const { isUploading, uploadProgress, uploadError, enqueueUpload } = useUploadQueue({
+    isEnabled: true,
+    path,
+    files,
+    directories,
+    uploadSessionTag,
+  });
 
   function onClickUploadFile() {
     const fileInput = document.createElement('input');
@@ -33,49 +43,18 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
     fileInput.accept = 'image/*,video/*';
     fileInput.click();
 
-    fileInput.onchange = async (event) => {
+    fileInput.onchange = (event) => {
       const chosenFilesList = (event.target as HTMLInputElement)?.files!;
 
-      const chosenFiles = Array.from(chosenFilesList);
+      const chosenFiles = Array.from(chosenFilesList).filter(Boolean);
 
-      isUploading.value = true;
-
-      for (const chosenFile of chosenFiles) {
-        if (!chosenFile) {
-          continue;
-        }
-
-        areNewOptionsOption.value = false;
-
-        const requestBody = new FormData();
-        requestBody.set('parent_path', path.value);
-        requestBody.set('path_in_view', path.value);
-        requestBody.set('name', chosenFile.name);
-        requestBody.set('contents', chosenFile);
-
-        try {
-          const response = await fetch(`/api/files/upload`, {
-            method: 'POST',
-            body: requestBody,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Failed to upload photo. ${response.statusText} ${await response.text()}`);
-          }
-
-          const result = await response.json() as UploadResponseBody;
-
-          if (!result.success) {
-            throw new Error('Failed to upload photo!');
-          }
-
-          files.value = [...result.newFiles];
-        } catch (error) {
-          console.error(error);
-        }
+      if (chosenFiles.length === 0) {
+        return;
       }
 
-      isUploading.value = false;
+      areNewOptionsOption.value = false;
+
+      enqueueUpload(chosenFiles.map((chosenFile) => ({ file: chosenFile, parentPath: path.value })));
     };
   }
 
@@ -219,12 +198,21 @@ export default function MainPhotos({ initialDirectories, initialFiles, initialPa
           {isUploading.value
             ? (
               <>
-                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />Uploading...
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
+                {uploadProgress.value || 'Uploading...'}
               </>
             )
             : null}
           {!isAdding.value && !isUploading.value ? <>&nbsp;</> : null}
         </span>
+
+        {uploadError.value
+          ? (
+            <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
+              Upload failed — {uploadError.value}
+            </span>
+          )
+          : null}
       </section>
 
       <CreateDirectoryModal

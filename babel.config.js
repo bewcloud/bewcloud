@@ -1,15 +1,18 @@
-// Converts local TSX imports to JS imports, used in the components
-const rewriteLocalTsxImports = () => {
+// Converts local TS/TSX imports to JS imports, used in the components
+const rewriteLocalTypeScriptImports = () => {
   const isLocal = (value) => typeof value === 'string' && (value.startsWith('./') || value.startsWith('../'));
   const isComponent = (value) => typeof value === 'string' && value.startsWith('/components/');
+  // Every component is compiled to a .js file next to this one, and only /public/ is served, so both extensions have to point there or the browser gets a 404
+  const isTypeScript = (value) => typeof value === 'string' && (value.endsWith('.ts') || value.endsWith('.tsx'));
+  const toJsFileName = (value) => `${value.slice(0, value.lastIndexOf('.'))}.js`;
 
   const rewrite = (source) => {
-    if (source && isLocal(source.value) && source.value.endsWith('.tsx')) {
-      source.value = source.value.replace('.tsx', '.js');
+    if (source && isLocal(source.value) && isTypeScript(source.value)) {
+      source.value = toJsFileName(source.value);
     }
 
-    if (source && isComponent(source.value) && source.value.endsWith('.tsx')) {
-      source.value = source.value.replace('/components/', '/public/components/').replace('.tsx', '.js');
+    if (source && isComponent(source.value) && isTypeScript(source.value)) {
+      source.value = toJsFileName(source.value.replace('/components/', '/public/components/'));
     }
   };
 
@@ -34,7 +37,7 @@ const presets = [
 ];
 
 const plugins = [
-  rewriteLocalTsxImports,
+  rewriteLocalTypeScriptImports,
   [
     '@babel/plugin-transform-react-jsx',
     {

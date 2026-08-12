@@ -60,8 +60,14 @@ async function basicLayout(
 
         <script>
           // Tell the upload service worker to abort its queue before navigating away, instead of letting it keep running against a session that's about to be gone.
-          document.getElementById('logout-link')?.addEventListener('click', () => {
-            navigator.serviceWorker?.controller?.postMessage({ type: 'ABORT_UPLOADS' });
+          document.getElementById('logout-link')?.addEventListener('click', async () => {
+            if (navigator.serviceWorker?.controller) {
+              navigator.serviceWorker.controller.postMessage({ type: 'ABORT_UPLOADS' });
+              return;
+            }
+
+            const registration = await navigator.serviceWorker?.ready;
+            registration?.active?.postMessage({ type: 'ABORT_UPLOADS' });
           });
         </script>
       </body>

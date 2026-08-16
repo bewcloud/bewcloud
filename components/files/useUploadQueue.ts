@@ -91,10 +91,22 @@ export function useUploadQueue(
       }
     };
 
+    // Only sent once on mount otherwise: a STATE broadcast the SW sent while this tab was backgrounded or bfcache-frozen never arrives, so isUploading/uploadProgress get stuck at whatever they were when the tab lost focus. Re-querying on visibility/pageshow self-heals from the SW's authoritative state.
+    function resyncState() {
+      if (document.visibilityState === 'visible') {
+        postToUploadServiceWorker({ type: 'QUERY_STATE', sessionTag: uploadSessionTag });
+      }
+    }
+
+    document.addEventListener('visibilitychange', resyncState);
+    window.addEventListener('pageshow', resyncState);
+
     postToUploadServiceWorker({ type: 'QUERY_STATE', sessionTag: uploadSessionTag });
 
     return () => {
       uploadChannel.close();
+      document.removeEventListener('visibilitychange', resyncState);
+      window.removeEventListener('pageshow', resyncState);
     };
   }, []);
 

@@ -41,12 +41,24 @@ export function useUploadQueue({
         directories.value = [...state.newDirectories];
       }
     };
+    function resyncState() {
+      if (document.visibilityState === 'visible') {
+        postToUploadServiceWorker({
+          type: 'QUERY_STATE',
+          sessionTag: uploadSessionTag
+        });
+      }
+    }
+    document.addEventListener('visibilitychange', resyncState);
+    window.addEventListener('pageshow', resyncState);
     postToUploadServiceWorker({
       type: 'QUERY_STATE',
       sessionTag: uploadSessionTag
     });
     return () => {
       uploadChannel.close();
+      document.removeEventListener('visibilitychange', resyncState);
+      window.removeEventListener('pageshow', resyncState);
     };
   }, []);
   async function uploadFileSingle(file, parentPath, pathInView, overwrite) {

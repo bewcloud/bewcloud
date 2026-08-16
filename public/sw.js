@@ -7,7 +7,7 @@ const REQUEST_TIMEOUT_MS = 2 * 60 * 1000;
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
-let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController }
+let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount }
 
 // A queue outlives the session that created it, so the upload endpoints refuse requests tagged with a session other than the one their cookie now belongs to. When that happens there's nothing left to retry: the rest of the queue is dropped instead of being uploaded as whoever is logged in now.
 class UploadSessionGoneError extends Error {}
@@ -184,7 +184,10 @@ async function uploadFileChunked(job, file, parentPath, pathInView, overwrite) {
       throw new Error('upload cancelled');
     }
 
-    job.uploadProgress = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
+    const itemNumber = job.totalCount - job.queue.length;
+    job.uploadProgress = job.totalCount > 1
+      ? `Uploading ${file.name} (${itemNumber}/${job.totalCount}), chunk ${chunkIndex + 1}/${totalChunks}…`
+      : `Uploading ${file.name} (chunk ${chunkIndex + 1}/${totalChunks})…`;
     broadcastState();
 
     const start = chunkIndex * CHUNK_SIZE_BYTES;
@@ -230,7 +233,8 @@ async function processQueue(job) {
   while (job.queue.length > 0) {
     const { file, parentPath, pathInView, kind, overwrite, batchId } = job.queue.shift();
 
-    job.uploadProgress = '';
+    const itemNumber = job.totalCount - job.queue.length;
+    job.uploadProgress = job.totalCount > 1 ? `Uploading ${file.name} (${itemNumber}/${job.totalCount})…` : '';
     job.currentItemKind = kind || 'file';
     job.currentItemParentPath = parentPath;
     job.currentItemBatchId = batchId;
@@ -325,10 +329,13 @@ self.addEventListener('message', (event) => {
         uploadProgress: '',
         sessionTag: message.sessionTag,
         abortController: new AbortController(),
+        totalCount: 0,
       };
     }
 
     currentJob.queue.push(...message.items);
+    // Grows the batch total when more items are enqueued mid-flight (e.g. a directory walk that streams in), so the "(i/n)" counter stays accurate instead of resetting to the newly-added items alone.
+    currentJob.totalCount += message.items.length;
 
     broadcastState();
 

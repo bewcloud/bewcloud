@@ -136,7 +136,7 @@ export function useUploadQueue({
       const existingNamesByParentPath = await fetchExistingNamesByPath(items.map(item => item.parentPath));
       itemsToUpload = items.filter(item => {
         if (existingNamesByParentPath.get(item.parentPath)?.fileNames.has(item.file.name)) {
-          uploadError.value = `${item.file.name}: A file with this name already exists.`;
+          uploadError.value = `(${item.file.name}): A file with this name already exists.`;
           return false;
         }
         return true;
@@ -167,7 +167,7 @@ export function useUploadQueue({
         }
       } catch (error) {
         console.error(error);
-        uploadError.value = `${item.file.name}: ${error instanceof Error ? error.message : String(error)}`;
+        uploadError.value = `(${item.file.name}): ${error instanceof Error ? error.message : String(error)}`;
       }
     }
     isUploading.value = false;

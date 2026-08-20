@@ -1,0 +1,174 @@
+---
+define: &containerPort 8000
+common:
+  name: "bew"
+
+# -----------------------------------------------------------------------------
+# APPLICATIONS Bew + Radicale
+# -----------------------------------------------------------------------------
+  image:
+    repository: ghcr.io/bewcloud/bewcloud
+    tag: v4.13.1
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    enabled: true
+    servicePort: *containerPort
+    containerPort: *containerPort
+    protocol: TCP
+  
+  deployment:
+    port: *containerPort
+    memoryLimit: "2048Mi"
+    memoryRequest: "256Mi"
+    cpuRequest: "500m"
+    strategy:
+      type: Recreate
+
+    # additionalContainers:
+    #   - name: "radicale"
+    #     image: "tomsquest/docker-radicale:3.7.6.0"
+    #     imagePullPolicy: "IfNotPresent"
+    #     ports:
+    #       - containerPort: 5232
+    #     securityContext:
+    #       readOnlyRootFilesystem: true
+    #       capabilities:
+    #         drop:
+    #           - ALL
+    #         add:
+    #           - SETUID
+    #           - SETGID
+    #           - CHOWN
+    #           - KILL
+    #     resources:
+    #       requests:
+    #         memory: "64Mi"
+    #         cpu: "20m"
+    #       limits:
+    #         memory: "256Mi"
+    #     volumeMounts:
+    #       - name: "radicale-data"
+    #         mountPath: "/data"
+    #       - name: "bew-radicale-config"
+    #         mountPath: "/config"
+
+  
+
+# -----------------------------------------------------------------------------
+# ENVIRONNMENT VARIABLES 
+# -----------------------------------------------------------------------------
+  variables:
+    nonSecret:
+      RADICALE_URL: "http://127.0.0.1:5232"
+      POSTGRESQL_PORT: "5432"
+      JWT_SECRET: "fake"
+      PASSWORD_SALT: "fake"
+  
+    secret:
+      # Récupération automatique de l'URL de connexion générée par CNPG dans le Secret app-user
+      existingSecret:
+        - name: "bew-db-app"
+          key: "host"
+          envName: "POSTGRESQL_HOST"
+        - name: "bew-db-app"
+          key: "user"
+          envName: "POSTGRESQL_USER"
+        - name: "bew-db-app"
+          key: "password"
+          envName: "POSTGRESQL_PASSWORD"
+        - name: "bew-db-app"
+          key: "dbname"
+          envName: "POSTGRESQL_DBNAME"
+
+        
+
+# -----------------------------------------------------------------------------
+# CONFIGMAPS (Configurations bewcloud & radicale)
+# -----------------------------------------------------------------------------
+  configMap:
+    enabled: false
+    # bewcloud.config.ts is in extraresources to avoid unwanted directory creation
+    existingConfigMap:
+      - name: "bew-bewcloud-config"
+        mountPath: "/app/bewcloud.config.ts"
+        subPath: "bewcloud.config.ts"
+
+
+# -----------------------------------------------------------------------------
+# PERSISTENCE / VOLUMES
+# -----------------------------------------------------------------------------
+  persistence:
+    enabled: true
+    volumes:
+      - name: "data-files"
+        storageClassName: ""  # leave empty if you want to use default
+        size: "5Gi"
+        containerMount: "/app/data-files"
+      - name: "radicale-data"
+        storageClassName: ""  # leave empty if you want to use default
+        size: "2Gi"
+        containerMount: "/data"
+
+
+# -----------------------------------------------------------------------------
+# RESSOURCES EXTRA : CLUSTER POSTGRESQL (CloudNativePG) + base due to initdb
+# -----------------------------------------------------------------------------
+  extraResources:
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      metadata:
+        name: bew-db
+      spec:
+        imageName: ghcr.io/cloudnative-pg/postgresql:18.4-standard-trixie
+        instances: 1
+        storage:
+          size: 10Gi
+          storageClass: nfs-postgresql
+        bootstrap:
+          initdb:
+            database: bew
+            owner: bew
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: bew-radicale-config
+      data:
+        config: |
+          [server]
+          hosts = 0.0.0.0:5232
+
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: bew-bewcloud-config
+      data:
+        bewcloud.config.ts: |
+          import { Config, PartialDeep } from './lib/types.ts';
+          const config: PartialDeep<Config> = {
+            auth: {
+              baseUrl: 'http://localhost:8000',
+              allowSignups: false,
+              enableEmailVerification: false,
+              enableForeverSignup: true,
+              enableMultiFactor: false, 
+            },
+          };
+          export default config;
+  
+
+# -----------------------------------------------------------------------------
+# INGRESS
+# -----------------------------------------------------------------------------
+  ingress:
+    enabled: false
+    hostName: bewcloud.yourdomain.com
+    ingressClassName: "traefik"

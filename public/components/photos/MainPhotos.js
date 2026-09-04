@@ -198,7 +198,9 @@ export default function MainPhotos({
     class: "white mr-2",
     width: 18,
     height: 18
-  }), uploadProgress.value || 'Uploading...') : null, !isAdding.value && !isResolvingConflicts.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
+  }), h("span", {
+    class: "truncate min-w-0"
+  }, uploadProgress.value || 'Uploading...')) : null, !isAdding.value && !isResolvingConflicts.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
   }, "Upload failed ", uploadError.value) : null, skippedFilesNotice.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"

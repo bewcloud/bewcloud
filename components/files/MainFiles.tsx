@@ -1020,7 +1020,7 @@ export default function MainFiles(
             ? (
               <>
                 <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
-                {uploadProgress.value || 'Uploading...'}
+                <span class='truncate min-w-0'>{uploadProgress.value || 'Uploading...'}</span>
               </>
             )
             : null}

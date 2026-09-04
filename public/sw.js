@@ -69,7 +69,11 @@ function isUnderDeletedPath(parentPath, deletedPath) {
 // Drops queued items that would land in the directory that just got deleted (or a subdirectory of it), without touching queued items for anywhere else. If the in-flight item is affected, only that fetch is aborted: replace the job AbortController so later items can still run.
 function handleDirectoryDeleted(job, deletedPath) {
   const currentAffected = isUnderDeletedPath(job.currentItemParentPath, deletedPath);
+  const queueLengthBefore = job.queue.length;
   job.queue = job.queue.filter((item) => !isUnderDeletedPath(item.parentPath, deletedPath));
+
+  const removedCount = queueLengthBefore - job.queue.length + (currentAffected ? 1 : 0);
+  job.totalCount = Math.max(0, job.totalCount - removedCount);
 
   if (currentAffected) {
     job.currentItemCancelled = true;
@@ -338,7 +342,6 @@ self.addEventListener('message', (event) => {
     }
 
     currentJob.queue.push(...message.items);
-    // Grows the batch total when more items are enqueued mid-flight (e.g. a directory walk that streams in), so the "(i/n)" counter stays accurate instead of resetting to the newly-added items alone.
     currentJob.totalCount += message.items.length;
 
     broadcastState();

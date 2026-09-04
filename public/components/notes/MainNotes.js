@@ -224,7 +224,7 @@ export default function MainNotes({
     height: 18
   }), "Creating...") : null, !isDeleting.value && !isAdding.value && !isCreatingNote.value ? h(Fragment, null, "\xA0") : null), createNoteError.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Creating the note failed \u2014 ", createNoteError.value) : null), h(CreateDirectoryModal, {
+  }, "Creating the note failed ", createNoteError.value) : null), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,
     onClickSave: onClickSaveDirectory,
     onClose: onCloseCreateDirectory

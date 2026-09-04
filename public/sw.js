@@ -187,7 +187,7 @@ async function uploadFileChunked(job, file, parentPath, pathInView, overwrite) {
     const itemNumber = job.totalCount - job.queue.length;
     job.uploadProgress = job.totalCount > 1
       ? `Uploading ${file.name} (${itemNumber}/${job.totalCount}), chunk ${chunkIndex + 1}/${totalChunks}…`
-      : `Uploading ${file.name} (chunk ${chunkIndex + 1}/${totalChunks})…`;
+      : `Uploading ${file.name}, chunk ${chunkIndex + 1}/${totalChunks}…`;
     broadcastState();
 
     const start = chunkIndex * CHUNK_SIZE_BYTES;

@@ -50,7 +50,7 @@ export function useUploadQueue({
       }
     }
     document.addEventListener('visibilitychange', resyncState);
-    window.addEventListener('pageshow', resyncState);
+    globalThis.addEventListener('pageshow', resyncState);
     postToUploadServiceWorker({
       type: 'QUERY_STATE',
       sessionTag: uploadSessionTag
@@ -58,7 +58,7 @@ export function useUploadQueue({
     return () => {
       uploadChannel.close();
       document.removeEventListener('visibilitychange', resyncState);
-      window.removeEventListener('pageshow', resyncState);
+      globalThis.removeEventListener('pageshow', resyncState);
     };
   }, []);
   async function uploadFileSingle(file, parentPath, pathInView, overwrite) {

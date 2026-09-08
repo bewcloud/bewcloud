@@ -68,7 +68,7 @@ function isUnderDeletedPath(parentPath, deletedPath) {
 
 // Drops queued items that would land in the directory that just got deleted (or a subdirectory of it), without touching queued items for anywhere else. If the in-flight item is affected, only that fetch is aborted: replace the job AbortController so later items can still run.
 function handleDirectoryDeleted(job, deletedPath) {
-  const currentAffected = isUnderDeletedPath(job.currentItemParentPath, deletedPath);
+  const currentAffected = !job.currentItemCancelled && isUnderDeletedPath(job.currentItemParentPath, deletedPath);
   const queueLengthBefore = job.queue.length;
   job.queue = job.queue.filter((item) => !isUnderDeletedPath(item.parentPath, deletedPath));
 

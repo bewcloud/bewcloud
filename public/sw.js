@@ -239,7 +239,9 @@ async function processQueue(job) {
     const { file, parentPath, pathInView, kind, overwrite, batchId } = job.queue.shift();
 
     const itemNumber = job.totalCount - job.queue.length;
-    job.uploadProgress = job.totalCount > 1 ? `Uploading ${file.name} (${itemNumber}/${job.totalCount})…` : '';
+    job.uploadProgress = job.totalCount > 1
+      ? `Uploading ${file.name} (${itemNumber}/${job.totalCount})…`
+      : `Uploading ${file.name}…`;
     job.currentItemKind = kind || 'file';
     job.currentItemParentPath = parentPath;
     job.currentItemBatchId = batchId;

@@ -9,6 +9,10 @@ const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
 let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount }
 
+// The tab that needs to see a failure is often the one that was frozen when it happened, and by the time it asks for state again the job is gone, so the last error is kept out here instead of on the job. The id lets a tab tell a re-broadcast of an error it already showed from a new one, so the same failure isn't logged on every later progress tick.
+let lastError = null; // { id, message, kind, sessionTag }
+let lastErrorId = 0;
+
 // A queue outlives the session that created it, so the upload endpoints refuse requests tagged with a session other than the one their cookie now belongs to. When that happens there's nothing left to retry: the rest of the queue is dropped instead of being uploaded as whoever is logged in now.
 class UploadSessionGoneError extends Error {}
 
@@ -28,9 +32,23 @@ function broadcastState(extra = {}) {
     sessionTag: currentJob?.sessionTag || '',
     kindsInProgress: getKindsInProgress(currentJob),
     kind: currentJob?.currentItemKind || '',
-    error: currentJob?.error || '',
+    error: lastError?.message || '',
+    errorId: lastError?.id || 0,
+    errorKind: lastError?.kind || '',
+    errorSessionTag: lastError?.sessionTag || '',
     ...extra,
   });
+}
+
+function setLastError(job, fileName, message) {
+  lastError = {
+    id: ++lastErrorId,
+    message: `(${fileName}): ${message}`,
+    kind: job.currentItemKind || 'file',
+    sessionTag: job.sessionTag,
+  };
+
+  broadcastState();
 }
 
 function abandonCurrentJob() {
@@ -272,10 +290,11 @@ async function processQueue(job) {
         const droppedCount = job.queue.length + 1;
 
         console.error(error);
-        job.error = `(${file.name}): ${error.message} (${droppedCount} upload${
-          droppedCount === 1 ? '' : 's'
-        } dropped).`;
-        broadcastState();
+        setLastError(
+          job,
+          file.name,
+          `${error.message} (${droppedCount} upload${droppedCount === 1 ? '' : 's'} dropped).`,
+        );
         await abandonCurrentJob();
 
         return;
@@ -283,8 +302,7 @@ async function processQueue(job) {
 
       console.error(error);
       await cleanupAbortedChunkUpload(job);
-      job.error = `(${file.name}): ${String(error?.message || error)}`;
-      broadcastState();
+      setLastError(job, file.name, String(error?.message || error));
     }
   }
 
@@ -333,10 +351,10 @@ self.addEventListener('message', (event) => {
     const isNewJob = !currentJob;
 
     if (isNewJob) {
+      lastError = null;
       currentJob = {
         queue: [],
         uploadProgress: '',
-        error: '',
         sessionTag: message.sessionTag,
         abortController: new AbortController(),
         totalCount: 0,

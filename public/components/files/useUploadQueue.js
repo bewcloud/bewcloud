@@ -20,6 +20,7 @@ export function useUploadQueue({
       return;
     }
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
+    let lastSeenErrorId = 0;
     uploadChannel.onmessage = event => {
       const state = event.data;
       if (!state || state.type !== 'STATE') {
@@ -30,7 +31,8 @@ export function useUploadQueue({
       }
       isUploading.value = state.kindsInProgress ? state.kindsInProgress.includes(uploadKind) : state.isUploading;
       uploadProgress.value = state.kind === uploadKind ? state.uploadProgress || '' : '';
-      if (state.error && state.kind === uploadKind) {
+      if (state.error && state.errorKind === uploadKind && state.errorSessionTag === uploadSessionTag && state.errorId !== lastSeenErrorId) {
+        lastSeenErrorId = state.errorId;
         console.error(new Error(state.error));
         uploadError.value = state.error;
       }

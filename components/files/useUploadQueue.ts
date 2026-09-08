@@ -51,6 +51,8 @@ export function useUploadQueue(
 
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
 
+    let lastSeenErrorId = 0;
+
     uploadChannel.onmessage = (event) => {
       const state = event.data as {
         type: string;
@@ -62,6 +64,9 @@ export function useUploadQueue(
         newDirectories?: Directory[];
         pathInView?: string;
         error?: string;
+        errorId?: number;
+        errorKind?: string;
+        errorSessionTag?: string;
         sessionTag?: string;
       };
 
@@ -76,7 +81,12 @@ export function useUploadQueue(
       isUploading.value = state.kindsInProgress ? state.kindsInProgress.includes(uploadKind) : state.isUploading;
       uploadProgress.value = state.kind === uploadKind ? (state.uploadProgress || '') : '';
 
-      if (state.error && state.kind === uploadKind) {
+      // The worker keeps the last error around so a tab that was frozen when it happened still gets it on resync, which means it rides on every later broadcast too. Only act on an id this tab hasn't seen, or one failure would be logged again on every progress tick.
+      if (
+        state.error && state.errorKind === uploadKind && state.errorSessionTag === uploadSessionTag &&
+        state.errorId !== lastSeenErrorId
+      ) {
+        lastSeenErrorId = state.errorId!;
         console.error(new Error(state.error));
         uploadError.value = state.error;
       }

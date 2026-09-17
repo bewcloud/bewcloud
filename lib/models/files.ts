@@ -215,6 +215,7 @@ export class FileModel {
     path: string,
     name: string,
     contents: string | ArrayBuffer,
+    overwrite = false,
   ): Promise<{ success: boolean; alreadyExists?: boolean }> {
     await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
 
@@ -230,10 +231,11 @@ export class FileModel {
         }
       }
 
+      // createNew rejects if the file already exists; overwrite instead writes in place, same as update() below.
       if (typeof contents === 'string') {
-        await Deno.writeTextFile(join(rootPath, name), contents, { append: false, createNew: true });
+        await Deno.writeTextFile(join(rootPath, name), contents, { append: false, createNew: !overwrite });
       } else {
-        await Deno.writeFile(join(rootPath, name), new Uint8Array(contents), { append: false, createNew: true });
+        await Deno.writeFile(join(rootPath, name), new Uint8Array(contents), { append: false, createNew: !overwrite });
       }
     } catch (error) {
       console.error(error);

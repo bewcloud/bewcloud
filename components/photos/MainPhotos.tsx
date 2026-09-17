@@ -6,10 +6,23 @@ import {
   ResponseBody as CreateDirectoryResponseBody,
 } from '/pages/api/files/create-directory.ts';
 import { useUploadQueue } from '/components/files/useUploadQueue.ts';
+import { useDragAndDropUpload } from '/components/files/useDragAndDropUpload.ts';
+import FileConflictModal from '/components/files/FileConflictModal.tsx';
 import CreateDirectoryModal from '/components/files/CreateDirectoryModal.tsx';
 import ListFiles from '/components/files/ListFiles.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
 import ListPhotos from '/components/photos/ListPhotos.tsx';
+import { PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
+
+function isPhotoFile(file: File): boolean {
+  if (file.type) {
+    return file.type.startsWith('image/') || file.type.startsWith('video/');
+  }
+
+  // Plenty of sources hand over a file with an empty MIME type (HEIC/HEIF and camera RAW especially), and dropping those silently loses exactly the photos the user meant to upload. The app lists photos by extension anyway, so fall back to the same list it lists by.
+  const lowercaseFileName = file.name.toLocaleLowerCase();
+  return PHOTO_EXTENSIONS.some((extension) => lowercaseFileName.endsWith(`.${extension}`));
+}
 
 interface MainPhotosProps {
   initialDirectories: Directory[];
@@ -28,6 +41,7 @@ export default function MainPhotos(
   const areNewOptionsOption = useSignal<boolean>(false);
   const isNewDirectoryModalOpen = useSignal<boolean>(false);
 
+  // Uploads run inside a service worker (public/sw.js) so they survive a page refresh; this hook enqueues files and hydrates isUploading/uploadProgress/uploadError from its broadcasts. Existing-file checking is done ourselves above (with a replace/skip/replace-all prompt), so the hook's own blanket skip-if-exists check is disabled here.
   const { isUploading, uploadProgress, uploadError, enqueueUpload } = useUploadQueue({
     isEnabled: true,
     path,
@@ -35,6 +49,28 @@ export default function MainPhotos(
     directories,
     uploadSessionTag,
     uploadKind: 'photo',
+    checkExistingFiles: false,
+  });
+
+  const {
+    isResolvingConflicts,
+    resolveProgress,
+    isDraggingOver,
+    fileConflictModal,
+    uploadFiles,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
+  } = useDragAndDropUpload({
+    path,
+    uploadError,
+    enqueueUpload,
+    onBeforeUpload: () => {
+      areNewOptionsOption.value = false;
+    },
+    fileFilter: isPhotoFile,
+    sessionTag: uploadSessionTag ?? '',
   });
 
   function onClickUploadFile() {
@@ -44,18 +80,15 @@ export default function MainPhotos(
     fileInput.accept = 'image/*,video/*';
     fileInput.click();
 
-    fileInput.onchange = (event) => {
+    fileInput.onchange = async (event) => {
       const chosenFilesList = (event.target as HTMLInputElement)?.files!;
-
       const chosenFiles = Array.from(chosenFilesList).filter(Boolean);
 
       if (chosenFiles.length === 0) {
         return;
       }
 
-      areNewOptionsOption.value = false;
-
-      enqueueUpload(chosenFiles.map((chosenFile) => ({ file: chosenFile, parentPath: path.value })));
+      await uploadFiles(chosenFiles);
     };
   }
 
@@ -119,7 +152,30 @@ export default function MainPhotos(
   }
 
   return (
-    <>
+    <div
+      class='relative'
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag and drop overlay */}
+      {isDraggingOver.value && (
+        <div class='fixed inset-0 z-50 bg-black/50 flex items-center justify-center'>
+          <div class='bg-[#51A4FB] text-white p-8 rounded-lg border-2 border-dashed border-white max-w-md text-center'>
+            <img
+              src='/public/images/add.svg'
+              alt='Upload'
+              class='white mx-auto mb-4'
+              width={48}
+              height={48}
+            />
+            <h3 class='text-xl font-semibold mb-2'>Drop photos here to upload</h3>
+            <p class='text-sm opacity-90'>Release to upload images and videos to the current directory</p>
+          </div>
+        </div>
+      )}
+
       <section class='flex flex-row items-center justify-between mb-4'>
         <section class='flex items-center justify-end w-full'>
           <FilesBreadcrumb path={path.value} isShowingPhotos />
@@ -138,7 +194,9 @@ export default function MainPhotos(
                 <img
                   src='/public/images/add.svg'
                   alt='Add new file or directory'
-                  class={`white ${isAdding.value || isUploading.value ? 'animate-spin' : ''}`}
+                  class={`white ${
+                    isAdding.value || isUploading.value || isResolvingConflicts.value ? 'animate-spin' : ''
+                  }`}
                   width={20}
                   height={20}
                 />
@@ -196,6 +254,14 @@ export default function MainPhotos(
               </>
             )
             : null}
+          {isResolvingConflicts.value
+            ? (
+              <>
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
+                {resolveProgress.value || 'Preparing upload...'}
+              </>
+            )
+            : null}
           {isUploading.value
             ? (
               <>
@@ -204,7 +270,7 @@ export default function MainPhotos(
               </>
             )
             : null}
-          {!isAdding.value && !isUploading.value ? <>&nbsp;</> : null}
+          {!isAdding.value && !isResolvingConflicts.value && !isUploading.value ? <>&nbsp;</> : null}
         </span>
 
         {uploadError.value
@@ -221,6 +287,16 @@ export default function MainPhotos(
         onClickSave={onClickSaveDirectory}
         onClose={onCloseCreateDirectory}
       />
-    </>
+
+      <FileConflictModal
+        isOpen={fileConflictModal.value?.isOpen || false}
+        filePath={fileConflictModal.value?.filePath || ''}
+        onReplace={fileConflictModal.value?.onReplace || (() => {})}
+        onSkip={fileConflictModal.value?.onSkip || (() => {})}
+        onReplaceAll={fileConflictModal.value?.onReplaceAll || (() => {})}
+        onSkipAll={fileConflictModal.value?.onSkipAll || (() => {})}
+        onAbort={fileConflictModal.value?.onAbort || (() => {})}
+      />
+    </div>
   );
 }

@@ -7,7 +7,7 @@ const REQUEST_TIMEOUT_MS = 2 * 60 * 1000;
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
-let currentJob = null; // { queue: [{ file, parentPath, pathInView }], uploadProgress, sessionTag, abortController }
+let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController }
 
 // A queue outlives the session that created it, so the upload endpoints refuse requests tagged with a session other than the one their cookie now belongs to. When that happens there's nothing left to retry: the rest of the queue is dropped instead of being uploaded as whoever is logged in now.
 class UploadSessionGoneError extends Error {}
@@ -82,6 +82,23 @@ function handleDirectoryDeleted(job, deletedPath) {
   broadcastState();
 }
 
+// Drops the queued items belonging to one drop's batch, leaving every other batch's items alone. Same shape as handleDirectoryDeleted above: if the in-flight item is one of them, only that fetch is aborted and the job AbortController is replaced so later items still run. Without this an Abort would kill whatever the queue happened to be uploading for some other view or tab.
+function handleBatchAborted(job, batchId) {
+  const currentAffected = !job.currentItemCancelled && job.currentItemBatchId === batchId;
+  job.queue = job.queue.filter((item) => item.batchId !== batchId);
+
+  if (currentAffected) {
+    job.currentItemCancelled = true;
+    job.currentItemKind = '';
+    job.uploadProgress = '';
+    const previousAbortController = job.abortController;
+    job.abortController = new AbortController();
+    previousAbortController.abort();
+  }
+
+  broadcastState();
+}
+
 // A 403 is the endpoints refusing this queue's session tag, and a redirect means there's no session left at all (the request was bounced to the login page). The upload endpoints use 503, not 403, when they're refusing for an unrelated reason (the app is disabled), so 403 here means the session specifically.
 function throwIfUploadSessionIsGone(response) {
   if (response.status === 403 || response.redirected) {
@@ -128,12 +145,13 @@ async function fetchForJob(job, url, options) {
   }
 }
 
-async function uploadFileSingle(job, file, parentPath, pathInView) {
+async function uploadFileSingle(job, file, parentPath, pathInView, overwrite) {
   const requestBody = new FormData();
   requestBody.set('path_in_view', pathInView);
   requestBody.set('parent_path', parentPath);
   requestBody.set('name', file.name);
   requestBody.set('upload_session_tag', job.sessionTag);
+  requestBody.set('overwrite', String(!!overwrite));
   requestBody.set('contents', file);
 
   const response = await fetchForJob(job, '/api/files/upload', { method: 'POST', body: requestBody });
@@ -153,7 +171,7 @@ async function uploadFileSingle(job, file, parentPath, pathInView) {
   return { newFiles: result.newFiles, newDirectories: result.newDirectories };
 }
 
-async function uploadFileChunked(job, file, parentPath, pathInView) {
+async function uploadFileChunked(job, file, parentPath, pathInView, overwrite) {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE_BYTES);
   const uploadId = crypto.randomUUID();
   job.currentUploadId = uploadId;
@@ -181,6 +199,7 @@ async function uploadFileChunked(job, file, parentPath, pathInView) {
     requestBody.set('parent_path', parentPath);
     requestBody.set('name', file.name);
     requestBody.set('upload_session_tag', job.sessionTag);
+    requestBody.set('overwrite', String(!!overwrite));
     requestBody.set('chunk', chunkBlob);
 
     const response = await fetchForJob(job, '/api/files/upload-chunk', { method: 'POST', body: requestBody });
@@ -209,19 +228,20 @@ async function uploadFileChunked(job, file, parentPath, pathInView) {
 
 async function processQueue(job) {
   while (job.queue.length > 0) {
-    const { file, parentPath, pathInView, kind } = job.queue.shift();
+    const { file, parentPath, pathInView, kind, overwrite, batchId } = job.queue.shift();
 
     job.uploadProgress = '';
     job.currentItemKind = kind || 'file';
     job.currentItemParentPath = parentPath;
+    job.currentItemBatchId = batchId;
     job.currentUploadId = undefined;
     job.currentItemCancelled = false;
     broadcastState();
 
     try {
       const result = file.size >= CHUNK_SIZE_BYTES
-        ? await uploadFileChunked(job, file, parentPath, pathInView)
-        : await uploadFileSingle(job, file, parentPath, pathInView);
+        ? await uploadFileChunked(job, file, parentPath, pathInView, overwrite)
+        : await uploadFileSingle(job, file, parentPath, pathInView, overwrite);
 
       if (result) {
         broadcastState({ ...result, pathInView });
@@ -267,7 +287,19 @@ self.addEventListener('message', (event) => {
   }
 
   if (message.type === 'ABORT_UPLOADS') {
-    event.waitUntil(abandonCurrentJob());
+    // A batch id scopes the abort to the one drop it came from. Without one (logout-time cleanup) everything goes, as before. The session tag alone is not scope enough: it comes from the login session, so it is the same across Files/Photos/Notes and every open tab.
+    if (message.batchId) {
+      if (currentJob && message.sessionTag === currentJob.sessionTag) {
+        handleBatchAborted(currentJob, message.batchId);
+      }
+
+      return;
+    }
+
+    if (!message.sessionTag || !currentJob || message.sessionTag === currentJob.sessionTag) {
+      event.waitUntil(abandonCurrentJob());
+    }
+
     return;
   }
 

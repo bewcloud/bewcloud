@@ -1,6 +1,7 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
+import { fetchExistingNames } from "./existingFileNames.js";
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
 export function useUploadQueue({
   isEnabled,
@@ -8,7 +9,8 @@ export function useUploadQueue({
   files,
   directories,
   uploadSessionTag = '',
-  uploadKind = 'file'
+  uploadKind = 'file',
+  checkExistingFiles = true
 }) {
   const isUploading = useSignal(false);
   const uploadProgress = useSignal('');
@@ -47,12 +49,13 @@ export function useUploadQueue({
       uploadChannel.close();
     };
   }, []);
-  async function uploadFileSingle(file, parentPath, pathInView) {
+  async function uploadFileSingle(file, parentPath, pathInView, overwrite) {
     const requestBody = new FormData();
     requestBody.set('path_in_view', pathInView);
     requestBody.set('parent_path', parentPath);
     requestBody.set('name', file.name);
     requestBody.set('upload_session_tag', uploadSessionTag);
+    requestBody.set('overwrite', String(overwrite));
     requestBody.set('contents', file);
     const response = await fetch(`/api/files/upload`, {
       method: 'POST',
@@ -68,7 +71,7 @@ export function useUploadQueue({
     files.value = [...result.newFiles];
     directories.value = [...result.newDirectories];
   }
-  async function uploadFileChunked(file, parentPath, pathInView) {
+  async function uploadFileChunked(file, parentPath, pathInView, overwrite) {
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE_BYTES);
     const uploadId = crypto.randomUUID();
     try {
@@ -85,6 +88,7 @@ export function useUploadQueue({
         requestBody.set('parent_path', parentPath);
         requestBody.set('name', file.name);
         requestBody.set('upload_session_tag', uploadSessionTag);
+        requestBody.set('overwrite', String(overwrite));
         requestBody.set('chunk', chunkBlob);
         const response = await fetch(`/api/files/upload-chunk`, {
           method: 'POST',
@@ -113,43 +117,32 @@ export function useUploadQueue({
       throw error;
     }
   }
-  async function findExistingNames(parentPath) {
-    try {
-      const requestBody = {
-        parentPath
-      };
-      const response = await fetch('/api/files/get', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(10_000)
-      });
-      if (!response.ok) {
-        return new Set();
-      }
-      const result = await response.json();
-      return new Set(result.files.map(file => file.file_name));
-    } catch (error) {
-      console.error(error);
-      return new Set();
-    }
-  }
   async function enqueueUpload(items) {
     if (items.length === 0) {
+      isUploading.value = false;
+      uploadProgress.value = '';
+      uploadError.value = '';
       return;
     }
     const pathInView = path.value;
+    const isPartOfBatch = items.some(item => item.batchId);
+    if (!isPartOfBatch) {
+      uploadProgress.value = '';
+      uploadError.value = '';
+    }
     isUploading.value = true;
-    uploadProgress.value = '';
-    uploadError.value = '';
-    const uniqueParentPaths = [...new Set(items.map(item => item.parentPath))];
-    const existingNamesByParentPath = new Map(await Promise.all(uniqueParentPaths.map(async parentPath => [parentPath, await findExistingNames(parentPath)])));
-    const itemsToUpload = items.filter(item => {
-      if (existingNamesByParentPath.get(item.parentPath)?.has(item.file.name)) {
-        uploadError.value = `${item.file.name}: A file with this name already exists.`;
-        return false;
-      }
-      return true;
-    });
+    let itemsToUpload = items;
+    if (checkExistingFiles) {
+      const uniqueParentPaths = [...new Set(items.map(item => item.parentPath))];
+      const existingNamesByParentPath = new Map(await Promise.all(uniqueParentPaths.map(async parentPath => [parentPath, await fetchExistingNames(parentPath)])));
+      itemsToUpload = items.filter(item => {
+        if (existingNamesByParentPath.get(item.parentPath)?.fileNames.has(item.file.name)) {
+          uploadError.value = `${item.file.name}: A file with this name already exists.`;
+          return false;
+        }
+        return true;
+      });
+    }
     if (itemsToUpload.length === 0) {
       isUploading.value = false;
       return;
@@ -169,9 +162,9 @@ export function useUploadQueue({
     for (const item of itemsToUpload) {
       try {
         if (item.file.size >= CHUNK_SIZE_BYTES) {
-          await uploadFileChunked(item.file, item.parentPath, pathInView);
+          await uploadFileChunked(item.file, item.parentPath, pathInView, !!item.overwrite);
         } else {
-          await uploadFileSingle(item.file, item.parentPath, pathInView);
+          await uploadFileSingle(item.file, item.parentPath, pathInView, !!item.overwrite);
         }
       } catch (error) {
         console.error(error);

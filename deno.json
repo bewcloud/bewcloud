@@ -70,10 +70,10 @@
     "@libs/qrcode": "jsr:@libs/qrcode@3.0.1",
     "@simplewebauthn/server": "jsr:@simplewebauthn/server@13.3.2",
     "@std/assert": "jsr:@std/assert@1.0.19",
-    "@std/dotenv": "jsr:@std/dotenv@0.225.7",
-    "@std/encoding": "jsr:@std/encoding@1.0.10",
+    "@std/dotenv": "jsr:@std/dotenv@0.225.8",
+    "@std/encoding": "jsr:@std/encoding@1.0.11",
     "@std/fs": "jsr:@std/fs@1.0.24",
-    "@std/http": "jsr:@std/http@1.1.2",
+    "@std/http": "jsr:@std/http@1.1.4",
 
     "jimp": "npm:jimp@1.6.1",
     "mrmime": "npm:mrmime@2.0.1",

@@ -1,6 +1,6 @@
 services:
   website:
-    image: ghcr.io/bewcloud/bewcloud:v4.15.0
+    image: ghcr.io/bewcloud/bewcloud:v4.16.0
     # NOTE: uncomment below (and comment above) only if you pulled the repo and want to build the image locally
     # build:
     #   context: .
@@ -17,7 +17,7 @@ services:
       - ./bewcloud.config.ts:/app/bewcloud.config.ts
 
   postgresql:
-    image: postgres:18.4
+    image: postgres:18.6
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=fake

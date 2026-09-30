@@ -18,6 +18,7 @@ export function useUploadQueue({
       return;
     }
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
+    let lastSeenErrorId = 0;
     uploadChannel.onmessage = event => {
       const state = event.data;
       if (!state || state.type !== 'STATE') {
@@ -28,7 +29,8 @@ export function useUploadQueue({
       }
       isUploading.value = state.kindsInProgress ? state.kindsInProgress.includes(uploadKind) : state.isUploading;
       uploadProgress.value = state.kind === uploadKind ? state.uploadProgress || '' : '';
-      if (state.error && state.kind === uploadKind) {
+      if (state.error && state.errorKind === uploadKind && state.errorSessionTag === uploadSessionTag && state.errorId !== lastSeenErrorId) {
+        lastSeenErrorId = state.errorId;
         console.error(new Error(state.error));
         uploadError.value = state.error;
       }
@@ -39,12 +41,24 @@ export function useUploadQueue({
         directories.value = [...state.newDirectories];
       }
     };
+    function resyncState() {
+      if (document.visibilityState === 'visible') {
+        postToUploadServiceWorker({
+          type: 'QUERY_STATE',
+          sessionTag: uploadSessionTag
+        });
+      }
+    }
+    document.addEventListener('visibilitychange', resyncState);
+    globalThis.addEventListener('pageshow', resyncState);
     postToUploadServiceWorker({
       type: 'QUERY_STATE',
       sessionTag: uploadSessionTag
     });
     return () => {
       uploadChannel.close();
+      document.removeEventListener('visibilitychange', resyncState);
+      globalThis.removeEventListener('pageshow', resyncState);
     };
   }, []);
   async function uploadFileSingle(file, parentPath, pathInView) {
@@ -68,12 +82,12 @@ export function useUploadQueue({
     files.value = [...result.newFiles];
     directories.value = [...result.newDirectories];
   }
-  async function uploadFileChunked(file, parentPath, pathInView) {
+  async function uploadFileChunked(file, parentPath, pathInView, itemLabel) {
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE_BYTES);
     const uploadId = crypto.randomUUID();
     try {
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        uploadProgress.value = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
+        uploadProgress.value = `${itemLabel}, chunk ${chunkIndex + 1}/${totalChunks}…`;
         const start = chunkIndex * CHUNK_SIZE_BYTES;
         const end = Math.min(start + CHUNK_SIZE_BYTES, file.size);
         const chunkBlob = file.slice(start, end);
@@ -145,7 +159,7 @@ export function useUploadQueue({
     const existingNamesByParentPath = new Map(await Promise.all(uniqueParentPaths.map(async parentPath => [parentPath, await findExistingNames(parentPath)])));
     const itemsToUpload = items.filter(item => {
       if (existingNamesByParentPath.get(item.parentPath)?.has(item.file.name)) {
-        uploadError.value = `${item.file.name}: A file with this name already exists.`;
+        uploadError.value = `(${item.file.name}): A file with this name already exists.`;
         return false;
       }
       return true;
@@ -166,16 +180,18 @@ export function useUploadQueue({
     if (wasEnqueuedInServiceWorker) {
       return;
     }
-    for (const item of itemsToUpload) {
+    for (const [index, item] of itemsToUpload.entries()) {
+      const itemLabel = itemsToUpload.length > 1 ? `Uploading ${item.file.name} (${index + 1}/${itemsToUpload.length})` : `Uploading ${item.file.name}`;
+      uploadProgress.value = `${itemLabel}…`;
       try {
         if (item.file.size >= CHUNK_SIZE_BYTES) {
-          await uploadFileChunked(item.file, item.parentPath, pathInView);
+          await uploadFileChunked(item.file, item.parentPath, pathInView, itemLabel);
         } else {
           await uploadFileSingle(item.file, item.parentPath, pathInView);
         }
       } catch (error) {
         console.error(error);
-        uploadError.value = `${item.file.name}: ${error instanceof Error ? error.message : String(error)}`;
+        uploadError.value = `(${item.file.name}): ${error instanceof Error ? error.message : String(error)}`;
       }
     }
     isUploading.value = false;

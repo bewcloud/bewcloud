@@ -7,7 +7,10 @@ export async function registerUploadServiceWorker() {
   }
 
   try {
-    uploadServiceWorkerRegistration = await navigator.serviceWorker.register('/public/sw.js', { scope: '/' });
+    uploadServiceWorkerRegistration = await navigator.serviceWorker.register('/public/sw.js', {
+      scope: '/',
+      updateViaCache: 'none',
+    });
   } catch (error) {
     console.error(error);
   }

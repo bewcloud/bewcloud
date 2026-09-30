@@ -7,7 +7,11 @@ const REQUEST_TIMEOUT_MS = 2 * 60 * 1000;
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
-let currentJob = null; // { queue: [{ file, parentPath, pathInView }], uploadProgress, sessionTag, abortController }
+let currentJob = null; // { queue: [{ file, parentPath, pathInView }], uploadProgress, sessionTag, abortController, totalCount }
+
+// The tab that needs to see a failure is often the one that was frozen when it happened, and by the time it asks for state again the job is gone, so the last error is kept out here instead of on the job. The id lets a tab tell a re-broadcast of an error it already showed from a new one, so the same failure isn't logged on every later progress tick.
+let lastError = null; // { id, message, kind, sessionTag }
+let lastErrorId = 0;
 
 // A queue outlives the session that created it, so the upload endpoints refuse requests tagged with a session other than the one their cookie now belongs to. When that happens there's nothing left to retry: the rest of the queue is dropped instead of being uploaded as whoever is logged in now.
 class UploadSessionGoneError extends Error {}
@@ -28,8 +32,23 @@ function broadcastState(extra = {}) {
     sessionTag: currentJob?.sessionTag || '',
     kindsInProgress: getKindsInProgress(currentJob),
     kind: currentJob?.currentItemKind || '',
+    error: lastError?.message || '',
+    errorId: lastError?.id || 0,
+    errorKind: lastError?.kind || '',
+    errorSessionTag: lastError?.sessionTag || '',
     ...extra,
   });
+}
+
+function setLastError(job, fileName, message) {
+  lastError = {
+    id: ++lastErrorId,
+    message: `(${fileName}): ${message}`,
+    kind: job.currentItemKind || 'file',
+    sessionTag: job.sessionTag,
+  };
+
+  broadcastState();
 }
 
 function abandonCurrentJob() {
@@ -67,8 +86,12 @@ function isUnderDeletedPath(parentPath, deletedPath) {
 
 // Drops queued items that would land in the directory that just got deleted (or a subdirectory of it), without touching queued items for anywhere else. If the in-flight item is affected, only that fetch is aborted: replace the job AbortController so later items can still run.
 function handleDirectoryDeleted(job, deletedPath) {
-  const currentAffected = isUnderDeletedPath(job.currentItemParentPath, deletedPath);
+  const currentAffected = !job.currentItemCancelled && isUnderDeletedPath(job.currentItemParentPath, deletedPath);
+  const queueLengthBefore = job.queue.length;
   job.queue = job.queue.filter((item) => !isUnderDeletedPath(item.parentPath, deletedPath));
+
+  const removedCount = queueLengthBefore - job.queue.length + (currentAffected ? 1 : 0);
+  job.totalCount = Math.max(0, job.totalCount - removedCount);
 
   if (currentAffected) {
     job.currentItemCancelled = true;
@@ -166,7 +189,10 @@ async function uploadFileChunked(job, file, parentPath, pathInView) {
       throw new Error('upload cancelled');
     }
 
-    job.uploadProgress = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
+    const itemNumber = job.totalCount - job.queue.length;
+    job.uploadProgress = job.totalCount > 1
+      ? `Uploading ${file.name} (${itemNumber}/${job.totalCount}), chunk ${chunkIndex + 1}/${totalChunks}…`
+      : `Uploading ${file.name}, chunk ${chunkIndex + 1}/${totalChunks}…`;
     broadcastState();
 
     const start = chunkIndex * CHUNK_SIZE_BYTES;
@@ -211,7 +237,10 @@ async function processQueue(job) {
   while (job.queue.length > 0) {
     const { file, parentPath, pathInView, kind } = job.queue.shift();
 
-    job.uploadProgress = '';
+    const itemNumber = job.totalCount - job.queue.length;
+    job.uploadProgress = job.totalCount > 1
+      ? `Uploading ${file.name} (${itemNumber}/${job.totalCount})…`
+      : `Uploading ${file.name}…`;
     job.currentItemKind = kind || 'file';
     job.currentItemParentPath = parentPath;
     job.currentUploadId = undefined;
@@ -241,9 +270,11 @@ async function processQueue(job) {
         const droppedCount = job.queue.length + 1;
 
         console.error(error);
-        broadcastState({
-          error: `${file.name}: ${error.message} (${droppedCount} upload${droppedCount === 1 ? '' : 's'} dropped).`,
-        });
+        setLastError(
+          job,
+          file.name,
+          `${error.message} (${droppedCount} upload${droppedCount === 1 ? '' : 's'} dropped).`,
+        );
         await abandonCurrentJob();
 
         return;
@@ -251,7 +282,7 @@ async function processQueue(job) {
 
       console.error(error);
       await cleanupAbortedChunkUpload(job);
-      broadcastState({ error: `${file.name}: ${String(error?.message || error)}` });
+      setLastError(job, file.name, String(error?.message || error));
     }
   }
 
@@ -288,15 +319,18 @@ self.addEventListener('message', (event) => {
     const isNewJob = !currentJob;
 
     if (isNewJob) {
+      lastError = null;
       currentJob = {
         queue: [],
         uploadProgress: '',
         sessionTag: message.sessionTag,
         abortController: new AbortController(),
+        totalCount: 0,
       };
     }
 
     currentJob.queue.push(...message.items);
+    currentJob.totalCount += message.items.length;
 
     broadcastState();
 

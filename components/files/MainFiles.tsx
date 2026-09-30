@@ -927,7 +927,7 @@ export default function MainFiles(
             ? (
               <>
                 <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
-                {uploadProgress.value || 'Uploading...'}
+                <span class='truncate min-w-0'>{uploadProgress.value || 'Uploading...'}</span>
               </>
             )
             : null}
@@ -944,7 +944,7 @@ export default function MainFiles(
         {uploadError.value
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
-              Upload failed — {uploadError.value}
+              Upload failed {uploadError.value}
             </span>
           )
           : null}

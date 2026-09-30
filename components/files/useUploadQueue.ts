@@ -39,6 +39,8 @@ export function useUploadQueue(
 
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
 
+    let lastSeenErrorId = 0;
+
     uploadChannel.onmessage = (event) => {
       const state = event.data as {
         type: string;
@@ -50,6 +52,9 @@ export function useUploadQueue(
         newDirectories?: Directory[];
         pathInView?: string;
         error?: string;
+        errorId?: number;
+        errorKind?: string;
+        errorSessionTag?: string;
         sessionTag?: string;
       };
 
@@ -64,7 +69,12 @@ export function useUploadQueue(
       isUploading.value = state.kindsInProgress ? state.kindsInProgress.includes(uploadKind) : state.isUploading;
       uploadProgress.value = state.kind === uploadKind ? (state.uploadProgress || '') : '';
 
-      if (state.error && state.kind === uploadKind) {
+      // The worker keeps the last error around so a tab that was frozen when it happened still gets it on resync, which means it rides on every later broadcast too. Only act on an id this tab hasn't seen, or one failure would be logged again on every progress tick.
+      if (
+        state.error && state.errorKind === uploadKind && state.errorSessionTag === uploadSessionTag &&
+        state.errorId !== lastSeenErrorId
+      ) {
+        lastSeenErrorId = state.errorId!;
         console.error(new Error(state.error));
         uploadError.value = state.error;
       }
@@ -79,10 +89,22 @@ export function useUploadQueue(
       }
     };
 
+    // Prevents isUploading/uploadProgress from getting stuck
+    function resyncState() {
+      if (document.visibilityState === 'visible') {
+        postToUploadServiceWorker({ type: 'QUERY_STATE', sessionTag: uploadSessionTag });
+      }
+    }
+
+    document.addEventListener('visibilitychange', resyncState);
+    globalThis.addEventListener('pageshow', resyncState);
+
     postToUploadServiceWorker({ type: 'QUERY_STATE', sessionTag: uploadSessionTag });
 
     return () => {
       uploadChannel.close();
+      document.removeEventListener('visibilitychange', resyncState);
+      globalThis.removeEventListener('pageshow', resyncState);
     };
   }, []);
 
@@ -113,13 +135,13 @@ export function useUploadQueue(
     directories.value = [...result.newDirectories];
   }
 
-  async function uploadFileChunked(file: File, parentPath: string, pathInView: string) {
+  async function uploadFileChunked(file: File, parentPath: string, pathInView: string, itemLabel: string) {
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE_BYTES);
     const uploadId = crypto.randomUUID();
 
     try {
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        uploadProgress.value = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
+        uploadProgress.value = `${itemLabel}, chunk ${chunkIndex + 1}/${totalChunks}…`;
 
         const start = chunkIndex * CHUNK_SIZE_BYTES;
         const end = Math.min(start + CHUNK_SIZE_BYTES, file.size);
@@ -213,7 +235,7 @@ export function useUploadQueue(
 
     const itemsToUpload = items.filter((item) => {
       if (existingNamesByParentPath.get(item.parentPath)?.has(item.file.name)) {
-        uploadError.value = `${item.file.name}: A file with this name already exists.`;
+        uploadError.value = `(${item.file.name}): A file with this name already exists.`;
         return false;
       }
 
@@ -236,16 +258,21 @@ export function useUploadQueue(
     }
 
     // Fallback for browsers/contexts without an active service worker: upload directly, as before.
-    for (const item of itemsToUpload) {
+    for (const [index, item] of itemsToUpload.entries()) {
+      const itemLabel = itemsToUpload.length > 1
+        ? `Uploading ${item.file.name} (${index + 1}/${itemsToUpload.length})`
+        : `Uploading ${item.file.name}`;
+      uploadProgress.value = `${itemLabel}…`;
+
       try {
         if (item.file.size >= CHUNK_SIZE_BYTES) {
-          await uploadFileChunked(item.file, item.parentPath, pathInView);
+          await uploadFileChunked(item.file, item.parentPath, pathInView, itemLabel);
         } else {
           await uploadFileSingle(item.file, item.parentPath, pathInView);
         }
       } catch (error) {
         console.error(error);
-        uploadError.value = `${item.file.name}: ${error instanceof Error ? error.message : String(error)}`;
+        uploadError.value = `(${item.file.name}): ${error instanceof Error ? error.message : String(error)}`;
       }
     }
 

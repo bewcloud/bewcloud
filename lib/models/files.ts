@@ -860,7 +860,7 @@ export async function getDirectorySize(path: string): Promise<number> {
     }
 
     if (code !== 0) {
-      if (stderr) {
+      if (stderr.length > 0) {
         throw new Error(new TextDecoder().decode(stderr));
       }
 
@@ -875,7 +875,13 @@ export async function getDirectorySize(path: string): Promise<number> {
     const unit = value.match(/[A-Z]+/)?.[0] || 'B'.toUpperCase();
 
     return bytesFromHumanFileSize(`${number} ${unit}B`);
-  } catch {
-    return getDirectorySizeFallback(path);
+  } catch (error) {
+    // Only walk the tree manually when "du" isn't installed (looking at Windows, non WSL, mostly), as the walk is much slower than "du" and would otherwise run unbounded right after "du" timed out
+    if (error instanceof Deno.errors.NotFound) {
+      return getDirectorySizeFallback(path);
+    }
+
+    console.error(error);
+    return 0;
   }
 }

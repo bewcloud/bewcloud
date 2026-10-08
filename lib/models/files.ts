@@ -52,7 +52,7 @@ export class DirectoryModel {
         parent_path: path,
         directory_name: entry.name,
         has_write_access: true,
-        size_in_bytes: directorySize || stat.size,
+        size_in_bytes: directorySize,
         file_share_id: fileShares.find((fileShare) => fileShare.file_path === `${join(path, entry.name)}/`)?.id || null,
         updated_at: stat.mtime || new Date(),
         created_at: stat.birthtime || new Date(),
@@ -154,7 +154,7 @@ export class DirectoryModel {
           parent_path: parentPath,
           directory_name: directoryName,
           has_write_access: true,
-          size_in_bytes: directorySize || stat.size,
+          size_in_bytes: directorySize,
           file_share_id: fileShares.find((fileShare) =>
             fileShare.file_path === `${join(relativeDirectoryPath, directoryName)}/`
           )?.id || null,
@@ -840,7 +840,7 @@ async function getDirectorySizeFallback(path: string): Promise<number> {
 }
 
 // NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
-export async function getDirectorySize(path: string): Promise<number> {
+export async function getDirectorySize(path: string): Promise<number | null> {
   try {
     const controller = new AbortController();
     const commandTimeout = setTimeout(() => controller.abort(), 5_000);
@@ -860,6 +860,10 @@ export async function getDirectorySize(path: string): Promise<number> {
     }
 
     if (code !== 0) {
+      if (controller.signal.aborted) {
+        throw new Error(`Timed out running "du" for "${path}"`);
+      }
+
       if (stderr.length > 0) {
         throw new Error(new TextDecoder().decode(stderr));
       }
@@ -882,6 +886,6 @@ export async function getDirectorySize(path: string): Promise<number> {
     }
 
     console.error(error);
-    return 0;
+    return null;
   }
 }

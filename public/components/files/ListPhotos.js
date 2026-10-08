@@ -62,7 +62,7 @@ export default function ListPhotos({
       class: "px-6 py-4 text-slate-200"
     }, dateFormat.format(new Date(directory.updated_at))), isShowingNotes ? null : h("td", {
       class: "px-6 py-4 text-slate-200"
-    }, humanFileSize(directory.size_in_bytes)), h("td", {
+    }, directory.size_in_bytes === null ? 'Unknown' : humanFileSize(directory.size_in_bytes)), h("td", {
       class: "px-6 py-4"
     }, fullPath === TRASH_PATH || typeof onClickOpenRenameDirectory === 'undefined' || typeof onClickOpenMoveDirectory === 'undefined' ? null : h("section", {
       class: "flex items-center justify-end w-20"

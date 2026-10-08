@@ -97,7 +97,8 @@ export function sortDirectories(directories: Directory[], options: SortOptions):
         result = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
         break;
       case 'size_in_bytes':
-        result = a.size_in_bytes - b.size_in_bytes;
+        // Unknown sizes come from "du" timing out, so sort them as the biggest
+        result = (a.size_in_bytes ?? Number.MAX_SAFE_INTEGER) - (b.size_in_bytes ?? Number.MAX_SAFE_INTEGER);
         break;
     }
 

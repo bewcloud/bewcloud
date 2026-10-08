@@ -59,7 +59,7 @@ async function get({ request, user }: RequestHandlerParams) {
     }
 
     const directorySizeInBytes = await getDirectorySize(fullDirectoryPath);
-    // An unknown size means "du" timed out, so the directory is likely big
+    // An unknown size means it could not be calculated quickly, so the directory is likely big
     const compressionArgs = directorySizeInBytes === null || directorySizeInBytes > FAST_COMPRESSION_MIN_SIZE_IN_BYTES
       ? ['-1']
       : [];

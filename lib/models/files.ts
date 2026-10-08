@@ -42,10 +42,15 @@ export class DirectoryModel {
       ? await FileShareModel.getByParentFilePath(userId, path)
       : [];
 
-    for (const entry of directoryEntries) {
+    // Calculate all sizes at once, so the listing waits for the slowest directory instead of the sum of all of them
+    const directorySizes = await Promise.all(
+      directoryEntries.map((entry) => getDirectorySize(join(rootPath, entry.name))),
+    );
+
+    for (const [index, entry] of directoryEntries.entries()) {
       const stat = await Deno.stat(join(rootPath, entry.name));
 
-      const directorySize = await getDirectorySize(join(rootPath, entry.name));
+      const directorySize = directorySizes[index];
 
       const directory: Directory = {
         user_id: userId,
@@ -840,10 +845,10 @@ async function getDirectorySizeFallback(path: string): Promise<number> {
 }
 
 // NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
-export async function getDirectorySize(path: string): Promise<number | null> {
+async function calculateDirectorySize(path: string): Promise<number | null> {
   try {
     const controller = new AbortController();
-    const commandTimeout = setTimeout(() => controller.abort(), 5_000);
+    const commandTimeout = setTimeout(() => controller.abort(), DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS);
 
     const command = new Deno.Command(`du`, {
       args: [
@@ -888,4 +893,93 @@ export async function getDirectorySize(path: string): Promise<number | null> {
     console.error(error);
     return null;
   }
+}
+
+const DIRECTORY_SIZE_WAIT_IN_MILLISECONDS = 1_000;
+const DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS = 5 * 60_000;
+const SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS = 10 * 60_000;
+
+interface CachedDirectorySize {
+  sizeInBytes: number;
+  calculatedAt: number;
+  durationInMilliseconds: number;
+}
+
+// ponytail: in-memory and per-process, so it grows with every directory listed and resets on restart; move to the database if that matters
+const cachedDirectorySizes = new Map<string, CachedDirectorySize>();
+const directorySizesInProgress = new Map<string, Promise<number | null>>();
+
+// Fast directories are always recalculated so their size stays current, but slow ones reuse their last size for a while, so browsing doesn't keep the disk busy re-running "du" over huge trees
+function shouldRecalculateDirectorySize(cached: CachedDirectorySize | undefined): boolean {
+  if (!cached) {
+    return true;
+  }
+
+  if (cached.durationInMilliseconds < DIRECTORY_SIZE_WAIT_IN_MILLISECONDS) {
+    return true;
+  }
+
+  return Date.now() - cached.calculatedAt > SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS;
+}
+
+function startCalculatingDirectorySize(path: string): Promise<number | null> {
+  const inProgress = directorySizesInProgress.get(path);
+
+  if (inProgress) {
+    return inProgress;
+  }
+
+  const calculation = (async () => {
+    const startedAt = Date.now();
+
+    try {
+      const sizeInBytes = await calculateDirectorySize(path);
+
+      if (sizeInBytes !== null) {
+        cachedDirectorySizes.set(path, {
+          sizeInBytes,
+          calculatedAt: Date.now(),
+          durationInMilliseconds: Date.now() - startedAt,
+        });
+      }
+
+      return sizeInBytes;
+    } finally {
+      directorySizesInProgress.delete(path);
+    }
+  })();
+
+  directorySizesInProgress.set(path, calculation);
+
+  return calculation;
+}
+
+/**
+ * Gets the size of a directory without making the request wait for huge trees: waits up to DIRECTORY_SIZE_WAIT_IN_MILLISECONDS, after which the calculation continues in the background and the last known size (or null, if there's none) is returned instead.
+ *
+ * @param path - The full path of the directory
+ */
+export async function getDirectorySize(path: string): Promise<number | null> {
+  const cached = cachedDirectorySizes.get(path);
+
+  if (!shouldRecalculateDirectorySize(cached)) {
+    return cached!.sizeInBytes;
+  }
+
+  const calculation = startCalculatingDirectorySize(path);
+
+  let waitTimeout: number | undefined;
+  const wait = new Promise<undefined>((resolve) => {
+    waitTimeout = setTimeout(() => resolve(undefined), DIRECTORY_SIZE_WAIT_IN_MILLISECONDS);
+  });
+
+  const sizeInBytes = await Promise.race([calculation, wait]);
+
+  clearTimeout(waitTimeout);
+
+  if (sizeInBytes === undefined) {
+    return cached?.sizeInBytes ?? null;
+  }
+
+  return sizeInBytes;
 }

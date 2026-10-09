@@ -4,14 +4,15 @@ const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
 const BROADCAST_CHANNEL_NAME = 'bewcloud-uploads';
 // If the server dies mid-request (a restart/deploy), the socket can sit open with no RST and no response for minutes, so a plain fetch() neither resolves nor rejects: nothing left to catch, the queue never finishes, and the UI is stuck on "Uploading" forever. A timeout guarantees the request eventually fails instead.
 const REQUEST_TIMEOUT_MS = 2 * 60 * 1000;
+// Long enough for a tab frozen mid-upload to pick up a failure on resync, short enough that it doesn't resurface on later visits.
+const LAST_ERROR_TTL_MS = 5 * 60 * 1000;
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
 let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount }
 
-// The tab that needs to see a failure is often the one that was frozen when it happened, and by the time it asks for state again the job is gone, so the last error is kept out here instead of on the job. The id lets a tab tell a re-broadcast of an error it already showed from a new one, so the same failure isn't logged on every later progress tick.
-let lastError = null; // { id, message, kind, sessionTag }
-let lastErrorId = 0;
+// Outlives the job so a tab that was frozen when the upload failed still gets the error on resync.
+let lastError = null; // { id, message, kind, sessionTag, createdAt }
 
 // A queue outlives the session that created it, so the upload endpoints refuse requests tagged with a session other than the one their cookie now belongs to. When that happens there's nothing left to retry: the rest of the queue is dropped instead of being uploaded as whoever is logged in now.
 class UploadSessionGoneError extends Error {}
@@ -25,6 +26,10 @@ self.addEventListener('activate', (event) => {
 });
 
 function broadcastState(extra = {}) {
+  if (lastError && Date.now() - lastError.createdAt > LAST_ERROR_TTL_MS) {
+    lastError = null;
+  }
+
   broadcastChannel.postMessage({
     type: 'STATE',
     isUploading: Boolean(currentJob),
@@ -33,7 +38,7 @@ function broadcastState(extra = {}) {
     kindsInProgress: getKindsInProgress(currentJob),
     kind: currentJob?.currentItemKind || '',
     error: lastError?.message || '',
-    errorId: lastError?.id || 0,
+    errorId: lastError?.id || '',
     errorKind: lastError?.kind || '',
     errorSessionTag: lastError?.sessionTag || '',
     ...extra,
@@ -42,10 +47,12 @@ function broadcastState(extra = {}) {
 
 function setLastError(job, fileName, message) {
   lastError = {
-    id: ++lastErrorId,
+    // A UUID instead of a counter, since a restarted worker would reuse ids a tab has already seen.
+    id: crypto.randomUUID(),
     message: `(${fileName}): ${message}`,
     kind: job.currentItemKind || 'file',
     sessionTag: job.sessionTag,
+    createdAt: Date.now(),
   };
 
   broadcastState();

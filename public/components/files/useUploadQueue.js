@@ -1,8 +1,10 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
+import { getUploadErrorAction } from '/public/ts/utils/files.ts';
 import { fetchExistingNamesByPath } from "./existingFileNames.js";
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
+const LAST_SEEN_UPLOAD_ERROR_ID_KEY = 'bewcloud-last-seen-upload-error-id';
 export function useUploadQueue({
   isEnabled,
   path,
@@ -20,7 +22,13 @@ export function useUploadQueue({
       return;
     }
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
-    let lastSeenErrorId = 0;
+    let lastSeenErrorId = '';
+    let shownWorkerError = '';
+    try {
+      lastSeenErrorId = sessionStorage.getItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY) || '';
+    } catch (error) {
+      console.error(error);
+    }
     uploadChannel.onmessage = event => {
       const state = event.data;
       if (!state || state.type !== 'STATE') {
@@ -31,10 +39,20 @@ export function useUploadQueue({
       }
       isUploading.value = state.kindsInProgress ? state.kindsInProgress.includes(uploadKind) : state.isUploading;
       uploadProgress.value = state.kind === uploadKind ? state.uploadProgress || '' : '';
-      if (state.error && state.errorKind === uploadKind && state.errorSessionTag === uploadSessionTag && state.errorId !== lastSeenErrorId) {
+      const errorAction = getUploadErrorAction(state, uploadKind, uploadSessionTag, lastSeenErrorId, Boolean(shownWorkerError) && uploadError.value === shownWorkerError);
+      if (errorAction === 'show') {
         lastSeenErrorId = state.errorId;
+        shownWorkerError = state.error;
+        try {
+          sessionStorage.setItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY, lastSeenErrorId);
+        } catch (error) {
+          console.error(error);
+        }
         console.error(new Error(state.error));
         uploadError.value = state.error;
+      } else if (errorAction === 'clear') {
+        shownWorkerError = '';
+        uploadError.value = '';
       }
       if (state.newFiles && state.pathInView === path.value) {
         files.value = [...state.newFiles];

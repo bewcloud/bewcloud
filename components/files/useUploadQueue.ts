@@ -5,10 +5,12 @@ import { Directory, DirectoryFile } from '/lib/types.ts';
 import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
 import { ResponseBody as ChunkUploadResponseBody } from '/pages/api/files/upload-chunk.ts';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
+import { getUploadErrorAction } from '/public/ts/utils/files.ts';
 import { fetchExistingNamesByPath } from './existingFileNames.ts';
 
 // 10 MB chunks keep each request faster.
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
+const LAST_SEEN_UPLOAD_ERROR_ID_KEY = 'bewcloud-last-seen-upload-error-id';
 
 interface UploadQueueItem {
   file: File;
@@ -51,7 +53,15 @@ export function useUploadQueue(
 
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
 
-    let lastSeenErrorId = 0;
+    // Kept in sessionStorage so revisiting the page in this tab doesn't show (and log) the same failure again.
+    let lastSeenErrorId = '';
+    let shownWorkerError = '';
+
+    try {
+      lastSeenErrorId = sessionStorage.getItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY) || '';
+    } catch (error) {
+      console.error(error);
+    }
 
     uploadChannel.onmessage = (event) => {
       const state = event.data as {
@@ -64,7 +74,7 @@ export function useUploadQueue(
         newDirectories?: Directory[];
         pathInView?: string;
         error?: string;
-        errorId?: number;
+        errorId?: string;
         errorKind?: string;
         errorSessionTag?: string;
         sessionTag?: string;
@@ -81,14 +91,29 @@ export function useUploadQueue(
       isUploading.value = state.kindsInProgress ? state.kindsInProgress.includes(uploadKind) : state.isUploading;
       uploadProgress.value = state.kind === uploadKind ? (state.uploadProgress || '') : '';
 
-      // The worker keeps the last error around so a tab that was frozen when it happened still gets it on resync, which means it rides on every later broadcast too. Only act on an id this tab hasn't seen, or one failure would be logged again on every progress tick.
-      if (
-        state.error && state.errorKind === uploadKind && state.errorSessionTag === uploadSessionTag &&
-        state.errorId !== lastSeenErrorId
-      ) {
+      const errorAction = getUploadErrorAction(
+        state,
+        uploadKind,
+        uploadSessionTag,
+        lastSeenErrorId,
+        Boolean(shownWorkerError) && uploadError.value === shownWorkerError,
+      );
+
+      if (errorAction === 'show') {
         lastSeenErrorId = state.errorId!;
+        shownWorkerError = state.error!;
+
+        try {
+          sessionStorage.setItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY, lastSeenErrorId);
+        } catch (error) {
+          console.error(error);
+        }
+
         console.error(new Error(state.error));
-        uploadError.value = state.error;
+        uploadError.value = state.error!;
+      } else if (errorAction === 'clear') {
+        shownWorkerError = '';
+        uploadError.value = '';
       }
 
       // Only apply the file/directory listing from an upload if it matches this tab's own current path; another tab may have uploaded into a different directory.

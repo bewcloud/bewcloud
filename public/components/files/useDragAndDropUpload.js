@@ -45,12 +45,12 @@ export function useDragAndDropUpload({
       globalThis.removeEventListener('drop', preventDefaultDrop);
     };
   }, []);
-  function getTargetPath(file) {
+  function getTargetPath(file, basePath) {
     if (!file.webkitRelativePath) {
-      return path.value;
+      return basePath;
     }
     const directoryPath = file.webkitRelativePath.slice(0, -file.name.length);
-    return `${path.value}${directoryPath}`;
+    return `${basePath}${directoryPath}`;
   }
   function resolveFileConflict(file, targetPath, existingNamesByPath) {
     const existingNames = existingNamesByPath.get(targetPath);
@@ -118,12 +118,12 @@ export function useDragAndDropUpload({
       return;
     }
     try {
-      await resolveAndEnqueue(candidateFiles);
+      await resolveAndEnqueue(candidateFiles, path.value);
     } finally {
       finishResolving();
     }
   }
-  async function resolveAndEnqueue(candidateFiles) {
+  async function resolveAndEnqueue(candidateFiles, basePath) {
     const filesToUpload = fileFilter ? candidateFiles.filter(fileFilter) : candidateFiles;
     if (filesToUpload.length === 0) {
       if (candidateFiles.length > 0) {
@@ -134,11 +134,11 @@ export function useDragAndDropUpload({
     onBeforeUpload?.();
     const batchId = crypto.randomUUID();
     resolveProgress.value = 'Checking for conflicts...';
-    const targetPaths = [...new Set(filesToUpload.map(getTargetPath))];
+    const targetPaths = [...new Set(filesToUpload.map(file => getTargetPath(file, basePath)))];
     const existingNamesByPath = new Map(await Promise.all(targetPaths.map(async targetPath => [targetPath, await fetchExistingNames(targetPath)])));
     let enqueued = Promise.resolve();
     for (const file of filesToUpload) {
-      const targetPath = getTargetPath(file);
+      const targetPath = getTargetPath(file, basePath);
       const resolution = await resolveFileConflict(file, targetPath, existingNamesByPath);
       if (resolution === 'abort') {
         await enqueued.catch(() => {});
@@ -252,7 +252,7 @@ export function useDragAndDropUpload({
         await onEmptyDirectory?.(directoryPath, pathAtDropStart);
       }
       const filesToUpload = droppedFiles.length === 0 && emptyDirectories.length === 0 ? fallbackFiles : droppedFiles;
-      await resolveAndEnqueue(filesToUpload);
+      await resolveAndEnqueue(filesToUpload, pathAtDropStart);
     } catch (error) {
       console.error('Failed to process dropped files:', error);
       uploadError.value = error instanceof Error ? error.message : String(error);

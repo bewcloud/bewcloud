@@ -88,14 +88,14 @@ export function useDragAndDropUpload(
     };
   }, []);
 
-  function getTargetPath(file: File): string {
+  function getTargetPath(file: File, basePath: string): string {
     if (!file.webkitRelativePath) {
-      return path.value;
+      return basePath;
     }
 
     // Resolve the parent path, keeping any sub-directory structure from directory uploads. We don't need to worry about path joining here, the API will handle it (and make sure it's secure)
     const directoryPath = file.webkitRelativePath.slice(0, -file.name.length);
-    return `${path.value}${directoryPath}`;
+    return `${basePath}${directoryPath}`;
   }
 
   // Resolves a naming conflict for a single file, prompting the user unless already in "replace all"/"skip all" mode.
@@ -182,14 +182,14 @@ export function useDragAndDropUpload(
     }
 
     try {
-      await resolveAndEnqueue(candidateFiles);
+      await resolveAndEnqueue(candidateFiles, path.value);
     } finally {
       finishResolving();
     }
   }
 
-  // Resolves conflicts one file at a time (so a "replace all" picked mid-batch applies to the rest), then enqueues the survivors. The caller must have claimed the resolve phase with tryStartResolving.
-  async function resolveAndEnqueue(candidateFiles: File[]) {
+  // Resolves conflicts one file at a time (so a "replace all" picked mid-batch applies to the rest), then enqueues the survivors. The caller must have claimed the resolve phase with tryStartResolving. basePath is the directory that was in view when the drop or pick started: resolving can take a while (a listing per directory, then the prompts), and the user may navigate elsewhere in the meantime.
+  async function resolveAndEnqueue(candidateFiles: File[], basePath: string) {
     const filesToUpload = fileFilter ? candidateFiles.filter(fileFilter) : candidateFiles;
 
     if (filesToUpload.length === 0) {
@@ -209,7 +209,7 @@ export function useDragAndDropUpload(
     resolveProgress.value = 'Checking for conflicts...';
 
     // Check every target path a dropped file will land in (not just the currently-viewed directory), so conflicts in dragged subdirectories are caught too.
-    const targetPaths = [...new Set(filesToUpload.map(getTargetPath))];
+    const targetPaths = [...new Set(filesToUpload.map((file) => getTargetPath(file, basePath)))];
     const existingNamesByPath = new Map(
       await Promise.all(
         targetPaths.map(async (targetPath) => [targetPath, await fetchExistingNames(targetPath)] as const),
@@ -220,7 +220,7 @@ export function useDragAndDropUpload(
     let enqueued: Promise<void> = Promise.resolve();
 
     for (const file of filesToUpload) {
-      const targetPath = getTargetPath(file);
+      const targetPath = getTargetPath(file, basePath);
       const resolution = await resolveFileConflict(file, targetPath, existingNamesByPath);
 
       if (resolution === 'abort') {
@@ -360,7 +360,7 @@ export function useDragAndDropUpload(
       ? `Uploading ${topLevelNames.length} items...`
       : '';
 
-    // Captured before the tree walk below (which can itself take a while for a large directory), so every empty directory this drop creates lands under the path that was in view at drop time, even if the user has since navigated elsewhere.
+    // Captured before the tree walk below (which can itself take a while for a large directory), so everything this drop creates (empty directories and files alike) lands under the path that was in view at drop time, even if the user has since navigated elsewhere.
     const pathAtDropStart = path.value;
 
     try {
@@ -376,7 +376,7 @@ export function useDragAndDropUpload(
       // The walk can come back with nothing even though the drop did carry files, because webkitGetAsEntry() is allowed to return null. Decide on what the walk actually produced rather than on whether items were present, or that case is a silent no-op.
       const filesToUpload = droppedFiles.length === 0 && emptyDirectories.length === 0 ? fallbackFiles : droppedFiles;
 
-      await resolveAndEnqueue(filesToUpload);
+      await resolveAndEnqueue(filesToUpload, pathAtDropStart);
     } catch (error) {
       console.error('Failed to process dropped files:', error);
       uploadError.value = error instanceof Error ? error.message : String(error);

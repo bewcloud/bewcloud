@@ -97,3 +97,28 @@ Deno.test('that a file pick while another upload is still being prepared is turn
     globalThis.fetch = originalFetch;
   }
 });
+
+Deno.test('that files upload to the directory that was in view when the upload started, even after navigating away', async () => {
+  const path = signal('/Documents/');
+  const uploadError = signal('');
+  const enqueued: EnqueuedItem[] = [];
+
+  let releaseListing = () => {};
+  globalThis.fetch = (() =>
+    new Promise<Response>((resolve) => {
+      releaseListing = () => resolve(listingResponse([]));
+    })) as typeof globalThis.fetch;
+
+  try {
+    const hook = renderHook(path, uploadError, enqueued);
+
+    const upload = hook.uploadFiles([new File(['a'], 'a.txt')]);
+    path.value = '/Pictures/';
+    releaseListing();
+    await upload;
+
+    assertEquals(enqueued.map((item) => item.parentPath), ['/Documents/']);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

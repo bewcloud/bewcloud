@@ -12,17 +12,7 @@ import CreateDirectoryModal from '/components/files/CreateDirectoryModal.tsx';
 import ListFiles from '/components/files/ListFiles.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
 import ListPhotos from '/components/photos/ListPhotos.tsx';
-import { PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
-
-function isPhotoFile(file: File): boolean {
-  if (file.type) {
-    return file.type.startsWith('image/') || file.type.startsWith('video/');
-  }
-
-  // Plenty of sources hand over a file with an empty MIME type (HEIC/HEIF and camera RAW especially), and dropping those silently loses exactly the photos the user meant to upload. The app lists photos by extension anyway, so fall back to the same list it lists by.
-  const lowercaseFileName = file.name.toLocaleLowerCase();
-  return PHOTO_EXTENSIONS.some((extension) => lowercaseFileName.endsWith(`.${extension}`));
-}
+import { isPhotoFile } from '/public/ts/utils/photos.ts';
 
 interface MainPhotosProps {
   initialDirectories: Directory[];

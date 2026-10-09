@@ -82,7 +82,7 @@ function handleDirectoryDeleted(job, deletedPath) {
   broadcastState();
 }
 
-// Drops the queued items belonging to one drop's batch, leaving every other batch's items alone. Same shape as handleDirectoryDeleted above: if the in-flight item is one of them, only that fetch is aborted and the job AbortController is replaced so later items still run. Without this an Abort would kill whatever the queue happened to be uploading for some other view or tab.
+// Drops one batch's items, leaving other batches alone. Same approach as handleDirectoryDeleted for the in-flight item.
 function handleBatchAborted(job, batchId) {
   const currentAffected = !job.currentItemCancelled && job.currentItemBatchId === batchId;
   job.queue = job.queue.filter((item) => item.batchId !== batchId);
@@ -287,7 +287,7 @@ self.addEventListener('message', (event) => {
   }
 
   if (message.type === 'ABORT_UPLOADS') {
-    // A batch id scopes the abort to the one drop it came from. Without one (logout-time cleanup) everything goes, as before. The session tag alone is not scope enough: it comes from the login session, so it is the same across Files/Photos/Notes and every open tab.
+    // A batch id scopes the abort to one drop, since the session tag is shared by every view and tab. Without one (logout), everything goes.
     if (message.batchId) {
       if (currentJob && message.sessionTag === currentJob.sessionTag) {
         handleBatchAborted(currentJob, message.batchId);

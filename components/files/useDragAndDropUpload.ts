@@ -23,20 +23,20 @@ type ConflictResolution = 'upload' | 'replace' | 'skip' | 'abort';
 
 interface UseDragAndDropUploadOptions {
   path: Signal<string>;
-  // Caller's own error signal (from useUploadQueue), reused here so a tree-walk failure (before enqueueUpload is ever reached) still shows up in the same place upload failures do.
+  // Shared with useUploadQueue, so all upload errors show in one place.
   uploadError: Signal<string>;
   enqueueUpload: (items: { file: File; parentPath: string; overwrite: boolean; batchId: string }[]) => Promise<void>;
   // Called once, right before conflict resolution starts, e.g. to close an open dropdown.
   onBeforeUpload?: () => void;
   // Restricts which dropped/chosen files are uploaded, e.g. Photos only wants images and videos.
   fileFilter?: (file: File) => boolean;
-  // Called (in order) for each empty directory found in a directory drop. Files-only wants these created; Photos ignores them.
+  // Called for each empty directory in a drop (Files creates them, Photos ignores them).
   onEmptyDirectory?: (directoryPath: string, parentPath: string) => Promise<void>;
-  // Identifies this view's upload session to the service worker, so Abort Upload only cancels this session's own in-flight job.
+  // The service worker only accepts an abort from the session that owns the job.
   sessionTag?: string;
 }
 
-// A single readEntries() call can return a partial batch (historically capped around 100 in Chromium) per the File and Directory Entries API spec, so it must be called repeatedly until it resolves with an empty array to get every entry in the directory. Exported so it can be unit tested directly.
+// readEntries() returns at most ~100 entries per call (Chromium), so keep calling until it returns none.
 export function readAllDirectoryEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
   const allEntries: FileSystemEntry[] = [];
 
@@ -57,7 +57,7 @@ export function readAllDirectoryEntries(reader: FileSystemDirectoryReader): Prom
   });
 }
 
-// Drag-and-drop (and file-input) upload with naming-conflict resolution (replace/skip/replace-all), shared by MainFiles and MainPhotos. Uploads themselves still go through each caller's own useUploadQueue instance (different upload kind/session per view); this hook only resolves conflicts and hands the survivors over.
+// Drag-and-drop and file picker uploads with a replace/skip prompt for conflicts, shared by MainFiles and MainPhotos. The uploads themselves go through each caller's useUploadQueue.
 export function useDragAndDropUpload(
   {
     path,
@@ -69,7 +69,7 @@ export function useDragAndDropUpload(
     sessionTag = '',
   }: UseDragAndDropUploadOptions,
 ) {
-  // The tree walk and the conflict prompts happen before anything is handed to the upload queue, so this phase needs its own signals. useUploadQueue's isUploading/uploadProgress can't stand in: the service worker overwrites both on every broadcast (including the QUERY_STATE any other tab fires on mount), which would wipe the status mid-prompt and let a second drop land on top of the first.
+  // Own signals, since the service worker overwrites useUploadQueue's on every broadcast, even mid-prompt.
   const isResolvingConflicts = useSignal<boolean>(false);
   const resolveProgress = useSignal<string>('');
   const isDraggingOver = useSignal<boolean>(false);
@@ -78,7 +78,7 @@ export function useDragAndDropUpload(
   const replaceAllMode = useSignal<boolean>(false);
   const skipAllMode = useSignal<boolean>(false);
 
-  // Safety net: a drop landing outside the handled area below (e.g. the page header) would otherwise navigate the browser away to the dropped file/URL instead of being ignored.
+  // Stops a drop outside the drop zone (e.g. on the header) from navigating to the dropped file.
   useEffect(() => {
     function preventDefaultDrop(event: DragEvent) {
       event.preventDefault();
@@ -120,7 +120,7 @@ export function useDragAndDropUpload(
     const existingNames = existingNamesByPath.get(targetPath);
 
     if (existingNames?.directoryNames.has(file.name)) {
-      // None of the modal's answers apply to a directory of the same name: a file can't be written over one, so replacing it isn't on offer. Skipping it here reports the clash straight away instead of letting the upload fail part-way through.
+      // A file can't replace a directory, so report it instead of prompting.
       uploadError.value = `${targetPath}${file.name}: A directory with this name already exists.`;
       return Promise.resolve('skip');
     }
@@ -167,7 +167,7 @@ export function useDragAndDropUpload(
     });
   }
 
-  // Only one drop or pick is resolved at a time: a second one landing on top of the first would overwrite its open conflict prompt and leave it waiting on an answer that can never arrive. Both entry points (handleDrop and the file picker's uploadFiles) go through here, since the picker can fire while a drop is still being walked or checked, before any prompt is up to block it.
+  // One drop or pick at a time, or a second one overwrites the first's conflict prompt and leaves it hanging.
   function tryStartResolving(): boolean {
     if (isResolvingConflicts.value) {
       uploadError.value = 'Another upload is still being prepared. Wait for it to finish before adding more.';
@@ -188,7 +188,6 @@ export function useDragAndDropUpload(
     skipAllMode.value = false;
   }
 
-  // Entry point for the file picker. Drops go through handleDrop instead, which claims the resolve phase before its tree walk.
   async function uploadFiles(candidateFiles: File[]) {
     if (!tryStartResolving()) {
       return;
@@ -201,7 +200,7 @@ export function useDragAndDropUpload(
     }
   }
 
-  // Resolves conflicts one file at a time (so a "replace all" picked mid-batch applies to the rest), then enqueues the survivors. The caller must have claimed the resolve phase with tryStartResolving. basePath is the directory that was in view when the drop or pick started: resolving can take a while (a listing per directory, then the prompts), and the user may navigate elsewhere in the meantime.
+  // Resolves conflicts one file at a time, so a "Replace All" mid-batch applies to the rest. basePath is captured when the drop or pick starts, since the user may navigate away meanwhile.
   async function resolveAndEnqueue(candidateFiles: File[], basePath: string) {
     const filesToUpload = fileFilter ? candidateFiles.filter(fileFilter) : candidateFiles;
 
@@ -221,19 +220,19 @@ export function useDragAndDropUpload(
 
     onBeforeUpload?.();
 
-    // Identifies every item this call hands to the queue, so an Abort part-way through takes back exactly what this call already enqueued and nothing else.
+    // Lets Abort take back only this batch's items.
     const batchId = crypto.randomUUID();
 
     // Immediate feedback for the conflict-check below, which is a network round-trip per target path.
     resolveProgress.value = 'Checking for conflicts...';
 
-    // Check every directory a dropped file passes through (not just the currently-viewed one), so conflicts in dragged subdirectories are caught too, and so is a dragged directory whose name a file already has.
+    // Every directory on the way down, to also catch a dropped directory whose name a file already has.
     const targetPaths = [...new Set(filesToUpload.map((file) => getTargetPath(file, basePath)))];
     const existingNamesByPath = await fetchExistingNamesByPath(
       targetPaths.flatMap((targetPath) => getPathsFromBase(basePath, targetPath)),
     );
 
-    // Each answered file is handed over immediately rather than after the whole batch, so uploading starts while the user is still working through the prompts, and an Abort has this batch's own queued items to take back. Chained instead of awaited in the loop: without a service worker enqueueUpload does the upload itself, and awaiting it here would stall the next prompt behind it.
+    // Enqueue each file as soon as it's answered, so uploads start during the prompts. Chained, not awaited: without a service worker enqueueUpload uploads in-page and would block the next prompt.
     let enqueued: Promise<void> = Promise.resolve();
 
     for (const file of filesToUpload) {
@@ -241,7 +240,7 @@ export function useDragAndDropUpload(
       const resolution = await resolveFileConflict(file, basePath, targetPath, existingNamesByPath);
 
       if (resolution === 'abort') {
-        // Takes back everything already handed over for this batch too, not just the files not yet answered for. Letting the chain settle first means no item can still be on its way to the worker when the abort message arrives. Scoped to the batch, so an upload from an earlier drop (or another view or tab, which share the session tag) keeps running.
+        // Wait for the chain first, so no item of this batch reaches the worker after the abort.
         await enqueued.catch(() => {});
         postToUploadServiceWorker({ type: 'ABORT_UPLOADS', sessionTag, batchId });
 
@@ -257,7 +256,7 @@ export function useDragAndDropUpload(
     await enqueued;
   }
 
-  // Process a single dropped file system entry (file or directory), tagging files with a webkitRelativePath so directory structure survives the upload, and collecting empty directory paths for the caller to create.
+  // Walks one dropped entry, setting webkitRelativePath on files to keep the directory structure, and collecting empty directories.
   async function processEntry(
     entry: FileSystemEntry,
     currentPath: string,
@@ -357,10 +356,10 @@ export function useDragAndDropUpload(
       return;
     }
 
-    // Both of these must be read synchronously here (before any await), since dataTransfer becomes invalid once the drop event handler yields.
+    // dataTransfer is emptied once the handler yields, so read it before any await.
     const fallbackFiles = hasFiles ? Array.from(event.dataTransfer!.files) : [];
 
-    // Immediate feedback while we walk the dropped tree below, which (for a directory with many files) can itself take a moment before uploadFiles even starts its own conflict check.
+    // Feedback while walking a big dropped directory.
     const topLevelNames = hasItems
       ? Array.from(event.dataTransfer!.items)
         .map((item) => item.kind === 'file' ? item.webkitGetAsEntry()?.name : undefined)
@@ -377,7 +376,7 @@ export function useDragAndDropUpload(
       ? `Uploading ${topLevelNames.length} items...`
       : '';
 
-    // Captured before the tree walk below (which can itself take a while for a large directory), so everything this drop creates (empty directories and files alike) lands under the path that was in view at drop time, even if the user has since navigated elsewhere.
+    // Captured before the tree walk, so everything lands where the drop happened even if the user navigates away.
     const pathAtDropStart = path.value;
 
     try {
@@ -390,7 +389,7 @@ export function useDragAndDropUpload(
         await onEmptyDirectory?.(directoryPath, pathAtDropStart);
       }
 
-      // The walk can come back with nothing even though the drop did carry files, because webkitGetAsEntry() is allowed to return null. Decide on what the walk actually produced rather than on whether items were present, or that case is a silent no-op.
+      // webkitGetAsEntry() may return null, so fall back to the plain file list when the walk finds nothing.
       const filesToUpload = droppedFiles.length === 0 && emptyDirectories.length === 0 ? fallbackFiles : droppedFiles;
 
       await resolveAndEnqueue(filesToUpload, pathAtDropStart);

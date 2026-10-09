@@ -101,7 +101,7 @@ export default function MainFiles(
   const isCreatingDirectories = useSignal<boolean>(false);
   const currentDirectoryName = useSignal<string>('');
 
-  // Uploads run inside a service worker (public/sw.js) so they survive a page refresh; this hook enqueues files and hydrates isUploading/uploadProgress/uploadError from its broadcasts. Existing-file checking is done ourselves above (with a replace/skip/replace-all prompt), so the hook's own blanket skip-if-exists check is disabled here.
+  // Existing files are handled by useDragAndDropUpload's conflict prompt, so the queue doesn't skip them itself.
   const { isUploading, uploadProgress, uploadError, enqueueUpload } = useUploadQueue({
     isEnabled: !fileShareId,
     path,
@@ -222,7 +222,7 @@ export default function MainFiles(
         throw new Error('Failed to create directory!');
       }
 
-      // The listing that comes back is of pathAtDropStart, which the user may have navigated away from during the tree walk. Same reasoning as useUploadQueue's own check: only apply it when it's still the directory on screen.
+      // The user may have navigated away since the drop.
       if (pathInView === path.value) {
         directories.value = [...result.newDirectories];
       }

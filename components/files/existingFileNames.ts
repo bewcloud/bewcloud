@@ -5,7 +5,7 @@ export interface ExistingNames {
   directoryNames: Set<string>;
 }
 
-// The names already taken in a directory, used to detect naming conflicts before an upload. Directory names count: a file can't be written over a directory, so that clash has to be caught here rather than failing mid-upload. Fails open (empty sets) on any error, so a check that itself fails doesn't block an upload that turns out fine, or wrongly report a clash.
+// Names already taken in a directory. Fails open, so a failed check doesn't block the upload.
 export async function fetchExistingNames(parentPath: string): Promise<ExistingNames> {
   try {
     const requestBody: GetFilesRequestBody = { parentPath };

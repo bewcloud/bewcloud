@@ -146,10 +146,10 @@ async function post({ request, user, session }: RequestHandlerParams) {
 
     const finalFilePath = join(finalParentDir, name.trim());
 
-    // When overwriting, assemble into a temp file inside this upload's own .chunk-uploads directory and only rename it over the target once it's complete, so a failure part-way through can't truncate or delete the file that's already there. Keeping the temp in there (rather than next to the target) means every cleanup path below already removes it, and the user never sees it in their own directory. When not overwriting, finalFilePath can't pre-exist by definition, so there's no data-loss risk and it's written directly.
+    // An overwrite is assembled inside this upload's directory and renamed over the target once complete, so a failure can't truncate the existing file.
     const writeTargetPath = overwrite ? join(uploadDir, 'assembled') : finalFilePath;
 
-    // Open with createNew:true to match the single-upload behaviour (reject if file already exists), unless overwrite was requested (write into the temp path instead).
+    // Open with createNew:true to match the single-upload behaviour (reject if file already exists)
     let finalFile: Deno.FsFile;
 
     try {

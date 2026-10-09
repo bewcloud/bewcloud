@@ -16,7 +16,7 @@ export default function FileConflictModal(
 ) {
   const skipButtonRef = useRef<HTMLButtonElement>(null);
 
-  // The prompt interrupts whatever the user was doing, so it takes the focus itself, and Escape answers it the same way the focused button does: skip this one file, leaving the rest of the batch alone.
+  // Focus the non-destructive Skip, and let Escape skip too.
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -58,7 +58,7 @@ export default function FileConflictModal(
             Replacing overwrites the existing file permanently. It is not moved to Trash.
           </p>
         </section>
-        {/* 3-column grid so Skip/Skip All line up with the same widths as Replace/Replace All below them; the empty cell on row 1 reserves the Abort Upload column so only row 2 has it. Skip comes first in the DOM (and thus tab order) so the non-destructive default gets focused first. */}
+        {/* Skip first, so it's first in tab order. The empty cell keeps Abort Upload on row 2 only. */}
         <footer class='grid grid-cols-[1fr_1fr_auto] gap-2'>
           <button
             ref={skipButtonRef}

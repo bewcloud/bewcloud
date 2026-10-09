@@ -14,7 +14,7 @@ interface UploadQueueItem {
   file: File;
   parentPath: string;
   overwrite?: boolean;
-  // Identifies the drop this item came from, so aborting that drop's conflict prompt drops only its own items from the worker's queue.
+  // Lets an Abort take back only its own drop's items.
   batchId?: string;
 }
 
@@ -182,7 +182,7 @@ export function useUploadQueue(
 
   async function enqueueUpload(items: UploadQueueItem[]) {
     if (items.length === 0) {
-      // A caller (like useDragAndDropUpload after a "Skip All") may resolve every candidate to nothing left to upload. Still clear any stale isUploading/error from a previous run, or that leftover state keeps showing after this no-op call.
+      // Still clear leftover state, e.g. after a "Skip All" left nothing to upload.
       isUploading.value = false;
       uploadProgress.value = '';
       uploadError.value = '';
@@ -192,7 +192,7 @@ export function useUploadQueue(
     // Capture once, before any await: the user may navigate away while the pre-upload existence check or the upload itself is in flight, which would change path.value and cause the eventual response to refresh the wrong directory listing.
     const pathInView = path.value;
 
-    // A drop is enqueued file by file as each conflict is answered (see useDragAndDropUpload), and clears these itself before it starts. By then it may already have reported a clash of its own, so a batched item never resets them here.
+    // A drop clears these itself before it starts, and may have reported errors since.
     const isPartOfBatch = items.some((item) => item.batchId);
 
     if (!isPartOfBatch) {

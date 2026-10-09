@@ -327,6 +327,9 @@ self.addEventListener('message', (event) => {
       return;
     }
 
+    // Sent on logout, so the next user on this browser doesn't get this user's failure (basic auth shares an empty session tag).
+    lastError = null;
+
     if (!message.sessionTag || !currentJob || message.sessionTag === currentJob.sessionTag) {
       event.waitUntil(abandonCurrentJob());
     }

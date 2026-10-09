@@ -172,3 +172,29 @@ Deno.test('that a dropped directory whose name a file already has is skipped and
     globalThis.fetch = originalFetch;
   }
 });
+
+Deno.test('that only a file the user chose to replace is uploaded with overwrite', async () => {
+  const path = signal('/');
+  const uploadError = signal('');
+  const enqueued: EnqueuedItem[] = [];
+
+  globalThis.fetch = (() => Promise.resolve(listingResponse(['a.txt']))) as typeof globalThis.fetch;
+
+  try {
+    const hook = renderHook(path, uploadError, enqueued);
+
+    const upload = hook.uploadFiles([new File(['a'], 'a.txt'), new File(['b'], 'b.txt')]);
+
+    while (!hook.fileConflictModal.value) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    assertEquals(hook.fileConflictModal.value.filePath, '/a.txt');
+    hook.fileConflictModal.value.onReplace();
+    await upload;
+
+    assertEquals(enqueued.map((item) => [item.file.name, item.overwrite]), [['a.txt', true], ['b.txt', false]]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

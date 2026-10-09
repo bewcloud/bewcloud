@@ -96,56 +96,70 @@ export function useDragAndDropUpload({
       };
     });
   }
+  function tryStartResolving() {
+    if (isResolvingConflicts.value) {
+      uploadError.value = 'Another upload is still being prepared. Wait for it to finish before adding more.';
+      return false;
+    }
+    isResolvingConflicts.value = true;
+    uploadError.value = '';
+    replaceAllMode.value = false;
+    skipAllMode.value = false;
+    return true;
+  }
+  function finishResolving() {
+    isResolvingConflicts.value = false;
+    resolveProgress.value = '';
+    replaceAllMode.value = false;
+    skipAllMode.value = false;
+  }
   async function uploadFiles(candidateFiles) {
+    if (!tryStartResolving()) {
+      return;
+    }
+    try {
+      await resolveAndEnqueue(candidateFiles);
+    } finally {
+      finishResolving();
+    }
+  }
+  async function resolveAndEnqueue(candidateFiles) {
     const filesToUpload = fileFilter ? candidateFiles.filter(fileFilter) : candidateFiles;
     if (filesToUpload.length === 0) {
       if (candidateFiles.length > 0) {
         uploadError.value = 'No supported files were found in the dropped items.';
       }
-      isResolvingConflicts.value = false;
-      resolveProgress.value = '';
       return;
     }
-    isResolvingConflicts.value = true;
-    uploadError.value = '';
     onBeforeUpload?.();
-    replaceAllMode.value = false;
-    skipAllMode.value = false;
     const batchId = crypto.randomUUID();
-    try {
-      resolveProgress.value = 'Checking for conflicts...';
-      const targetPaths = [...new Set(filesToUpload.map(getTargetPath))];
-      const existingNamesByPath = new Map(await Promise.all(targetPaths.map(async targetPath => [targetPath, await fetchExistingNames(targetPath)])));
-      let enqueued = Promise.resolve();
-      for (const file of filesToUpload) {
-        const targetPath = getTargetPath(file);
-        const resolution = await resolveFileConflict(file, targetPath, existingNamesByPath);
-        if (resolution === 'abort') {
-          await enqueued.catch(() => {});
-          postToUploadServiceWorker({
-            type: 'ABORT_UPLOADS',
-            sessionTag,
-            batchId
-          });
-          return;
-        }
-        if (resolution === 'upload' || resolution === 'replace') {
-          const item = {
-            file,
-            parentPath: targetPath,
-            overwrite: resolution === 'replace',
-            batchId
-          };
-          enqueued = enqueued.then(() => enqueueUpload([item]));
-        }
+    resolveProgress.value = 'Checking for conflicts...';
+    const targetPaths = [...new Set(filesToUpload.map(getTargetPath))];
+    const existingNamesByPath = new Map(await Promise.all(targetPaths.map(async targetPath => [targetPath, await fetchExistingNames(targetPath)])));
+    let enqueued = Promise.resolve();
+    for (const file of filesToUpload) {
+      const targetPath = getTargetPath(file);
+      const resolution = await resolveFileConflict(file, targetPath, existingNamesByPath);
+      if (resolution === 'abort') {
+        await enqueued.catch(() => {});
+        postToUploadServiceWorker({
+          type: 'ABORT_UPLOADS',
+          sessionTag,
+          batchId
+        });
+        return;
       }
-      await enqueued;
-    } finally {
-      isResolvingConflicts.value = false;
-      resolveProgress.value = '';
-      replaceAllMode.value = false;
-      skipAllMode.value = false;
+      if (resolution === 'upload' || resolution === 'replace') {
+        const item = {
+          file,
+          parentPath: targetPath,
+          overwrite: resolution === 'replace',
+          batchId
+        };
+        enqueued = enqueued.then(() => enqueueUpload([item]));
+      }
     }
+    await enqueued;
   }
   async function processEntry(entry, currentPath, filesToUpload, directoriesToCreate) {
     if (entry.isFile) {
@@ -214,10 +228,6 @@ export function useDragAndDropUpload({
     event.stopPropagation();
     isDraggingOver.value = false;
     dragCounter.value = 0;
-    if (isResolvingConflicts.value) {
-      uploadError.value = 'Another drop is still being processed. Wait for it to finish before dropping more.';
-      return;
-    }
     const hasItems = !!event.dataTransfer?.items && event.dataTransfer.items.length > 0;
     const hasFiles = !!event.dataTransfer?.files && event.dataTransfer.files.length > 0;
     if (!hasItems && !hasFiles) {
@@ -225,8 +235,9 @@ export function useDragAndDropUpload({
     }
     const fallbackFiles = hasFiles ? Array.from(event.dataTransfer.files) : [];
     const topLevelNames = hasItems ? Array.from(event.dataTransfer.items).map(item => item.kind === 'file' ? item.webkitGetAsEntry()?.name : undefined).filter(name => !!name) : fallbackFiles.map(file => file.name);
-    isResolvingConflicts.value = true;
-    uploadError.value = '';
+    if (!tryStartResolving()) {
+      return;
+    }
     resolveProgress.value = topLevelNames.length === 1 ? `Uploading ${topLevelNames[0]}...` : topLevelNames.length > 1 ? `Uploading ${topLevelNames.length} items...` : '';
     const pathAtDropStart = path.value;
     try {
@@ -241,12 +252,12 @@ export function useDragAndDropUpload({
         await onEmptyDirectory?.(directoryPath, pathAtDropStart);
       }
       const filesToUpload = droppedFiles.length === 0 && emptyDirectories.length === 0 ? fallbackFiles : droppedFiles;
-      await uploadFiles(filesToUpload);
+      await resolveAndEnqueue(filesToUpload);
     } catch (error) {
       console.error('Failed to process dropped files:', error);
       uploadError.value = error instanceof Error ? error.message : String(error);
-      isResolvingConflicts.value = false;
-      resolveProgress.value = '';
+    } finally {
+      finishResolving();
     }
   }
   return {

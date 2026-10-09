@@ -154,8 +154,42 @@ export function useDragAndDropUpload(
     });
   }
 
-  // Resolves conflicts one file at a time (so a "replace all" picked mid-batch applies to the rest), then enqueues the survivors.
+  // Only one drop or pick is resolved at a time: a second one landing on top of the first would overwrite its open conflict prompt and leave it waiting on an answer that can never arrive. Both entry points (handleDrop and the file picker's uploadFiles) go through here, since the picker can fire while a drop is still being walked or checked, before any prompt is up to block it.
+  function tryStartResolving(): boolean {
+    if (isResolvingConflicts.value) {
+      uploadError.value = 'Another upload is still being prepared. Wait for it to finish before adding more.';
+      return false;
+    }
+
+    isResolvingConflicts.value = true;
+    uploadError.value = '';
+    replaceAllMode.value = false;
+    skipAllMode.value = false;
+    return true;
+  }
+
+  function finishResolving() {
+    isResolvingConflicts.value = false;
+    resolveProgress.value = '';
+    replaceAllMode.value = false;
+    skipAllMode.value = false;
+  }
+
+  // Entry point for the file picker. Drops go through handleDrop instead, which claims the resolve phase before its tree walk.
   async function uploadFiles(candidateFiles: File[]) {
+    if (!tryStartResolving()) {
+      return;
+    }
+
+    try {
+      await resolveAndEnqueue(candidateFiles);
+    } finally {
+      finishResolving();
+    }
+  }
+
+  // Resolves conflicts one file at a time (so a "replace all" picked mid-batch applies to the rest), then enqueues the survivors. The caller must have claimed the resolve phase with tryStartResolving.
+  async function resolveAndEnqueue(candidateFiles: File[]) {
     const filesToUpload = fileFilter ? candidateFiles.filter(fileFilter) : candidateFiles;
 
     if (filesToUpload.length === 0) {
@@ -163,60 +197,47 @@ export function useDragAndDropUpload(
         // Something was dropped, but the filter (e.g. Photos wanting only images/videos) rejected all of it.
         uploadError.value = 'No supported files were found in the dropped items.';
       }
-      isResolvingConflicts.value = false;
-      resolveProgress.value = '';
       return;
     }
 
-    isResolvingConflicts.value = true;
-    uploadError.value = '';
     onBeforeUpload?.();
-    replaceAllMode.value = false; // Reset replace/skip all mode for new upload session
-    skipAllMode.value = false;
 
     // Identifies every item this call hands to the queue, so an Abort part-way through takes back exactly what this call already enqueued and nothing else.
     const batchId = crypto.randomUUID();
 
-    try {
-      // Immediate feedback for the conflict-check below, which is a network round-trip per target path.
-      resolveProgress.value = 'Checking for conflicts...';
+    // Immediate feedback for the conflict-check below, which is a network round-trip per target path.
+    resolveProgress.value = 'Checking for conflicts...';
 
-      // Check every target path a dropped file will land in (not just the currently-viewed directory), so conflicts in dragged subdirectories are caught too.
-      const targetPaths = [...new Set(filesToUpload.map(getTargetPath))];
-      const existingNamesByPath = new Map(
-        await Promise.all(
-          targetPaths.map(async (targetPath) => [targetPath, await fetchExistingNames(targetPath)] as const),
-        ),
-      );
+    // Check every target path a dropped file will land in (not just the currently-viewed directory), so conflicts in dragged subdirectories are caught too.
+    const targetPaths = [...new Set(filesToUpload.map(getTargetPath))];
+    const existingNamesByPath = new Map(
+      await Promise.all(
+        targetPaths.map(async (targetPath) => [targetPath, await fetchExistingNames(targetPath)] as const),
+      ),
+    );
 
-      // Each answered file is handed over immediately rather than after the whole batch, so uploading starts while the user is still working through the prompts, and an Abort has this batch's own queued items to take back. Chained instead of awaited in the loop: without a service worker enqueueUpload does the upload itself, and awaiting it here would stall the next prompt behind it.
-      let enqueued: Promise<void> = Promise.resolve();
+    // Each answered file is handed over immediately rather than after the whole batch, so uploading starts while the user is still working through the prompts, and an Abort has this batch's own queued items to take back. Chained instead of awaited in the loop: without a service worker enqueueUpload does the upload itself, and awaiting it here would stall the next prompt behind it.
+    let enqueued: Promise<void> = Promise.resolve();
 
-      for (const file of filesToUpload) {
-        const targetPath = getTargetPath(file);
-        const resolution = await resolveFileConflict(file, targetPath, existingNamesByPath);
+    for (const file of filesToUpload) {
+      const targetPath = getTargetPath(file);
+      const resolution = await resolveFileConflict(file, targetPath, existingNamesByPath);
 
-        if (resolution === 'abort') {
-          // Takes back everything already handed over for this batch too, not just the files not yet answered for. Letting the chain settle first means no item can still be on its way to the worker when the abort message arrives. Scoped to the batch, so an upload from an earlier drop (or another view or tab, which share the session tag) keeps running.
-          await enqueued.catch(() => {});
-          postToUploadServiceWorker({ type: 'ABORT_UPLOADS', sessionTag, batchId });
+      if (resolution === 'abort') {
+        // Takes back everything already handed over for this batch too, not just the files not yet answered for. Letting the chain settle first means no item can still be on its way to the worker when the abort message arrives. Scoped to the batch, so an upload from an earlier drop (or another view or tab, which share the session tag) keeps running.
+        await enqueued.catch(() => {});
+        postToUploadServiceWorker({ type: 'ABORT_UPLOADS', sessionTag, batchId });
 
-          return;
-        }
-
-        if (resolution === 'upload' || resolution === 'replace') {
-          const item = { file, parentPath: targetPath, overwrite: resolution === 'replace', batchId };
-          enqueued = enqueued.then(() => enqueueUpload([item]));
-        }
+        return;
       }
 
-      await enqueued;
-    } finally {
-      isResolvingConflicts.value = false;
-      resolveProgress.value = '';
-      replaceAllMode.value = false;
-      skipAllMode.value = false;
+      if (resolution === 'upload' || resolution === 'replace') {
+        const item = { file, parentPath: targetPath, overwrite: resolution === 'replace', batchId };
+        enqueued = enqueued.then(() => enqueueUpload([item]));
+      }
     }
+
+    await enqueued;
   }
 
   // Process a single dropped file system entry (file or directory), tagging files with a webkitRelativePath so directory structure survives the upload, and collecting empty directory paths for the caller to create.
@@ -312,12 +333,6 @@ export function useDragAndDropUpload(
     isDraggingOver.value = false;
     dragCounter.value = 0;
 
-    if (isResolvingConflicts.value) {
-      // A drop is still being resolved - a second one landing on top of it would overwrite the open conflict prompt and leave the first batch waiting on an answer that can never arrive.
-      uploadError.value = 'Another drop is still being processed. Wait for it to finish before dropping more.';
-      return;
-    }
-
     const hasItems = !!event.dataTransfer?.items && event.dataTransfer.items.length > 0;
     const hasFiles = !!event.dataTransfer?.files && event.dataTransfer.files.length > 0;
 
@@ -335,8 +350,10 @@ export function useDragAndDropUpload(
         .filter((name): name is string => !!name)
       : fallbackFiles.map((file) => file.name);
 
-    isResolvingConflicts.value = true;
-    uploadError.value = '';
+    if (!tryStartResolving()) {
+      return;
+    }
+
     resolveProgress.value = topLevelNames.length === 1
       ? `Uploading ${topLevelNames[0]}...`
       : topLevelNames.length > 1
@@ -359,12 +376,12 @@ export function useDragAndDropUpload(
       // The walk can come back with nothing even though the drop did carry files, because webkitGetAsEntry() is allowed to return null. Decide on what the walk actually produced rather than on whether items were present, or that case is a silent no-op.
       const filesToUpload = droppedFiles.length === 0 && emptyDirectories.length === 0 ? fallbackFiles : droppedFiles;
 
-      await uploadFiles(filesToUpload);
+      await resolveAndEnqueue(filesToUpload);
     } catch (error) {
       console.error('Failed to process dropped files:', error);
       uploadError.value = error instanceof Error ? error.message : String(error);
-      isResolvingConflicts.value = false;
-      resolveProgress.value = '';
+    } finally {
+      finishResolving();
     }
   }
 

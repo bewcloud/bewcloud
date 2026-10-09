@@ -27,3 +27,17 @@ export async function fetchExistingNames(parentPath) {
     };
   }
 }
+const MAX_CONCURRENT_LISTINGS = 4;
+export async function fetchExistingNamesByPath(paths) {
+  const existingNamesByPath = new Map();
+  const pathsToList = [...new Set(paths)];
+  async function listRemainingPaths() {
+    for (let path = pathsToList.shift(); path !== undefined; path = pathsToList.shift()) {
+      existingNamesByPath.set(path, await fetchExistingNames(path));
+    }
+  }
+  await Promise.all(Array.from({
+    length: MAX_CONCURRENT_LISTINGS
+  }, listRemainingPaths));
+  return existingNamesByPath;
+}

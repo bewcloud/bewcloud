@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
-import { fetchExistingNames } from "./existingFileNames.js";
+import { fetchExistingNamesByPath } from "./existingFileNames.js";
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
 export function useUploadQueue({
   isEnabled,
@@ -133,8 +133,7 @@ export function useUploadQueue({
     isUploading.value = true;
     let itemsToUpload = items;
     if (checkExistingFiles) {
-      const uniqueParentPaths = [...new Set(items.map(item => item.parentPath))];
-      const existingNamesByParentPath = new Map(await Promise.all(uniqueParentPaths.map(async parentPath => [parentPath, await fetchExistingNames(parentPath)])));
+      const existingNamesByParentPath = await fetchExistingNamesByPath(items.map(item => item.parentPath));
       itemsToUpload = items.filter(item => {
         if (existingNamesByParentPath.get(item.parentPath)?.fileNames.has(item.file.name)) {
           uploadError.value = `${item.file.name}: A file with this name already exists.`;

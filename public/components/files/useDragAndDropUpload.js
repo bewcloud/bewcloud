@@ -1,6 +1,6 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
-import { fetchExistingNames } from "./existingFileNames.js";
+import { fetchExistingNamesByPath } from "./existingFileNames.js";
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
 export function readAllDirectoryEntries(reader) {
   const allEntries = [];
@@ -138,8 +138,8 @@ export function useDragAndDropUpload({
     onBeforeUpload?.();
     const batchId = crypto.randomUUID();
     resolveProgress.value = 'Checking for conflicts...';
-    const targetPaths = [...new Set(filesToUpload.map(file => getTargetPath(file, basePath)))];
-    const existingNamesByPath = new Map(await Promise.all(targetPaths.map(async targetPath => [targetPath, await fetchExistingNames(targetPath)])));
+    const targetPaths = filesToUpload.map(file => getTargetPath(file, basePath));
+    const existingNamesByPath = await fetchExistingNamesByPath(targetPaths);
     let enqueued = Promise.resolve();
     for (const file of filesToUpload) {
       const targetPath = getTargetPath(file, basePath);

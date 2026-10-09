@@ -32,3 +32,21 @@ export async function fetchExistingNames(parentPath: string): Promise<ExistingNa
     return { fileNames: new Set(), directoryNames: new Set() };
   }
 }
+
+const MAX_CONCURRENT_LISTINGS = 4;
+
+// A few listings at a time, since a drop like node_modules can span hundreds of directories.
+export async function fetchExistingNamesByPath(paths: string[]): Promise<Map<string, ExistingNames>> {
+  const existingNamesByPath = new Map<string, ExistingNames>();
+  const pathsToList = [...new Set(paths)];
+
+  async function listRemainingPaths() {
+    for (let path = pathsToList.shift(); path !== undefined; path = pathsToList.shift()) {
+      existingNamesByPath.set(path, await fetchExistingNames(path));
+    }
+  }
+
+  await Promise.all(Array.from({ length: MAX_CONCURRENT_LISTINGS }, listRemainingPaths));
+
+  return existingNamesByPath;
+}

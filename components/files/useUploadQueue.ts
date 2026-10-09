@@ -5,7 +5,7 @@ import { Directory, DirectoryFile } from '/lib/types.ts';
 import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
 import { ResponseBody as ChunkUploadResponseBody } from '/pages/api/files/upload-chunk.ts';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
-import { fetchExistingNames } from './existingFileNames.ts';
+import { fetchExistingNamesByPath } from './existingFileNames.ts';
 
 // 10 MB chunks keep each request faster.
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
@@ -205,14 +205,7 @@ export function useUploadQueue(
     let itemsToUpload = items;
 
     if (checkExistingFiles) {
-      const uniqueParentPaths = [...new Set(items.map((item) => item.parentPath))];
-      const existingNamesByParentPath = new Map(
-        await Promise.all(
-          uniqueParentPaths.map(
-            async (parentPath) => [parentPath, await fetchExistingNames(parentPath)] as const,
-          ),
-        ),
-      );
+      const existingNamesByParentPath = await fetchExistingNamesByPath(items.map((item) => item.parentPath));
 
       itemsToUpload = items.filter((item) => {
         if (existingNamesByParentPath.get(item.parentPath)?.fileNames.has(item.file.name)) {

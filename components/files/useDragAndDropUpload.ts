@@ -1,7 +1,7 @@
 import { Signal, useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
-import { ExistingNames, fetchExistingNames } from './existingFileNames.ts';
+import { ExistingNames, fetchExistingNamesByPath } from './existingFileNames.ts';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
 
 interface FileConflictState {
@@ -215,12 +215,8 @@ export function useDragAndDropUpload(
     resolveProgress.value = 'Checking for conflicts...';
 
     // Check every target path a dropped file will land in (not just the currently-viewed directory), so conflicts in dragged subdirectories are caught too.
-    const targetPaths = [...new Set(filesToUpload.map((file) => getTargetPath(file, basePath)))];
-    const existingNamesByPath = new Map(
-      await Promise.all(
-        targetPaths.map(async (targetPath) => [targetPath, await fetchExistingNames(targetPath)] as const),
-      ),
-    );
+    const targetPaths = filesToUpload.map((file) => getTargetPath(file, basePath));
+    const existingNamesByPath = await fetchExistingNamesByPath(targetPaths);
 
     // Each answered file is handed over immediately rather than after the whole batch, so uploading starts while the user is still working through the prompts, and an Abort has this batch's own queued items to take back. Chained instead of awaited in the loop: without a service worker enqueueUpload does the upload itself, and awaiting it here would stall the next prompt behind it.
     let enqueued: Promise<void> = Promise.resolve();

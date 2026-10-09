@@ -1,6 +1,11 @@
 import { assertEquals } from '@std/assert';
 
-import { fetchExistingNames, fetchExistingNamesByPath } from './existingFileNames.ts';
+import {
+  fetchExistingNames,
+  fetchExistingNamesByPath,
+  findDirectoryTakenByFile,
+  getPathsFromBase,
+} from './existingFileNames.ts';
 
 const originalFetch = globalThis.fetch;
 
@@ -85,4 +90,20 @@ Deno.test('that fetchExistingNamesByPath lists every path once, a few at a time'
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+Deno.test('that getPathsFromBase lists every directory from the base down to the target', () => {
+  assertEquals(getPathsFromBase('/base/', '/base/'), ['/base/']);
+  assertEquals(getPathsFromBase('/base/', '/base/a/b/'), ['/base/', '/base/a/', '/base/a/b/']);
+});
+
+Deno.test('that findDirectoryTakenByFile finds a directory on the way whose name a file already has', () => {
+  const existingNamesByPath = new Map([
+    ['/base/', { fileNames: new Set(['notes.txt']), directoryNames: new Set(['a']) }],
+    ['/base/a/', { fileNames: new Set(['b']), directoryNames: new Set<string>() }],
+  ]);
+
+  assertEquals(findDirectoryTakenByFile('/base/', '/base/a/b/c/', existingNamesByPath), '/base/a/b');
+  assertEquals(findDirectoryTakenByFile('/base/', '/base/a/', existingNamesByPath), undefined);
+  assertEquals(findDirectoryTakenByFile('/base/', '/base/', existingNamesByPath), undefined);
 });

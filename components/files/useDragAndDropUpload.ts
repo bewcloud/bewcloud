@@ -1,7 +1,12 @@
 import { Signal, useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 
-import { ExistingNames, fetchExistingNamesByPath } from './existingFileNames.ts';
+import {
+  ExistingNames,
+  fetchExistingNamesByPath,
+  findDirectoryTakenByFile,
+  getPathsFromBase,
+} from './existingFileNames.ts';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
 
 interface FileConflictState {
@@ -101,9 +106,17 @@ export function useDragAndDropUpload(
   // Resolves a naming conflict for a single file, prompting the user unless already in "replace all"/"skip all" mode.
   function resolveFileConflict(
     file: File,
+    basePath: string,
     targetPath: string,
     existingNamesByPath: Map<string, ExistingNames>,
   ): Promise<ConflictResolution> {
+    const directoryTakenByFile = findDirectoryTakenByFile(basePath, targetPath, existingNamesByPath);
+
+    if (directoryTakenByFile) {
+      uploadError.value = `${directoryTakenByFile}: A file with this name already exists.`;
+      return Promise.resolve('skip');
+    }
+
     const existingNames = existingNamesByPath.get(targetPath);
 
     if (existingNames?.directoryNames.has(file.name)) {
@@ -214,16 +227,18 @@ export function useDragAndDropUpload(
     // Immediate feedback for the conflict-check below, which is a network round-trip per target path.
     resolveProgress.value = 'Checking for conflicts...';
 
-    // Check every target path a dropped file will land in (not just the currently-viewed directory), so conflicts in dragged subdirectories are caught too.
-    const targetPaths = filesToUpload.map((file) => getTargetPath(file, basePath));
-    const existingNamesByPath = await fetchExistingNamesByPath(targetPaths);
+    // Check every directory a dropped file passes through (not just the currently-viewed one), so conflicts in dragged subdirectories are caught too, and so is a dragged directory whose name a file already has.
+    const targetPaths = [...new Set(filesToUpload.map((file) => getTargetPath(file, basePath)))];
+    const existingNamesByPath = await fetchExistingNamesByPath(
+      targetPaths.flatMap((targetPath) => getPathsFromBase(basePath, targetPath)),
+    );
 
     // Each answered file is handed over immediately rather than after the whole batch, so uploading starts while the user is still working through the prompts, and an Abort has this batch's own queued items to take back. Chained instead of awaited in the loop: without a service worker enqueueUpload does the upload itself, and awaiting it here would stall the next prompt behind it.
     let enqueued: Promise<void> = Promise.resolve();
 
     for (const file of filesToUpload) {
       const targetPath = getTargetPath(file, basePath);
-      const resolution = await resolveFileConflict(file, targetPath, existingNamesByPath);
+      const resolution = await resolveFileConflict(file, basePath, targetPath, existingNamesByPath);
 
       if (resolution === 'abort') {
         // Takes back everything already handed over for this batch too, not just the files not yet answered for. Letting the chain settle first means no item can still be on its way to the worker when the abort message arrives. Scoped to the batch, so an upload from an earlier drop (or another view or tab, which share the session tag) keeps running.

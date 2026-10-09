@@ -147,3 +147,28 @@ Deno.test('that files the view does not accept are reported when the rest of the
     globalThis.fetch = originalFetch;
   }
 });
+
+Deno.test('that a dropped directory whose name a file already has is skipped and reported', async () => {
+  const path = signal('/');
+  const uploadError = signal('');
+  const enqueued: EnqueuedItem[] = [];
+
+  globalThis.fetch = ((_url: string, options: RequestInit) => {
+    const { parentPath } = JSON.parse(options.body as string);
+    return Promise.resolve(parentPath === '/' ? listingResponse(['photos']) : listingResponse([]));
+  }) as typeof globalThis.fetch;
+
+  try {
+    const hook = renderHook(path, uploadError, enqueued);
+
+    const nestedFile = new File(['a'], 'a.jpg');
+    Object.defineProperty(nestedFile, 'webkitRelativePath', { value: 'photos/a.jpg' });
+
+    await hook.uploadFiles([nestedFile, new File(['b'], 'b.txt')]);
+
+    assertEquals(enqueued.map((item) => item.file.name), ['b.txt']);
+    assertEquals(uploadError.value, '/photos: A file with this name already exists.');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

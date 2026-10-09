@@ -50,3 +50,34 @@ export async function fetchExistingNamesByPath(paths: string[]): Promise<Map<str
 
   return existingNamesByPath;
 }
+
+// Every directory from basePath down to targetPath, e.g. ['/base/', '/base/a/', '/base/a/b/'].
+export function getPathsFromBase(basePath: string, targetPath: string): string[] {
+  const paths = [basePath];
+
+  for (const directoryName of targetPath.slice(basePath.length).split('/').filter(Boolean)) {
+    paths.push(`${paths[paths.length - 1]}${directoryName}/`);
+  }
+
+  return paths;
+}
+
+// The first directory on the way to targetPath whose name is already taken by a file, so nothing can be uploaded into it.
+export function findDirectoryTakenByFile(
+  basePath: string,
+  targetPath: string,
+  existingNamesByPath: Map<string, ExistingNames>,
+): string | undefined {
+  const paths = getPathsFromBase(basePath, targetPath);
+
+  for (let index = 1; index < paths.length; index++) {
+    const parentPath = paths[index - 1];
+    const directoryName = paths[index].slice(parentPath.length, -1);
+
+    if (existingNamesByPath.get(parentPath)?.fileNames.has(directoryName)) {
+      return `${parentPath}${directoryName}`;
+    }
+  }
+
+  return undefined;
+}

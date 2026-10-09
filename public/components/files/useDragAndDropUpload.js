@@ -1,6 +1,6 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
-import { fetchExistingNamesByPath } from "./existingFileNames.js";
+import { fetchExistingNamesByPath, findDirectoryTakenByFile, getPathsFromBase } from "./existingFileNames.js";
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
 export function readAllDirectoryEntries(reader) {
   const allEntries = [];
@@ -52,7 +52,12 @@ export function useDragAndDropUpload({
     const directoryPath = file.webkitRelativePath.slice(0, -file.name.length);
     return `${basePath}${directoryPath}`;
   }
-  function resolveFileConflict(file, targetPath, existingNamesByPath) {
+  function resolveFileConflict(file, basePath, targetPath, existingNamesByPath) {
+    const directoryTakenByFile = findDirectoryTakenByFile(basePath, targetPath, existingNamesByPath);
+    if (directoryTakenByFile) {
+      uploadError.value = `${directoryTakenByFile}: A file with this name already exists.`;
+      return Promise.resolve('skip');
+    }
     const existingNames = existingNamesByPath.get(targetPath);
     if (existingNames?.directoryNames.has(file.name)) {
       uploadError.value = `${targetPath}${file.name}: A directory with this name already exists.`;
@@ -138,12 +143,12 @@ export function useDragAndDropUpload({
     onBeforeUpload?.();
     const batchId = crypto.randomUUID();
     resolveProgress.value = 'Checking for conflicts...';
-    const targetPaths = filesToUpload.map(file => getTargetPath(file, basePath));
-    const existingNamesByPath = await fetchExistingNamesByPath(targetPaths);
+    const targetPaths = [...new Set(filesToUpload.map(file => getTargetPath(file, basePath)))];
+    const existingNamesByPath = await fetchExistingNamesByPath(targetPaths.flatMap(targetPath => getPathsFromBase(basePath, targetPath)));
     let enqueued = Promise.resolve();
     for (const file of filesToUpload) {
       const targetPath = getTargetPath(file, basePath);
-      const resolution = await resolveFileConflict(file, targetPath, existingNamesByPath);
+      const resolution = await resolveFileConflict(file, basePath, targetPath, existingNamesByPath);
       if (resolution === 'abort') {
         await enqueued.catch(() => {});
         postToUploadServiceWorker({

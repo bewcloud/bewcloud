@@ -41,3 +41,21 @@ export async function fetchExistingNamesByPath(paths) {
   }, listRemainingPaths));
   return existingNamesByPath;
 }
+export function getPathsFromBase(basePath, targetPath) {
+  const paths = [basePath];
+  for (const directoryName of targetPath.slice(basePath.length).split('/').filter(Boolean)) {
+    paths.push(`${paths[paths.length - 1]}${directoryName}/`);
+  }
+  return paths;
+}
+export function findDirectoryTakenByFile(basePath, targetPath, existingNamesByPath) {
+  const paths = getPathsFromBase(basePath, targetPath);
+  for (let index = 1; index < paths.length; index++) {
+    const parentPath = paths[index - 1];
+    const directoryName = paths[index].slice(parentPath.length, -1);
+    if (existingNamesByPath.get(parentPath)?.fileNames.has(directoryName)) {
+      return `${parentPath}${directoryName}`;
+    }
+  }
+  return undefined;
+}

@@ -201,7 +201,7 @@ export default function MainFiles(
       isCreatingDirectories.value = true;
       currentDirectoryName.value = dirPath;
 
-      const requestBody = {
+      const requestBody: CreateDirectoryRequestBody = {
         parentPath: pathInView,
         name: dirPath, // The API should handle nested path creation
       };
@@ -215,10 +215,15 @@ export default function MainFiles(
         throw new Error(`Failed to create directory. ${response.statusText} ${await response.text()}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as CreateDirectoryResponseBody;
+
+      // The endpoint answers 200 with success: false when mkdir fails (e.g. a file already has that name).
+      if (!result.success) {
+        throw new Error('Failed to create directory!');
+      }
 
       // The listing that comes back is of pathAtDropStart, which the user may have navigated away from during the tree walk. Same reasoning as useUploadQueue's own check: only apply it when it's still the directory on screen.
-      if (result.success && pathInView === path.value) {
+      if (pathInView === path.value) {
         directories.value = [...result.newDirectories];
       }
     } catch (error) {

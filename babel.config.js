@@ -49,6 +49,8 @@ const plugins = [
 ];
 
 export default {
+  // Tests live next to the components they cover, but only the components themselves are served
+  ignore: [(fileName) => fileName.endsWith('_test.ts')],
   sourceType: 'module',
   targets: '> 0.5%, not dead',
   presets,

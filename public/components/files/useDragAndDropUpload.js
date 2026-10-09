@@ -131,6 +131,10 @@ export function useDragAndDropUpload({
       }
       return;
     }
+    const unsupportedCount = candidateFiles.length - filesToUpload.length;
+    if (unsupportedCount > 0) {
+      uploadError.value = `Skipped ${unsupportedCount} unsupported file${unsupportedCount === 1 ? '' : 's'}.`;
+    }
     onBeforeUpload?.();
     const batchId = crypto.randomUUID();
     resolveProgress.value = 'Checking for conflicts...';

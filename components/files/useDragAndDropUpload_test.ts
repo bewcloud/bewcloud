@@ -36,7 +36,12 @@ Deno.test('that readAllDirectoryEntries accumulates every batch until an empty o
 type EnqueuedItem = { file: File; parentPath: string; overwrite: boolean; batchId: string };
 
 // Renders the hook once (server-side, so no DOM is needed) and hands back what it returned. Its functions keep working after the render, since all they touch are signals.
-function renderHook(path: Signal<string>, uploadError: Signal<string>, enqueued: EnqueuedItem[]) {
+function renderHook(
+  path: Signal<string>,
+  uploadError: Signal<string>,
+  enqueued: EnqueuedItem[],
+  fileFilter?: (file: File) => boolean,
+) {
   let hook: ReturnType<typeof useDragAndDropUpload> | undefined;
 
   function TestComponent() {
@@ -47,6 +52,7 @@ function renderHook(path: Signal<string>, uploadError: Signal<string>, enqueued:
         enqueued.push(...items);
         return Promise.resolve();
       },
+      fileFilter,
     });
     return null;
   }
@@ -118,6 +124,25 @@ Deno.test('that files upload to the directory that was in view when the upload s
     await upload;
 
     assertEquals(enqueued.map((item) => item.parentPath), ['/Documents/']);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+Deno.test('that files the view does not accept are reported when the rest of the drop is uploaded', async () => {
+  const path = signal('/Photos/');
+  const uploadError = signal('');
+  const enqueued: EnqueuedItem[] = [];
+
+  globalThis.fetch = (() => Promise.resolve(listingResponse([]))) as typeof globalThis.fetch;
+
+  try {
+    const hook = renderHook(path, uploadError, enqueued, (file) => file.name.endsWith('.jpg'));
+
+    await hook.uploadFiles([new File(['a'], 'a.jpg'), new File(['b'], 'b.txt'), new File(['c'], 'c.pdf')]);
+
+    assertEquals(enqueued.map((item) => item.file.name), ['a.jpg']);
+    assertEquals(uploadError.value, 'Skipped 2 unsupported files.');
   } finally {
     globalThis.fetch = originalFetch;
   }

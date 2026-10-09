@@ -200,6 +200,12 @@ export function useDragAndDropUpload(
       return;
     }
 
+    const unsupportedCount = candidateFiles.length - filesToUpload.length;
+
+    if (unsupportedCount > 0) {
+      uploadError.value = `Skipped ${unsupportedCount} unsupported file${unsupportedCount === 1 ? '' : 's'}.`;
+    }
+
     onBeforeUpload?.();
 
     // Identifies every item this call hands to the queue, so an Abort part-way through takes back exactly what this call already enqueued and nothing else.

@@ -1040,7 +1040,9 @@ export default function MainFiles(
         {uploadError.value
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
-              Upload failed {uploadError.value}
+              <span class='truncate min-w-0' title={`Upload failed ${uploadError.value}`}>
+                Upload failed {uploadError.value}
+              </span>
             </span>
           )
           : null}

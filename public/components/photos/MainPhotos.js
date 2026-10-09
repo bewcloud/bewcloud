@@ -202,7 +202,10 @@ export default function MainPhotos({
     class: "truncate min-w-0"
   }, uploadProgress.value || 'Uploading...')) : null, !isAdding.value && !isResolvingConflicts.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Upload failed ", uploadError.value) : null, skippedFilesNotice.value ? h("span", {
+  }, h("span", {
+    class: "truncate min-w-0",
+    title: `Upload failed ${uploadError.value}`
+  }, "Upload failed ", uploadError.value)) : null, skippedFilesNotice.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
   }, "Upload partially successful \u2014 ", skippedFilesNotice.value) : null), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,

@@ -219,7 +219,12 @@ export class FileModel {
   ): Promise<{ success: boolean; alreadyExists?: boolean }> {
     await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
 
-    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
+    const userRootPath = join(await AppConfig.getFilesRootPath(), userId);
+    const rootPath = join(userRootPath, path);
+    const filePath = join(rootPath, name);
+
+    // An overwrite is written next to the chunked uploads and renamed over the target once complete, so a failed Replace can't truncate the existing file.
+    const writePath = overwrite ? join(userRootPath, '.chunk-uploads', crypto.randomUUID()) : filePath;
 
     try {
       // Ensure the directory exist, if being requested
@@ -231,14 +236,26 @@ export class FileModel {
         }
       }
 
-      // createNew rejects if the file already exists; overwrite instead writes in place, same as update() below.
+      if (overwrite) {
+        await Deno.mkdir(join(userRootPath, '.chunk-uploads'), { recursive: true });
+      }
+
       if (typeof contents === 'string') {
-        await Deno.writeTextFile(join(rootPath, name), contents, { append: false, createNew: !overwrite });
+        await Deno.writeTextFile(writePath, contents, { append: false, createNew: true });
       } else {
-        await Deno.writeFile(join(rootPath, name), new Uint8Array(contents), { append: false, createNew: !overwrite });
+        await Deno.writeFile(writePath, new Uint8Array(contents), { append: false, createNew: true });
+      }
+
+      if (overwrite) {
+        await Deno.rename(writePath, filePath);
       }
     } catch (error) {
       console.error(error);
+
+      if (overwrite) {
+        await Deno.remove(writePath).catch(() => {});
+      }
+
       return { success: false, alreadyExists: error instanceof Deno.errors.AlreadyExists };
     }
 

@@ -39,6 +39,21 @@ async function get({ request, match }: RequestHandlerParams): Promise<Response> 
     }
   }
 
+  let decodedFileName: string;
+
+  try {
+    decodedFileName = decodeURIComponent(fileName);
+  } catch {
+    throw new Error('NotFound');
+  }
+
+  if (
+    !decodedFileName || decodedFileName === '.' || decodedFileName === '..' || decodedFileName.includes('/') ||
+    decodedFileName.includes('\\')
+  ) {
+    throw new Error('NotFound');
+  }
+
   const searchParams = new URL(request.url).searchParams;
 
   let currentPath = searchParams.get('path') || '/';
@@ -53,10 +68,27 @@ async function get({ request, match }: RequestHandlerParams): Promise<Response> 
     currentPath = `${currentPath}/`;
   }
 
-  // Confirm that currentPath is not _outside_ the fileShare.file_path
-  await ensureFileSharePathIsValidAndSecurelyAccessible(fileShare.user_id, fileShare.file_path, currentPath);
-
   const isFileSharePathDirectory = fileShare.file_path.endsWith('/');
+
+  if (!isFileSharePathDirectory && decodedFileName !== fileShare.file_path.split('/').pop()) {
+    throw new Error('NotFound');
+  }
+
+  const sharePathSegments = isFileSharePathDirectory ? [currentPath, decodedFileName] : [currentPath];
+
+  try {
+    await ensureFileSharePathIsValidAndSecurelyAccessible(
+      fileShare.user_id,
+      fileShare.file_path,
+      ...sharePathSegments,
+    );
+  } catch (error) {
+    if ((error as Error).message === 'Invalid file path') {
+      throw new Error('NotFound');
+    }
+
+    throw error;
+  }
 
   const fileSharePathDirectory = isFileSharePathDirectory
     ? fileShare.file_path
@@ -64,7 +96,7 @@ async function get({ request, match }: RequestHandlerParams): Promise<Response> 
 
   currentPath = isFileSharePathDirectory ? join(fileShare.file_path, currentPath) : fileSharePathDirectory;
 
-  const fileResult = await FileModel.get(fileShare.user_id, currentPath, decodeURIComponent(fileName));
+  const fileResult = await FileModel.get(fileShare.user_id, currentPath, decodedFileName);
 
   if (!fileResult.success) {
     throw new Error('NotFound');

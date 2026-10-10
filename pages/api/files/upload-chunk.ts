@@ -1,4 +1,4 @@
-import { join } from '@std/path';
+import { dirname, join } from '@std/path';
 
 import page, { RequestHandlerParams } from '/lib/page.ts';
 import { Directory, DirectoryFile } from '/lib/types.ts';
@@ -89,8 +89,10 @@ async function post({ request, user, session }: RequestHandlerParams) {
     return new Response('Bad Request', { status: 400 });
   }
 
+  let targetFilePath: string;
+
   try {
-    await ensureUserPathIsValidAndSecurelyAccessible(user!.id, join(parentPath, name.trim()));
+    targetFilePath = await ensureUserPathIsValidAndSecurelyAccessible(user!.id, parentPath, name.trim());
   } catch {
     return new Response('Bad Request', { status: 400 });
   }
@@ -104,8 +106,6 @@ async function post({ request, user, session }: RequestHandlerParams) {
     await cleanStaleUploads(userUploadDir);
 
     if (!overwrite) {
-      const targetFilePath = join(filesRootPath, user!.id, parentPath, name.trim());
-
       try {
         await Deno.stat(targetFilePath);
 
@@ -141,13 +141,11 @@ async function post({ request, user, session }: RequestHandlerParams) {
     }
 
     // All chunks present — assemble the final file
-    const finalParentDir = join(filesRootPath, user!.id, parentPath);
+    const finalParentDir = dirname(targetFilePath);
     await Deno.mkdir(finalParentDir, { recursive: true });
 
-    const finalFilePath = join(finalParentDir, name.trim());
-
     // An overwrite is assembled inside this upload's directory and renamed over the target once complete, so a failure can't truncate the existing file.
-    const writeTargetPath = overwrite ? join(uploadDir, 'assembled') : finalFilePath;
+    const writeTargetPath = overwrite ? join(uploadDir, 'assembled') : targetFilePath;
 
     // Open with createNew:true to match the single-upload behaviour (reject if file already exists)
     let finalFile: Deno.FsFile;
@@ -188,7 +186,7 @@ async function post({ request, user, session }: RequestHandlerParams) {
     finalFile.close();
 
     if (overwrite) {
-      await Deno.rename(writeTargetPath, finalFilePath);
+      await Deno.rename(writeTargetPath, targetFilePath);
     }
 
     await Deno.remove(uploadDir, { recursive: true });

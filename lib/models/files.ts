@@ -1,4 +1,4 @@
-import { join, resolve } from '@std/path';
+import { dirname, join, resolve } from '@std/path';
 import { lookup } from 'mrmime';
 import { Cookie, getCookies, setCookie } from '@std/http';
 
@@ -66,14 +66,13 @@ export class DirectoryModel {
   }
 
   static async create(userId: string, path: string, name: string): Promise<boolean> {
-    await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
-
-    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
-
     try {
-      await Deno.mkdir(join(rootPath, name), { recursive: true });
+      const targetPath = await ensureUserPathIsValidAndSecurelyAccessible(userId, path, name);
+      await Deno.mkdir(targetPath, { recursive: true });
     } catch (error) {
-      console.error(error);
+      if ((error as Error).message !== 'Invalid file path') {
+        console.error(error);
+      }
       return false;
     }
 
@@ -217,14 +216,22 @@ export class FileModel {
     contents: string | ArrayBuffer,
     overwrite = false,
   ): Promise<{ success: boolean; alreadyExists?: boolean }> {
-    await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+    let targetPath: string;
 
+    try {
+      targetPath = await ensureUserPathIsValidAndSecurelyAccessible(userId, path, name);
+    } catch (error) {
+      if ((error as Error).message !== 'Invalid file path') {
+        console.error(error);
+      }
+      return { success: false };
+    }
+
+    const rootPath = dirname(targetPath);
     const userRootPath = join(await AppConfig.getFilesRootPath(), userId);
-    const rootPath = join(userRootPath, path);
-    const filePath = join(rootPath, name);
 
     // An overwrite is written next to the chunked uploads and renamed over the target once complete, so a failed Replace can't truncate the existing file.
-    const writePath = overwrite ? join(userRootPath, '.chunk-uploads', crypto.randomUUID()) : filePath;
+    const writePath = overwrite ? join(userRootPath, '.chunk-uploads', crypto.randomUUID()) : targetPath;
 
     try {
       // Ensure the directory exist, if being requested
@@ -247,7 +254,7 @@ export class FileModel {
       }
 
       if (overwrite) {
-        await Deno.rename(writePath, filePath);
+        await Deno.rename(writePath, targetPath);
       }
     } catch (error) {
       console.error(error);
@@ -268,14 +275,13 @@ export class FileModel {
     name: string,
     contents: string,
   ): Promise<boolean> {
-    await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
-
-    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
-
     try {
-      await Deno.writeTextFile(join(rootPath, name), contents, { append: false, createNew: false });
+      const targetPath = await ensureUserPathIsValidAndSecurelyAccessible(userId, path, name);
+      await Deno.writeTextFile(targetPath, contents, { append: false, createNew: false });
     } catch (error) {
-      console.error(error);
+      if ((error as Error).message !== 'Invalid file path') {
+        console.error(error);
+      }
       return false;
     }
 
@@ -287,15 +293,15 @@ export class FileModel {
     path: string,
     name?: string,
   ): Promise<{ success: boolean; contents?: Uint8Array; contentType?: string; byteSize?: number }> {
-    await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name || ''));
-
-    const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
-
     try {
-      const stat = await Deno.stat(join(rootPath, name || ''));
+      const targetPath = name
+        ? await ensureUserPathIsValidAndSecurelyAccessible(userId, path, name)
+        : await ensureUserPathIsValidAndSecurelyAccessible(userId, path);
+
+      const stat = await Deno.stat(targetPath);
 
       if (stat) {
-        const contents = await Deno.readFile(join(rootPath, name || ''));
+        const contents = await Deno.readFile(targetPath);
 
         const extension = (name || path).split('.').slice(-1).join('').toLowerCase();
 
@@ -309,7 +315,9 @@ export class FileModel {
         };
       }
     } catch (error) {
-      console.error(error);
+      if ((error as Error).message !== 'Invalid file path') {
+        console.error(error);
+      }
     }
 
     return {
@@ -615,23 +623,28 @@ export class FileShareModel {
  * Ensures the user path is valid and securely accessible (meaning it's not trying to access files outside of the user's root directory).
  * Does not check if the path exists.
  *
+ * Segments are joined onto the user root in one step. Joining them first collapses `..` against `/` and the check then looks at a different path than the filesystem call.
+ *
  * @param userId - The user ID
- * @param path - The relative path (user-provided) to check
+ * @param pathSegments - Path segments relative to the user's root
+ * @returns The resolved absolute path
  */
-export async function ensureUserPathIsValidAndSecurelyAccessible(userId: string, path: string): Promise<void> {
-  const userRootPath = join(await AppConfig.getFilesRootPath(), userId, '/');
-
-  const fullPath = join(userRootPath, path);
-
-  const resolvedFullPath = `${resolve(fullPath)}/`;
+export async function ensureUserPathIsValidAndSecurelyAccessible(
+  userId: string,
+  ...pathSegments: string[]
+): Promise<string> {
+  const userRootPath = resolve(join(await AppConfig.getFilesRootPath(), userId));
+  const fullPath = resolve(join(userRootPath, ...pathSegments));
 
   // Normalize path separators for consistent comparison on Windows
-  const normalizedUserRootPath = userRootPath.replaceAll('\\', '/');
-  const normalizedResolvedFullPath = resolvedFullPath.replaceAll('\\', '/');
+  const normalizedUserRootPath = `${userRootPath.replaceAll('\\', '/')}/`;
+  const normalizedFullPath = `${fullPath.replaceAll('\\', '/')}/`;
 
-  if (!normalizedResolvedFullPath.startsWith(normalizedUserRootPath)) {
+  if (!normalizedFullPath.startsWith(normalizedUserRootPath)) {
     throw new Error('Invalid file path');
   }
+
+  return fullPath;
 }
 
 /**
@@ -640,28 +653,35 @@ export async function ensureUserPathIsValidAndSecurelyAccessible(userId: string,
  *
  * @param userId - The user ID
  * @param fileSharePath - The file share path
- * @param path - The relative path (user-provided) to check
+ * @param pathSegments - Path segments relative to the file share, joined onto it in one step
  */
 export async function ensureFileSharePathIsValidAndSecurelyAccessible(
   userId: string,
   fileSharePath: string,
-  path: string,
+  ...pathSegments: string[]
 ): Promise<void> {
   await ensureUserPathIsValidAndSecurelyAccessible(userId, fileSharePath);
 
-  const userRootPath = join(await AppConfig.getFilesRootPath(), userId, '/');
-
-  const fileShareRootPath = join(userRootPath, fileSharePath);
-
-  const fullPath = join(fileShareRootPath, path);
-
-  const resolvedFullPath = `${resolve(fullPath)}/`;
+  const fileShareRootPath = resolve(join(await AppConfig.getFilesRootPath(), userId, fileSharePath));
+  const fullPath = resolve(join(fileShareRootPath, ...pathSegments));
 
   // Normalize path separators for consistent comparison on Windows
-  const normalizedFileShareRootPath = fileShareRootPath.replace(/\\/g, '/');
-  const normalizedResolvedFullPath = resolvedFullPath.replace(/\\/g, '/');
+  const normalizedFileShareRootPath = fileShareRootPath.replaceAll('\\', '/');
+  const normalizedFullPath = fullPath.replaceAll('\\', '/');
 
-  if (!normalizedResolvedFullPath.startsWith(normalizedFileShareRootPath)) {
+  if (fileSharePath.endsWith('/')) {
+    const sharePrefix = normalizedFileShareRootPath.endsWith('/')
+      ? normalizedFileShareRootPath
+      : `${normalizedFileShareRootPath}/`;
+
+    if (!`${normalizedFullPath}/`.startsWith(sharePrefix)) {
+      throw new Error('Invalid file path');
+    }
+
+    return;
+  }
+
+  if (normalizedFullPath !== normalizedFileShareRootPath) {
     throw new Error('Invalid file path');
   }
 }
@@ -711,16 +731,14 @@ async function renameDirectoryOrFile(
   oldName: string,
   newName: string,
 ): Promise<boolean> {
-  await ensureUserPathIsValidAndSecurelyAccessible(userId, join(oldPath, oldName));
-  await ensureUserPathIsValidAndSecurelyAccessible(userId, join(newPath, newName));
-
-  const oldRootPath = join(await AppConfig.getFilesRootPath(), userId, oldPath);
-  const newRootPath = join(await AppConfig.getFilesRootPath(), userId, newPath);
-
   try {
-    await Deno.rename(join(oldRootPath, oldName), join(newRootPath, newName));
+    const oldTargetPath = await ensureUserPathIsValidAndSecurelyAccessible(userId, oldPath, oldName);
+    const newTargetPath = await ensureUserPathIsValidAndSecurelyAccessible(userId, newPath, newName);
+    await Deno.rename(oldTargetPath, newTargetPath);
   } catch (error) {
-    console.error(error);
+    if ((error as Error).message !== 'Invalid file path') {
+      console.error(error);
+    }
     return false;
   }
 
@@ -728,9 +746,16 @@ async function renameDirectoryOrFile(
 }
 
 async function deleteDirectoryOrFile(userId: string, path: string, name: string): Promise<boolean> {
-  await ensureUserPathIsValidAndSecurelyAccessible(userId, join(path, name));
+  let targetPath: string;
 
-  const rootPath = join(await AppConfig.getFilesRootPath(), userId, path);
+  try {
+    targetPath = await ensureUserPathIsValidAndSecurelyAccessible(userId, path, name);
+  } catch (error) {
+    if ((error as Error).message !== 'Invalid file path') {
+      console.error(error);
+    }
+    return false;
+  }
 
   const fileShares = (await AppConfig.isPublicFileSharingAllowed())
     ? await FileShareModel.getByParentFilePath(userId, path)
@@ -742,10 +767,10 @@ async function deleteDirectoryOrFile(userId: string, path: string, name: string)
 
   try {
     if (path.startsWith(TRASH_PATH)) {
-      await Deno.remove(join(rootPath, name), { recursive: true });
+      await Deno.remove(targetPath, { recursive: true });
     } else {
-      const trashPath = join(await AppConfig.getFilesRootPath(), userId, TRASH_PATH);
-      await Deno.rename(join(rootPath, name), join(trashPath, name));
+      const trashTargetPath = await ensureUserPathIsValidAndSecurelyAccessible(userId, TRASH_PATH, name);
+      await Deno.rename(targetPath, trashTargetPath);
     }
 
     // Delete all file shares for this path

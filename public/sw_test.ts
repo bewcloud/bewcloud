@@ -227,3 +227,49 @@ Deno.test('that aborting the drop that is uploading cancels it, but the next dro
     assertEquals(aborted, ['first.txt']);
   });
 });
+
+Deno.test('that aborting a queued drop removes its items from the total', async () => {
+  await withFetch(succeedingFetch, async () => {
+    const { started, release } = stubHangingFetch();
+
+    postMessage({
+      type: 'ENQUEUE_UPLOAD',
+      sessionTag,
+      items: [makeItem('a.txt', { batchId: 'first-drop' }), makeItem('b.txt', { batchId: 'first-drop' })],
+    });
+    await untilStarted(started, 1);
+
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('c.txt', { batchId: 'second-drop' })] });
+    postMessage({ type: 'ABORT_UPLOADS', sessionTag, batchId: 'second-drop' });
+
+    release('a.txt');
+    await untilStarted(started, 2);
+    release('b.txt');
+    await settle();
+
+    const progress = [...new Set(broadcasts.map((broadcast) => broadcast.uploadProgress).filter(Boolean))];
+    assertEquals(progress, ['Uploading a.txt (1/2)…', 'Uploading b.txt (2/2)…']);
+  });
+});
+
+Deno.test('that a drop keeps its last error when its next file starts a new job, but a batch abort does not clear it', async () => {
+  await withFetch(failingFetch, async () => {
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a.txt', { batchId: 'first-drop' })] });
+    await settle();
+    const failure = lastBroadcast().error;
+    assertEquals(failure, '(a.txt): Failed to upload file. Internal Server Error nope');
+
+    globalThis.fetch = succeedingFetch;
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('b.txt', { batchId: 'first-drop' })] });
+    await settle();
+    assertEquals(lastBroadcast().error, failure);
+
+    postMessage({ type: 'ABORT_UPLOADS', sessionTag, batchId: 'first-drop' });
+    postMessage({ type: 'QUERY_STATE', sessionTag });
+    assertEquals(lastBroadcast().error, failure);
+
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('c.txt', { batchId: 'second-drop' })] });
+    await settle();
+    assertEquals(lastBroadcast().error, '');
+  });
+});

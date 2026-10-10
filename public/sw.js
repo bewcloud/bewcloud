@@ -12,7 +12,7 @@ const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount }
 
 // Outlives the job so a tab that was frozen when the upload failed still gets the error on resync.
-let lastError = null; // { id, message, kind, sessionTag, createdAt }
+let lastError = null; // { id, message, kind, sessionTag, batchId, createdAt }
 
 // A queue outlives the session that created it, so the upload endpoints refuse requests tagged with a session other than the one their cookie now belongs to. When that happens there's nothing left to retry: the rest of the queue is dropped instead of being uploaded as whoever is logged in now.
 class UploadSessionGoneError extends Error {}
@@ -52,6 +52,7 @@ function setLastError(job, fileName, message) {
     message: `(${fileName}): ${message}`,
     kind: job.currentItemKind || 'file',
     sessionTag: job.sessionTag,
+    batchId: job.currentItemBatchId,
     createdAt: Date.now(),
   };
 
@@ -115,7 +116,11 @@ function handleDirectoryDeleted(job, deletedPath) {
 // Drops one batch's items, leaving other batches alone. Same approach as handleDirectoryDeleted for the in-flight item.
 function handleBatchAborted(job, batchId) {
   const currentAffected = !job.currentItemCancelled && job.currentItemBatchId === batchId;
+  const queueLengthBefore = job.queue.length;
   job.queue = job.queue.filter((item) => item.batchId !== batchId);
+
+  const removedCount = queueLengthBefore - job.queue.length + (currentAffected ? 1 : 0);
+  job.totalCount = Math.max(0, job.totalCount - removedCount);
 
   if (currentAffected) {
     job.currentItemCancelled = true;
@@ -361,7 +366,14 @@ self.addEventListener('message', (event) => {
     const isNewJob = !currentJob;
 
     if (isNewJob) {
-      lastError = null;
+      // A drop enqueues each file as it's answered, so the queue can drain between two files of the same drop.
+      const isSameBatchAsLastError = Boolean(lastError?.batchId) &&
+        message.items.some((item) => item.batchId === lastError.batchId);
+
+      if (!isSameBatchAsLastError) {
+        lastError = null;
+      }
+
       currentJob = {
         queue: [],
         uploadProgress: '',

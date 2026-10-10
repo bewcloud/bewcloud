@@ -27,6 +27,7 @@ async function post({ request, user, session }: RequestHandlerParams) {
   const name = requestBody.get('name') as string;
   const contents = requestBody.get('contents') as File | string;
   const uploadSessionTag = requestBody.get('upload_session_tag') as string;
+  const overwrite = requestBody.get('overwrite') === 'true';
 
   // Uploads are queued in a service worker that outlives the page, so a queue left over from a previous session must not keep writing into whoever is logged in now. Cookie sessions must send a matching tag; basic auth has no session id and skips this.
   if (!await isUploadSessionTagValid(uploadSessionTag, session?.tokenData?.session_id)) {
@@ -42,7 +43,7 @@ async function post({ request, user, session }: RequestHandlerParams) {
 
   const fileContents = typeof contents === 'string' ? contents : await contents.arrayBuffer();
 
-  const createdFile = await FileModel.create(user!.id, parentPath, name.trim(), fileContents);
+  const createdFile = await FileModel.create(user!.id, parentPath, name.trim(), fileContents, overwrite);
 
   const newFiles = await FileModel.list(user!.id, pathInView);
   const newDirectories = await DirectoryModel.list(user!.id, pathInView);

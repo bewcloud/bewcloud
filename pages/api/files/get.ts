@@ -1,7 +1,7 @@
 import page, { RequestHandlerParams } from '/lib/page.ts';
 
-import { DirectoryFile } from '/lib/types.ts';
-import { FileModel } from '/lib/models/files.ts';
+import { Directory, DirectoryFile } from '/lib/types.ts';
+import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
 
 export interface RequestBody {
@@ -11,6 +11,7 @@ export interface RequestBody {
 export interface ResponseBody {
   success: boolean;
   files: DirectoryFile[];
+  directories: Directory[];
 }
 
 async function post({ request, user }: RequestHandlerParams) {
@@ -34,7 +35,12 @@ async function post({ request, user }: RequestHandlerParams) {
     requestBody.parentPath,
   );
 
-  const responseBody: ResponseBody = { success: true, files };
+  const directories = await DirectoryModel.list(
+    user!.id,
+    requestBody.parentPath,
+  );
+
+  const responseBody: ResponseBody = { success: true, files, directories };
 
   return new Response(JSON.stringify(responseBody));
 }

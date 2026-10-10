@@ -1,9 +1,12 @@
 import { useSignal } from '@preact/signals';
 import { useUploadQueue } from "/public/components/files/useUploadQueue.js";
+import { useDragAndDropUpload } from "/public/components/files/useDragAndDropUpload.js";
+import FileConflictModal from "/public/components/files/FileConflictModal.js";
 import CreateDirectoryModal from "/public/components/files/CreateDirectoryModal.js";
 import ListFiles from "/public/components/files/ListFiles.js";
 import FilesBreadcrumb from "/public/components/files/FilesBreadcrumb.js";
 import ListPhotos from "/public/components/photos/ListPhotos.js";
+import { isPhotoFile, PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
 export default function MainPhotos({
   initialDirectories,
   initialFiles,
@@ -27,25 +30,43 @@ export default function MainPhotos({
     files,
     directories,
     uploadSessionTag,
-    uploadKind: 'photo'
+    uploadKind: 'photo',
+    checkExistingFiles: false
+  });
+  const {
+    isResolvingConflicts,
+    resolveProgress,
+    skippedFilesNotice,
+    isDraggingOver,
+    fileConflictModal,
+    uploadFiles,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop
+  } = useDragAndDropUpload({
+    path,
+    uploadError,
+    enqueueUpload,
+    onBeforeUpload: () => {
+      areNewOptionsOption.value = false;
+    },
+    fileFilter: isPhotoFile,
+    sessionTag: uploadSessionTag ?? ''
   });
   function onClickUploadFile() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
-    fileInput.accept = 'image/*,video/*';
+    fileInput.accept = ['image/*', 'video/*', ...PHOTO_EXTENSIONS.map(extension => `.${extension}`)].join(',');
     fileInput.click();
-    fileInput.onchange = event => {
+    fileInput.onchange = async event => {
       const chosenFilesList = event.target?.files;
       const chosenFiles = Array.from(chosenFilesList).filter(Boolean);
       if (chosenFiles.length === 0) {
         return;
       }
-      areNewOptionsOption.value = false;
-      enqueueUpload(chosenFiles.map(chosenFile => ({
-        file: chosenFile,
-        parentPath: path.value
-      })));
+      await uploadFiles(chosenFiles);
     };
   }
   function onClickCreateDirectory() {
@@ -93,7 +114,27 @@ export default function MainPhotos({
   function toggleNewOptionsDropdown() {
     areNewOptionsOption.value = !areNewOptionsOption.value;
   }
-  return h(Fragment, null, h("section", {
+  return h("div", {
+    class: "relative",
+    onDragEnter: handleDragEnter,
+    onDragLeave: handleDragLeave,
+    onDragOver: handleDragOver,
+    onDrop: handleDrop
+  }, isDraggingOver.value && h("div", {
+    class: "fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+  }, h("div", {
+    class: "bg-[#51A4FB] text-white p-8 rounded-lg border-2 border-dashed border-white max-w-md text-center"
+  }, h("img", {
+    src: "/public/images/add.svg",
+    alt: "Upload",
+    class: "white mx-auto mb-4",
+    width: 48,
+    height: 48
+  }), h("h3", {
+    class: "text-xl font-semibold mb-2"
+  }, "Drop photos here to upload"), h("p", {
+    class: "text-sm opacity-90"
+  }, "Release to upload images and videos to the current directory"))), h("section", {
     class: "flex flex-row items-center justify-between mb-4"
   }, h("section", {
     class: "flex items-center justify-end w-full"
@@ -113,7 +154,7 @@ export default function MainPhotos({
   }, h("img", {
     src: "/public/images/add.svg",
     alt: "Add new file or directory",
-    class: `white ${isAdding.value || isUploading.value ? 'animate-spin' : ''}`,
+    class: `white ${isAdding.value || isUploading.value || isResolvingConflicts.value ? 'animate-spin' : ''}`,
     width: 20,
     height: 20
   }))), h("div", {
@@ -147,16 +188,31 @@ export default function MainPhotos({
     class: "white mr-2",
     width: 18,
     height: 18
-  }), "Creating...") : null, isUploading.value ? h(Fragment, null, h("img", {
+  }), "Creating...") : null, isResolvingConflicts.value ? h(Fragment, null, h("img", {
     src: "/public/images/loading.svg",
     class: "white mr-2",
     width: 18,
     height: 18
-  }), uploadProgress.value || 'Uploading...') : null, !isAdding.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
+  }), resolveProgress.value || 'Preparing upload...') : null, isUploading.value ? h(Fragment, null, h("img", {
+    src: "/public/images/loading.svg",
+    class: "white mr-2",
+    width: 18,
+    height: 18
+  }), uploadProgress.value || 'Uploading...') : null, !isAdding.value && !isResolvingConflicts.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Upload failed \u2014 ", uploadError.value) : null), h(CreateDirectoryModal, {
+  }, "Upload failed \u2014 ", uploadError.value) : null, skippedFilesNotice.value ? h("span", {
+    class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
+  }, "Upload partially successful \u2014 ", skippedFilesNotice.value) : null), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,
     onClickSave: onClickSaveDirectory,
     onClose: onCloseCreateDirectory
+  }), h(FileConflictModal, {
+    isOpen: fileConflictModal.value?.isOpen || false,
+    filePath: fileConflictModal.value?.filePath || '',
+    onReplace: fileConflictModal.value?.onReplace || (() => {}),
+    onSkip: fileConflictModal.value?.onSkip || (() => {}),
+    onReplaceAll: fileConflictModal.value?.onReplaceAll || (() => {}),
+    onSkipAll: fileConflictModal.value?.onSkipAll || (() => {}),
+    onAbort: fileConflictModal.value?.onAbort || (() => {})
   }));
 }

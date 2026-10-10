@@ -35,6 +35,8 @@ import {
   ResponseBody as DeleteShareResponseBody,
 } from '/pages/api/files/delete-share.ts';
 import { useUploadQueue } from './useUploadQueue.ts';
+import { useDragAndDropUpload } from './useDragAndDropUpload.ts';
+import FileConflictModal from './FileConflictModal.tsx';
 import SearchFiles from './SearchFiles.tsx';
 import ListFiles from './ListFiles.tsx';
 import FilesBreadcrumb from './FilesBreadcrumb.tsx';
@@ -95,6 +97,11 @@ export default function MainFiles(
   const createShareModal = useSignal<{ isOpen: boolean; filePath: string; password?: string } | null>(null);
   const manageShareModal = useSignal<{ isOpen: boolean; fileShareId: string } | null>(null);
 
+  // Directory creation progress state
+  const isCreatingDirectories = useSignal<boolean>(false);
+  const currentDirectoryName = useSignal<string>('');
+
+  // Existing files are handled by useDragAndDropUpload's conflict prompt, so the queue doesn't skip them itself.
   const { isUploading, uploadProgress, uploadError, enqueueUpload } = useUploadQueue({
     isEnabled: !fileShareId,
     path,
@@ -102,6 +109,29 @@ export default function MainFiles(
     directories,
     uploadSessionTag,
     uploadKind: 'file',
+    checkExistingFiles: false,
+  });
+
+  const {
+    isResolvingConflicts,
+    resolveProgress,
+    skippedFilesNotice,
+    isDraggingOver,
+    fileConflictModal,
+    uploadFiles,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
+  } = useDragAndDropUpload({
+    path,
+    uploadError,
+    enqueueUpload,
+    onBeforeUpload: () => {
+      areNewOptionsOpen.value = false;
+    },
+    onEmptyDirectory: createDirectoryFromPath,
+    sessionTag: uploadSessionTag ?? '',
   });
 
   function notifyDirectoryGone(parentPath: string, name: string) {
@@ -154,33 +184,56 @@ export default function MainFiles(
     }
     fileInput.click();
 
-    fileInput.onchange = (event) => {
+    fileInput.onchange = async (event) => {
       const chosenFilesList = (event.target as HTMLInputElement)?.files!;
-
       const chosenFiles = Array.from(chosenFilesList);
 
       if (chosenFiles.length === 0) {
         return;
       }
 
-      areNewOptionsOpen.value = false;
+      await uploadFiles(chosenFiles);
+    };
+  }
 
-      function getFileParentPath(chosenFile: File) {
-        if (!chosenFile.webkitRelativePath) {
-          return path.value;
-        }
+  // Create a directory from a relative path
+  async function createDirectoryFromPath(dirPath: string, pathInView: string) {
+    try {
+      isCreatingDirectories.value = true;
+      currentDirectoryName.value = dirPath;
 
-        // Resolve the parent path, keeping any sub-directory structure from directory uploads.
-        // We don't need to worry about path joining here, the API will handle it (and make sure it's secure)
-        const directoryPath = chosenFile.webkitRelativePath.slice(0, -chosenFile.name.length);
-        return `${path.value}${directoryPath}`;
+      const requestBody: CreateDirectoryRequestBody = {
+        parentPath: pathInView,
+        name: dirPath, // The API should handle nested path creation
+      };
+
+      const response = await fetch(`/api/files/create-directory`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create directory. ${response.statusText} ${await response.text()}`);
       }
 
-      enqueueUpload(chosenFiles.map((chosenFile) => ({
-        file: chosenFile,
-        parentPath: getFileParentPath(chosenFile),
-      })));
-    };
+      const result = await response.json() as CreateDirectoryResponseBody;
+
+      // The endpoint answers 200 with success: false when mkdir fails (e.g. a file already has that name).
+      if (!result.success) {
+        throw new Error('Failed to create directory!');
+      }
+
+      // The user may have navigated away since the drop.
+      if (pathInView === path.value) {
+        directories.value = [...result.newDirectories];
+      }
+    } catch (error) {
+      console.error(`Failed to create directory ${dirPath}:`, error);
+      uploadError.value = `${dirPath}: ${error instanceof Error ? error.message : String(error)}`;
+    } finally {
+      isCreatingDirectories.value = false;
+      currentDirectoryName.value = '';
+    }
   }
 
   function onClickCreateDirectory() {
@@ -300,10 +353,7 @@ export default function MainFiles(
 
       directories.value = [...result.newDirectories];
 
-      await notifyDirectoryGone(
-        renameDirectoryOrFileModal.value.parentPath,
-        renameDirectoryOrFileModal.value.name,
-      );
+      await notifyDirectoryGone(requestBody.parentPath, requestBody.oldName);
     } catch (error) {
       console.error(error);
     }
@@ -403,7 +453,7 @@ export default function MainFiles(
 
       directories.value = [...result.newDirectories];
 
-      await notifyDirectoryGone(moveDirectoryOrFileModal.value.path, moveDirectoryOrFileModal.value.name);
+      await notifyDirectoryGone(requestBody.oldParentPath, requestBody.name);
     } catch (error) {
       console.error(error);
     }
@@ -759,7 +809,29 @@ export default function MainFiles(
   }
 
   return (
-    <>
+    <div
+      class='relative'
+      {...(!fileShareId
+        ? { onDragEnter: handleDragEnter, onDragLeave: handleDragLeave, onDragOver: handleDragOver, onDrop: handleDrop }
+        : {})}
+    >
+      {/* Drag and drop overlay */}
+      {isDraggingOver.value && !fileShareId && (
+        <div class='fixed inset-0 z-50 bg-black/50 flex items-center justify-center'>
+          <div class='bg-[#51A4FB] text-white p-8 rounded-lg border-2 border-dashed border-white max-w-md text-center'>
+            <img
+              src='/public/images/add.svg'
+              alt='Upload'
+              class='white mx-auto mb-4'
+              width={48}
+              height={48}
+            />
+            <h3 class='text-xl font-semibold mb-2'>Drop files or directories here to upload</h3>
+            <p class='text-sm opacity-90'>Release to upload files to the current directory</p>
+          </div>
+        </div>
+      )}
+
       <section class='flex flex-row items-center justify-between mb-4'>
         <section class='relative inline-block text-left mr-2'>
           <section class='flex flex-row items-center justify-start'>
@@ -837,7 +909,12 @@ export default function MainFiles(
                     <img
                       src='/public/images/add.svg'
                       alt='Add new file or directory'
-                      class={`white ${isAdding.value || isUploading.value ? 'animate-spin' : ''}`}
+                      class={`white ${
+                        isAdding.value || isUploading.value || isCreatingDirectories.value ||
+                          isResolvingConflicts.value
+                          ? 'animate-spin'
+                          : ''
+                      }`}
                       width={20}
                       height={20}
                     />
@@ -923,6 +1000,22 @@ export default function MainFiles(
               </>
             )
             : null}
+          {isCreatingDirectories.value
+            ? (
+              <>
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
+                Creating directory {currentDirectoryName.value}...
+              </>
+            )
+            : null}
+          {isResolvingConflicts.value
+            ? (
+              <>
+                <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
+                {resolveProgress.value || 'Preparing upload...'}
+              </>
+            )
+            : null}
           {isUploading.value
             ? (
               <>
@@ -938,13 +1031,24 @@ export default function MainFiles(
               </>
             )
             : null}
-          {!isDeleting.value && !isAdding.value && !isUploading.value && !isUpdating.value ? <>&nbsp;</> : null}
+          {!isDeleting.value && !isAdding.value && !isCreatingDirectories.value && !isResolvingConflicts.value &&
+              !isUploading.value && !isUpdating.value
+            ? <>&nbsp;</>
+            : null}
         </span>
 
         {uploadError.value
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
               Upload failed — {uploadError.value}
+            </span>
+          )
+          : null}
+
+        {skippedFilesNotice.value
+          ? (
+            <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
+              Upload partially successful — {skippedFilesNotice.value}
             </span>
           )
           : null}
@@ -968,6 +1072,16 @@ export default function MainFiles(
           />
         )
         : null}
+
+      <FileConflictModal
+        isOpen={fileConflictModal.value?.isOpen || false}
+        filePath={fileConflictModal.value?.filePath || ''}
+        onReplace={fileConflictModal.value?.onReplace || (() => {})}
+        onSkip={fileConflictModal.value?.onSkip || (() => {})}
+        onReplaceAll={fileConflictModal.value?.onReplaceAll || (() => {})}
+        onSkipAll={fileConflictModal.value?.onSkipAll || (() => {})}
+        onAbort={fileConflictModal.value?.onAbort || (() => {})}
+      />
 
       {!fileShareId
         ? (
@@ -1020,6 +1134,6 @@ export default function MainFiles(
           />
         )
         : null}
-    </>
+    </div>
   );
 }

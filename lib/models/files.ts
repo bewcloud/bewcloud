@@ -42,10 +42,7 @@ export class DirectoryModel {
       ? await FileShareModel.getByParentFilePath(userId, path)
       : [];
 
-    // Calculate all sizes at once, so the listing waits for the slowest directory instead of the sum of all of them
-    const directorySizes = await Promise.all(
-      directoryEntries.map((entry) => getDirectorySize(join(rootPath, entry.name))),
-    );
+    const directorySizes = await getDirectorySizes(directoryEntries.map((entry) => join(rootPath, entry.name)));
 
     for (const [index, entry] of directoryEntries.entries()) {
       const stat = await Deno.stat(join(rootPath, entry.name));
@@ -139,7 +136,11 @@ export class DirectoryModel {
       const output = new TextDecoder().decode(stdout);
       const matchingDirectories = output.split('\n').map((directoryPath) => directoryPath.trim()).filter(Boolean);
 
-      for (const relativeDirectoryPath of matchingDirectories) {
+      const directorySizes = await getDirectorySizes(
+        matchingDirectories.map((relativeDirectoryPath) => join(rootPath, relativeDirectoryPath)),
+      );
+
+      for (const [index, relativeDirectoryPath] of matchingDirectories.entries()) {
         const fileShares = (await AppConfig.isPublicFileSharingAllowed())
           ? await FileShareModel.getByParentFilePath(userId, relativeDirectoryPath)
           : [];
@@ -152,7 +153,7 @@ export class DirectoryModel {
           parentPath = '/';
         }
 
-        const directorySize = await getDirectorySize(join(rootPath, relativeDirectoryPath));
+        const directorySize = directorySizes[index];
 
         const directory: Directory = {
           user_id: userId,
@@ -844,6 +845,11 @@ async function getDirectorySizeFallback(path: string): Promise<number> {
   return totalSize;
 }
 
+const DIRECTORY_SIZE_WAIT_IN_MILLISECONDS = 1_000;
+const DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS = 5 * 60_000;
+const SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS = 10 * 60_000;
+const MAX_CONCURRENT_DIRECTORY_SIZES = 8;
+
 // NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
 async function calculateDirectorySize(path: string): Promise<number | null> {
   try {
@@ -885,7 +891,7 @@ async function calculateDirectorySize(path: string): Promise<number | null> {
 
     return bytesFromHumanFileSize(`${number} ${unit}B`);
   } catch (error) {
-    // Only walk the tree manually when "du" isn't installed (looking at Windows, non WSL, mostly), as the walk is much slower than "du" and would otherwise run unbounded right after "du" timed out
+    // Only walk the tree when "du" isn't installed (looking at Windows, non WSL, mostly), as it's much slower than "du"
     if (error instanceof Deno.errors.NotFound) {
       return getDirectorySizeFallback(path);
     }
@@ -895,32 +901,14 @@ async function calculateDirectorySize(path: string): Promise<number | null> {
   }
 }
 
-const DIRECTORY_SIZE_WAIT_IN_MILLISECONDS = 1_000;
-const DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS = 5 * 60_000;
-const SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS = 10 * 60_000;
-
 interface CachedDirectorySize {
   sizeInBytes: number;
   calculatedAt: number;
-  durationInMilliseconds: number;
 }
 
-// ponytail: in-memory and per-process, so it grows with every directory listed and resets on restart; move to the database if that matters
+// Only slow directories are cached, so fast ones stay current after uploads/deletes
 const cachedDirectorySizes = new Map<string, CachedDirectorySize>();
 const directorySizesInProgress = new Map<string, Promise<number | null>>();
-
-// Fast directories are always recalculated so their size stays current, but slow ones reuse their last size for a while, so browsing doesn't keep the disk busy re-running "du" over huge trees
-function shouldRecalculateDirectorySize(cached: CachedDirectorySize | undefined): boolean {
-  if (!cached) {
-    return true;
-  }
-
-  if (cached.durationInMilliseconds < DIRECTORY_SIZE_WAIT_IN_MILLISECONDS) {
-    return true;
-  }
-
-  return Date.now() - cached.calculatedAt > SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS;
-}
 
 function startCalculatingDirectorySize(path: string): Promise<number | null> {
   const inProgress = directorySizesInProgress.get(path);
@@ -936,11 +924,11 @@ function startCalculatingDirectorySize(path: string): Promise<number | null> {
       const sizeInBytes = await calculateDirectorySize(path);
 
       if (sizeInBytes !== null) {
-        cachedDirectorySizes.set(path, {
-          sizeInBytes,
-          calculatedAt: Date.now(),
-          durationInMilliseconds: Date.now() - startedAt,
-        });
+        if (Date.now() - startedAt >= DIRECTORY_SIZE_WAIT_IN_MILLISECONDS) {
+          cachedDirectorySizes.set(path, { sizeInBytes, calculatedAt: Date.now() });
+        } else {
+          cachedDirectorySizes.delete(path);
+        }
       }
 
       return sizeInBytes;
@@ -955,25 +943,23 @@ function startCalculatingDirectorySize(path: string): Promise<number | null> {
 }
 
 /**
- * Gets the size of a directory without making the request wait for huge trees: waits up to DIRECTORY_SIZE_WAIT_IN_MILLISECONDS, after which the calculation continues in the background and the last known size (or null, if there's none) is returned instead.
+ * Gets the size of a directory, or its last known size (or null) if "du" takes too long, in which case it continues in the background.
  *
  * @param path - The full path of the directory
  */
 export async function getDirectorySize(path: string): Promise<number | null> {
   const cached = cachedDirectorySizes.get(path);
 
-  if (!shouldRecalculateDirectorySize(cached)) {
-    return cached!.sizeInBytes;
+  if (cached && Date.now() - cached.calculatedAt < SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS) {
+    return cached.sizeInBytes;
   }
 
   const calculation = startCalculatingDirectorySize(path);
 
-  let waitTimeout: number | undefined;
-  const wait = new Promise<undefined>((resolve) => {
-    waitTimeout = setTimeout(() => resolve(undefined), DIRECTORY_SIZE_WAIT_IN_MILLISECONDS);
-  });
+  const wait = Promise.withResolvers<undefined>();
+  const waitTimeout = setTimeout(() => wait.resolve(undefined), DIRECTORY_SIZE_WAIT_IN_MILLISECONDS);
 
-  const sizeInBytes = await Promise.race([calculation, wait]);
+  const sizeInBytes = await Promise.race([calculation, wait.promise]);
 
   clearTimeout(waitTimeout);
 
@@ -982,4 +968,20 @@ export async function getDirectorySize(path: string): Promise<number | null> {
   }
 
   return sizeInBytes;
+}
+
+// A few at a time, since a directory can have hundreds of subdirectories, each spawning "du"
+export async function getDirectorySizes(paths: string[]): Promise<(number | null)[]> {
+  const directorySizes: (number | null)[] = [];
+  let nextIndex = 0;
+
+  async function sizeRemainingPaths() {
+    for (let index = nextIndex++; index < paths.length; index = nextIndex++) {
+      directorySizes[index] = await getDirectorySize(paths[index]);
+    }
+  }
+
+  await Promise.all(Array.from({ length: MAX_CONCURRENT_DIRECTORY_SIZES }, sizeRemainingPaths));
+
+  return directorySizes;
 }

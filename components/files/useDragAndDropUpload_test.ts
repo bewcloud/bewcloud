@@ -142,7 +142,8 @@ Deno.test('that files the view does not accept are reported when the rest of the
     await hook.uploadFiles([new File(['a'], 'a.jpg'), new File(['b'], 'b.txt'), new File(['c'], 'c.pdf')]);
 
     assertEquals(enqueued.map((item) => item.file.name), ['a.jpg']);
-    assertEquals(uploadError.value, 'Skipped 2 unsupported files.');
+    assertEquals(hook.skippedFilesNotice.value, 'Skipped 2 unsupported files.');
+    assertEquals(uploadError.value, '');
   } finally {
     globalThis.fetch = originalFetch;
   }

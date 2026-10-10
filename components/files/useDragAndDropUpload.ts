@@ -72,6 +72,8 @@ export function useDragAndDropUpload(
   // Own signals, since the service worker overwrites useUploadQueue's on every broadcast, even mid-prompt.
   const isResolvingConflicts = useSignal<boolean>(false);
   const resolveProgress = useSignal<string>('');
+  // Not an error: the rest of the drop still uploads.
+  const skippedFilesNotice = useSignal<string>('');
   const isDraggingOver = useSignal<boolean>(false);
   const dragCounter = useSignal<number>(0);
   const fileConflictModal = useSignal<FileConflictState | null>(null);
@@ -176,6 +178,7 @@ export function useDragAndDropUpload(
 
     isResolvingConflicts.value = true;
     uploadError.value = '';
+    skippedFilesNotice.value = '';
     replaceAllMode.value = false;
     skipAllMode.value = false;
     return true;
@@ -215,7 +218,7 @@ export function useDragAndDropUpload(
     const unsupportedCount = candidateFiles.length - filesToUpload.length;
 
     if (unsupportedCount > 0) {
-      uploadError.value = `Skipped ${unsupportedCount} unsupported file${unsupportedCount === 1 ? '' : 's'}.`;
+      skippedFilesNotice.value = `Skipped ${unsupportedCount} unsupported file${unsupportedCount === 1 ? '' : 's'}.`;
     }
 
     onBeforeUpload?.();
@@ -404,6 +407,7 @@ export function useDragAndDropUpload(
   return {
     isResolvingConflicts,
     resolveProgress,
+    skippedFilesNotice,
     isDraggingOver,
     fileConflictModal,
     uploadFiles,

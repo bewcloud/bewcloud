@@ -115,6 +115,7 @@ export default function MainFiles(
   const {
     isResolvingConflicts,
     resolveProgress,
+    skippedFilesNotice,
     isDraggingOver,
     fileConflictModal,
     uploadFiles,
@@ -1040,6 +1041,14 @@ export default function MainFiles(
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
               Upload failed — {uploadError.value}
+            </span>
+          )
+          : null}
+
+        {skippedFilesNotice.value
+          ? (
+            <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
+              Upload partially successful — {skippedFilesNotice.value}
             </span>
           )
           : null}

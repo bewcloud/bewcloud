@@ -63,6 +63,7 @@ export default function MainFiles({
   const {
     isResolvingConflicts,
     resolveProgress,
+    skippedFilesNotice,
     isDraggingOver,
     fileConflictModal,
     uploadFiles,
@@ -759,7 +760,9 @@ export default function MainFiles({
     height: 18
   }), "Updating...") : null, !isDeleting.value && !isAdding.value && !isCreatingDirectories.value && !isResolvingConflicts.value && !isUploading.value && !isUpdating.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Upload failed \u2014 ", uploadError.value) : null), !fileShareId ? h("section", {
+  }, "Upload failed \u2014 ", uploadError.value) : null, skippedFilesNotice.value ? h("span", {
+    class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
+  }, "Upload partially successful \u2014 ", skippedFilesNotice.value) : null), !fileShareId ? h("section", {
     class: "flex flex-row items-center justify-start my-12"
   }, h("span", {
     class: "font-semibold"

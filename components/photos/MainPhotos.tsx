@@ -12,7 +12,7 @@ import CreateDirectoryModal from '/components/files/CreateDirectoryModal.tsx';
 import ListFiles from '/components/files/ListFiles.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
 import ListPhotos from '/components/photos/ListPhotos.tsx';
-import { isPhotoFile } from '/public/ts/utils/photos.ts';
+import { isPhotoFile, PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
 
 interface MainPhotosProps {
   initialDirectories: Directory[];
@@ -45,6 +45,7 @@ export default function MainPhotos(
   const {
     isResolvingConflicts,
     resolveProgress,
+    skippedFilesNotice,
     isDraggingOver,
     fileConflictModal,
     uploadFiles,
@@ -67,7 +68,8 @@ export default function MainPhotos(
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
-    fileInput.accept = 'image/*,video/*';
+    // Extensions too, since the OS may not label e.g. HEIC as an image.
+    fileInput.accept = ['image/*', 'video/*', ...PHOTO_EXTENSIONS.map((extension) => `.${extension}`)].join(',');
     fileInput.click();
 
     fileInput.onchange = async (event) => {
@@ -267,6 +269,14 @@ export default function MainPhotos(
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
               Upload failed — {uploadError.value}
+            </span>
+          )
+          : null}
+
+        {skippedFilesNotice.value
+          ? (
+            <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
+              Upload partially successful — {skippedFilesNotice.value}
             </span>
           )
           : null}

@@ -6,7 +6,7 @@ import CreateDirectoryModal from "/public/components/files/CreateDirectoryModal.
 import ListFiles from "/public/components/files/ListFiles.js";
 import FilesBreadcrumb from "/public/components/files/FilesBreadcrumb.js";
 import ListPhotos from "/public/components/photos/ListPhotos.js";
-import { isPhotoFile } from '/public/ts/utils/photos.ts';
+import { isPhotoFile, PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
 export default function MainPhotos({
   initialDirectories,
   initialFiles,
@@ -36,6 +36,7 @@ export default function MainPhotos({
   const {
     isResolvingConflicts,
     resolveProgress,
+    skippedFilesNotice,
     isDraggingOver,
     fileConflictModal,
     uploadFiles,
@@ -57,7 +58,7 @@ export default function MainPhotos({
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
-    fileInput.accept = 'image/*,video/*';
+    fileInput.accept = ['image/*', 'video/*', ...PHOTO_EXTENSIONS.map(extension => `.${extension}`)].join(',');
     fileInput.click();
     fileInput.onchange = async event => {
       const chosenFilesList = event.target?.files;
@@ -199,7 +200,9 @@ export default function MainPhotos({
     height: 18
   }), uploadProgress.value || 'Uploading...') : null, !isAdding.value && !isResolvingConflicts.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Upload failed \u2014 ", uploadError.value) : null), h(CreateDirectoryModal, {
+  }, "Upload failed \u2014 ", uploadError.value) : null, skippedFilesNotice.value ? h("span", {
+    class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
+  }, "Upload partially successful \u2014 ", skippedFilesNotice.value) : null), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,
     onClickSave: onClickSaveDirectory,
     onClose: onCloseCreateDirectory

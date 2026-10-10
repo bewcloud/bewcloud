@@ -827,19 +827,24 @@ export async function getPathInfo(userId: string, path: string): Promise<{ isDir
   };
 }
 
-async function getDirectorySizeFallback(path: string): Promise<number> {
+async function getDirectorySizeFallback(path: string, signal: AbortSignal): Promise<number> {
   let totalSize = 0;
   try {
     for await (const entry of Deno.readDir(path)) {
+      signal.throwIfAborted();
       const entryPath = join(path, entry.name);
       const stat = await Deno.lstat(entryPath);
       if (stat.isDirectory) {
-        totalSize += await getDirectorySizeFallback(entryPath);
+        totalSize += await getDirectorySizeFallback(entryPath, signal);
       } else {
         totalSize += stat.size;
       }
     }
   } catch (error) {
+    if (signal.aborted) {
+      throw error;
+    }
+
     console.error(error);
   }
   return totalSize;
@@ -848,56 +853,60 @@ async function getDirectorySizeFallback(path: string): Promise<number> {
 const DIRECTORY_SIZE_WAIT_IN_MILLISECONDS = 1_000;
 const DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS = 5 * 60_000;
 const SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS = 10 * 60_000;
-const MAX_CONCURRENT_DIRECTORY_SIZES = 8;
+const MAX_RUNNING_DIRECTORY_SIZES = 8;
 
 // NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
-async function calculateDirectorySize(path: string): Promise<number | null> {
+async function calculateDirectorySizeWithDu(path: string, signal: AbortSignal): Promise<number> {
+  let output: Deno.CommandOutput;
+
   try {
-    const controller = new AbortController();
-    const commandTimeout = setTimeout(() => controller.abort(), DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS);
-
-    const command = new Deno.Command(`du`, {
-      args: [
-        `-sh`,
-        path,
-      ],
-      signal: controller.signal,
-    });
-
-    const { code, stdout, stderr } = await command.output();
-
-    if (commandTimeout) {
-      clearTimeout(commandTimeout);
-    }
-
-    if (code !== 0) {
-      if (controller.signal.aborted) {
-        throw new Error(`Timed out running "du" for "${path}"`);
-      }
-
-      if (stderr.length > 0) {
-        throw new Error(new TextDecoder().decode(stderr));
-      }
-
-      throw new Error(`Unknown error running "du"`);
-    }
-
-    const output = new TextDecoder().decode(stdout);
-
-    const value = output.split('\t')[0].trim();
-
-    const number = Number.parseFloat(value.match(/\d+(\.\d+)?/)?.[0] || '0');
-    const unit = value.match(/[A-Z]+/)?.[0] || 'B'.toUpperCase();
-
-    return bytesFromHumanFileSize(`${number} ${unit}B`);
+    output = await new Deno.Command(`du`, { args: [`-sh`, path], signal }).output();
   } catch (error) {
     // Only walk the tree when "du" isn't installed (looking at Windows, non WSL, mostly), as it's much slower than "du"
     if (error instanceof Deno.errors.NotFound) {
-      return getDirectorySizeFallback(path);
+      return getDirectorySizeFallback(path, signal);
+    }
+
+    throw error;
+  }
+
+  signal.throwIfAborted();
+
+  const value = new TextDecoder().decode(output.stdout).split('\t')[0].trim();
+
+  if (output.code !== 0) {
+    const error = new Error(new TextDecoder().decode(output.stderr) || `"du" exited with code ${output.code}`);
+
+    if (!value) {
+      throw error;
+    }
+
+    // "du" still prints the size of what it could read, e.g. past an unreadable subdirectory
+    console.error(error);
+  }
+
+  const number = Number.parseFloat(value.match(/\d+(\.\d+)?/)?.[0] || '0');
+  const unit = value.match(/[A-Z]+/)?.[0] || 'B'.toUpperCase();
+
+  return bytesFromHumanFileSize(`${number} ${unit}B`);
+}
+
+// Null only when it took too long, so a failure doesn't sort as the biggest directory or zip as a big one
+async function calculateDirectorySize(path: string): Promise<number | null> {
+  const controller = new AbortController();
+  const commandTimeout = setTimeout(() => controller.abort(), DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS);
+
+  try {
+    return await calculateDirectorySizeWithDu(path, controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      return null;
     }
 
     console.error(error);
-    return null;
+    return 0;
+  } finally {
+    clearTimeout(commandTimeout);
   }
 }
 
@@ -910,11 +919,16 @@ interface CachedDirectorySize {
 const cachedDirectorySizes = new Map<string, CachedDirectorySize>();
 const directorySizesInProgress = new Map<string, Promise<number | null>>();
 
-function startCalculatingDirectorySize(path: string): Promise<number | null> {
+// Null once too many are running, since each one keeps going after its listing stops waiting
+function startCalculatingDirectorySize(path: string): Promise<number | null> | null {
   const inProgress = directorySizesInProgress.get(path);
 
   if (inProgress) {
     return inProgress;
+  }
+
+  if (directorySizesInProgress.size >= MAX_RUNNING_DIRECTORY_SIZES) {
+    return null;
   }
 
   const calculation = (async () => {
@@ -943,7 +957,7 @@ function startCalculatingDirectorySize(path: string): Promise<number | null> {
 }
 
 /**
- * Gets the size of a directory, or its last known size (or null) if "du" takes too long, in which case it continues in the background.
+ * Gets the size of a directory, or its last known size (or null) if "du" takes too long, in which case it continues in the background, or if too many are already running.
  *
  * @param path - The full path of the directory
  */
@@ -955,6 +969,10 @@ export async function getDirectorySize(path: string): Promise<number | null> {
   }
 
   const calculation = startCalculatingDirectorySize(path);
+
+  if (!calculation) {
+    return cached?.sizeInBytes ?? null;
+  }
 
   const wait = Promise.withResolvers<undefined>();
   const waitTimeout = setTimeout(() => wait.resolve(undefined), DIRECTORY_SIZE_WAIT_IN_MILLISECONDS);
@@ -981,7 +999,7 @@ export async function getDirectorySizes(paths: string[]): Promise<(number | null
     }
   }
 
-  await Promise.all(Array.from({ length: MAX_CONCURRENT_DIRECTORY_SIZES }, sizeRemainingPaths));
+  await Promise.all(Array.from({ length: MAX_RUNNING_DIRECTORY_SIZES }, sizeRemainingPaths));
 
   return directorySizes;
 }

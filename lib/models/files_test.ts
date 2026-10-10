@@ -263,23 +263,43 @@ Deno.test('that getDirectorySize recalculates fast directories every time', asyn
   });
 });
 
-Deno.test('that getDirectorySize returns null without walking the directory when du fails', async () => {
+// Puts a fake "du" first on the PATH that runs the given script instead
+async function withScriptedDu(script: string, test: () => Promise<void>) {
   const binPath = await Deno.makeTempDir();
-  const directoryPath = await Deno.makeTempDir();
   const originalPath = Deno.env.get('PATH') || '';
+  const originalConsoleError = console.error;
 
-  await Deno.writeTextFile(join(binPath, 'du'), `#!/bin/sh\necho "du failed" >&2\nexit 1\n`, { mode: 0o755 });
-  await Deno.writeTextFile(join(directoryPath, 'file.txt'), '12345');
+  await Deno.writeTextFile(join(binPath, 'du'), `#!/bin/sh\n${script}\n`, { mode: 0o755 });
 
   Deno.env.set('PATH', `${binPath}:${originalPath}`);
+  console.error = () => {};
 
   try {
-    assertEquals(await getDirectorySize(directoryPath), null);
+    await test();
   } finally {
     Deno.env.set('PATH', originalPath);
+    console.error = originalConsoleError;
     await Deno.remove(binPath, { recursive: true });
+  }
+}
+
+Deno.test('that getDirectorySize returns 0, not null, without walking the directory when du fails', async () => {
+  const directoryPath = await Deno.makeTempDir();
+  await Deno.writeTextFile(join(directoryPath, 'file.txt'), '12345');
+
+  try {
+    await withScriptedDu(`echo "du failed" >&2\nexit 1`, async () => {
+      assertEquals(await getDirectorySize(directoryPath), 0);
+    });
+  } finally {
     await Deno.remove(directoryPath, { recursive: true });
   }
+});
+
+Deno.test('that getDirectorySize uses what du could read when it fails partway', async () => {
+  await withScriptedDu(`echo "cannot read directory" >&2\nprintf '12K\\t%s\\n' "$2"\nexit 1`, async () => {
+    assertEquals(await getDirectorySize(`/nonexistent/${crypto.randomUUID()}`), bytesFromHumanFileSize('12 KB'));
+  });
 });
 
 Deno.test('that getDirectorySize walks the directory when du is missing', async () => {
@@ -341,5 +361,25 @@ Deno.test('that getDirectorySizes sizes every path, a few at a time', async () =
     }
 
     assertEquals(maxInFlight, 8);
+  });
+});
+
+Deno.test('that getDirectorySizes stops starting du once enough are running, instead of waiting on each in turn', async () => {
+  await withFakeDu('1.5', async (logPath) => {
+    const paths = Array.from({ length: 24 }, () => `/nonexistent/${crypto.randomUUID()}`);
+
+    const startedAt = Date.now();
+    const sizes = await getDirectorySizes(paths);
+
+    assertEquals(sizes, paths.map(() => null));
+    assertEquals(Date.now() - startedAt < 1_500, true);
+    assertEquals((await readLog(logPath)).filter((line) => line === 'started').length, 8);
+
+    // The ones already running still finish, so nothing outlives the fake "du"
+    while ((await readLog(logPath)).filter((line) => line === 'finished').length < 8) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
   });
 });

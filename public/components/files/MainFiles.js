@@ -1,6 +1,6 @@
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 import { useSignal } from '@preact/signals';
-import { sortDirectories, sortFiles } from '/public/ts/utils/files.ts';
+import { formatUploadError, sortDirectories, sortFiles } from '/public/ts/utils/files.ts';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
 import { useUploadQueue } from "./useUploadQueue.js";
 import { useDragAndDropUpload } from "./useDragAndDropUpload.js";
@@ -160,7 +160,7 @@ export default function MainFiles({
       }
     } catch (error) {
       console.error(`Failed to create directory ${dirPath}:`, error);
-      uploadError.value = `${dirPath}: ${error instanceof Error ? error.message : String(error)}`;
+      uploadError.value = `(${dirPath}): ${error instanceof Error ? error.message : String(error)}`;
     } finally {
       isCreatingDirectories.value = false;
       currentDirectoryName.value = '';
@@ -764,10 +764,13 @@ export default function MainFiles({
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
   }, h("span", {
     class: "truncate min-w-0",
-    title: `Upload failed ${uploadError.value}`
-  }, "Upload failed ", uploadError.value)) : null, skippedFilesNotice.value ? h("span", {
+    title: formatUploadError(uploadError.value)
+  }, formatUploadError(uploadError.value))) : null, skippedFilesNotice.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Upload partially successful \u2014 ", skippedFilesNotice.value) : null), !fileShareId ? h("section", {
+  }, h("span", {
+    class: "truncate min-w-0",
+    title: `Upload partially successful: ${skippedFilesNotice.value}`
+  }, "Upload partially successful: ", skippedFilesNotice.value)) : null), !fileShareId ? h("section", {
     class: "flex flex-row items-center justify-start my-12"
   }, h("span", {
     class: "font-semibold"

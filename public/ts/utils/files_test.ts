@@ -1,6 +1,6 @@
 import { assertEquals } from '@std/assert';
 
-import { bytesFromHumanFileSize, getUploadErrorAction, humanFileSize } from './files.ts';
+import { bytesFromHumanFileSize, formatUploadError, getUploadErrorAction, humanFileSize } from './files.ts';
 
 Deno.test('that humanFileSize works', () => {
   const tests: { input: number; expected: string }[] = [
@@ -131,4 +131,15 @@ Deno.test('that getUploadErrorAction shows each worker error once and clears it 
     );
     assertEquals(output, test.expected);
   }
+});
+
+Deno.test('that formatUploadError names the file when there is one', () => {
+  assertEquals(
+    formatUploadError('(a.txt): A file with this name already exists.'),
+    'Upload failed (a.txt): A file with this name already exists.',
+  );
+  assertEquals(
+    formatUploadError('No supported files were found in the dropped items.'),
+    'Upload failed: No supported files were found in the dropped items.',
+  );
 });

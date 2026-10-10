@@ -56,12 +56,12 @@ export function useDragAndDropUpload({
   function resolveFileConflict(file, basePath, targetPath, existingNamesByPath) {
     const directoryTakenByFile = findDirectoryTakenByFile(basePath, targetPath, existingNamesByPath);
     if (directoryTakenByFile) {
-      uploadError.value = `${directoryTakenByFile}: A file with this name already exists.`;
+      uploadError.value = `(${directoryTakenByFile}): A file with this name already exists.`;
       return Promise.resolve('skip');
     }
     const existingNames = existingNamesByPath.get(targetPath);
     if (existingNames?.directoryNames.has(file.name)) {
-      uploadError.value = `${targetPath}${file.name}: A directory with this name already exists.`;
+      uploadError.value = `(${targetPath}${file.name}): A directory with this name already exists.`;
       return Promise.resolve('skip');
     }
     if (!existingNames?.fileNames.has(file.name)) {

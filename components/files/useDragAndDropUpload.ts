@@ -115,7 +115,7 @@ export function useDragAndDropUpload(
     const directoryTakenByFile = findDirectoryTakenByFile(basePath, targetPath, existingNamesByPath);
 
     if (directoryTakenByFile) {
-      uploadError.value = `${directoryTakenByFile}: A file with this name already exists.`;
+      uploadError.value = `(${directoryTakenByFile}): A file with this name already exists.`;
       return Promise.resolve('skip');
     }
 
@@ -123,7 +123,7 @@ export function useDragAndDropUpload(
 
     if (existingNames?.directoryNames.has(file.name)) {
       // A file can't replace a directory, so report it instead of prompting.
-      uploadError.value = `${targetPath}${file.name}: A directory with this name already exists.`;
+      uploadError.value = `(${targetPath}${file.name}): A directory with this name already exists.`;
       return Promise.resolve('skip');
     }
 

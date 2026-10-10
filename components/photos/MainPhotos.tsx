@@ -13,6 +13,7 @@ import ListFiles from '/components/files/ListFiles.tsx';
 import FilesBreadcrumb from '/components/files/FilesBreadcrumb.tsx';
 import ListPhotos from '/components/photos/ListPhotos.tsx';
 import { isPhotoFile, PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
+import { formatUploadError } from '/public/ts/utils/files.ts';
 
 interface MainPhotosProps {
   initialDirectories: Directory[];
@@ -268,8 +269,8 @@ export default function MainPhotos(
         {uploadError.value
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
-              <span class='truncate min-w-0' title={`Upload failed ${uploadError.value}`}>
-                Upload failed {uploadError.value}
+              <span class='truncate min-w-0' title={formatUploadError(uploadError.value)}>
+                {formatUploadError(uploadError.value)}
               </span>
             </span>
           )
@@ -278,7 +279,9 @@ export default function MainPhotos(
         {skippedFilesNotice.value
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
-              Upload partially successful — {skippedFilesNotice.value}
+              <span class='truncate min-w-0' title={`Upload partially successful: ${skippedFilesNotice.value}`}>
+                Upload partially successful: {skippedFilesNotice.value}
+              </span>
             </span>
           )
           : null}

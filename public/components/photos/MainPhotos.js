@@ -7,6 +7,7 @@ import ListFiles from "/public/components/files/ListFiles.js";
 import FilesBreadcrumb from "/public/components/files/FilesBreadcrumb.js";
 import ListPhotos from "/public/components/photos/ListPhotos.js";
 import { isPhotoFile, PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
+import { formatUploadError } from '/public/ts/utils/files.ts';
 export default function MainPhotos({
   initialDirectories,
   initialFiles,
@@ -204,10 +205,13 @@ export default function MainPhotos({
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
   }, h("span", {
     class: "truncate min-w-0",
-    title: `Upload failed ${uploadError.value}`
-  }, "Upload failed ", uploadError.value)) : null, skippedFilesNotice.value ? h("span", {
+    title: formatUploadError(uploadError.value)
+  }, formatUploadError(uploadError.value))) : null, skippedFilesNotice.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Upload partially successful \u2014 ", skippedFilesNotice.value) : null), h(CreateDirectoryModal, {
+  }, h("span", {
+    class: "truncate min-w-0",
+    title: `Upload partially successful: ${skippedFilesNotice.value}`
+  }, "Upload partially successful: ", skippedFilesNotice.value)) : null), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,
     onClickSave: onClickSaveDirectory,
     onClose: onCloseCreateDirectory

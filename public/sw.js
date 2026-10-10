@@ -41,6 +41,8 @@ function broadcastState(extra = {}) {
     errorId: lastError?.id || '',
     errorKind: lastError?.kind || '',
     errorSessionTag: lastError?.sessionTag || '',
+    // The tab clears it itself at this time, since this worker may not broadcast again (or even be running) by then.
+    errorExpiresAt: lastError ? lastError.createdAt + LAST_ERROR_TTL_MS : 0,
     ...extra,
   });
 }

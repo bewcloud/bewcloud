@@ -56,6 +56,23 @@ export function useUploadQueue(
     // Kept in sessionStorage so revisiting the page in this tab doesn't show (and log) the same failure again.
     let lastSeenErrorId = '';
     let shownWorkerError = '';
+    let errorExpiryTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    function stopErrorExpiryTimer() {
+      if (errorExpiryTimeoutId) {
+        clearTimeout(errorExpiryTimeoutId);
+      }
+    }
+
+    function clearShownWorkerError() {
+      stopErrorExpiryTimer();
+
+      if (shownWorkerError && uploadError.value === shownWorkerError) {
+        uploadError.value = '';
+      }
+
+      shownWorkerError = '';
+    }
 
     try {
       lastSeenErrorId = sessionStorage.getItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY) || '';
@@ -77,6 +94,7 @@ export function useUploadQueue(
         errorId?: string;
         errorKind?: string;
         errorSessionTag?: string;
+        errorExpiresAt?: number;
         sessionTag?: string;
       };
 
@@ -111,9 +129,14 @@ export function useUploadQueue(
 
         console.error(new Error(state.error));
         uploadError.value = state.error!;
+
+        stopErrorExpiryTimer();
+
+        if (state.errorExpiresAt) {
+          errorExpiryTimeoutId = setTimeout(clearShownWorkerError, state.errorExpiresAt - Date.now());
+        }
       } else if (errorAction === 'clear') {
-        shownWorkerError = '';
-        uploadError.value = '';
+        clearShownWorkerError();
       }
 
       // Only apply the file/directory listing from an upload if it matches this tab's own current path; another tab may have uploaded into a different directory.
@@ -140,6 +163,7 @@ export function useUploadQueue(
 
     return () => {
       uploadChannel.close();
+      stopErrorExpiryTimer();
       document.removeEventListener('visibilitychange', resyncState);
       globalThis.removeEventListener('pageshow', resyncState);
     };

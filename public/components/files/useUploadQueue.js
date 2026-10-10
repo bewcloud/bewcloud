@@ -24,6 +24,19 @@ export function useUploadQueue({
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
     let lastSeenErrorId = '';
     let shownWorkerError = '';
+    let errorExpiryTimeoutId;
+    function stopErrorExpiryTimer() {
+      if (errorExpiryTimeoutId) {
+        clearTimeout(errorExpiryTimeoutId);
+      }
+    }
+    function clearShownWorkerError() {
+      stopErrorExpiryTimer();
+      if (shownWorkerError && uploadError.value === shownWorkerError) {
+        uploadError.value = '';
+      }
+      shownWorkerError = '';
+    }
     try {
       lastSeenErrorId = sessionStorage.getItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY) || '';
     } catch (error) {
@@ -50,9 +63,12 @@ export function useUploadQueue({
         }
         console.error(new Error(state.error));
         uploadError.value = state.error;
+        stopErrorExpiryTimer();
+        if (state.errorExpiresAt) {
+          errorExpiryTimeoutId = setTimeout(clearShownWorkerError, state.errorExpiresAt - Date.now());
+        }
       } else if (errorAction === 'clear') {
-        shownWorkerError = '';
-        uploadError.value = '';
+        clearShownWorkerError();
       }
       if (state.newFiles && state.pathInView === path.value) {
         files.value = [...state.newFiles];
@@ -77,6 +93,7 @@ export function useUploadQueue({
     });
     return () => {
       uploadChannel.close();
+      stopErrorExpiryTimer();
       document.removeEventListener('visibilitychange', resyncState);
       globalThis.removeEventListener('pageshow', resyncState);
     };

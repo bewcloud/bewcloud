@@ -8,6 +8,7 @@ interface BroadcastState {
   errorId: string;
   errorKind: string;
   errorSessionTag: string;
+  errorExpiresAt: number;
 }
 
 const broadcasts: BroadcastState[] = [];
@@ -108,10 +109,14 @@ function succeedingFetch() {
 
 Deno.test('that the last upload error survives the job ending and is restored on resync', async () => {
   await withFetch(failingFetch, async () => {
+    const startedAt = Date.now();
     postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a.txt')] });
     await settle();
 
     const finished = lastBroadcast();
+    const lastErrorTtlMs = 5 * 60 * 1000;
+    assertEquals(finished.errorExpiresAt >= startedAt + lastErrorTtlMs, true);
+    assertEquals(finished.errorExpiresAt <= Date.now() + lastErrorTtlMs, true);
     assertEquals(finished.isUploading, false);
     assertEquals(finished.error, '(a.txt): Failed to upload file. Internal Server Error nope');
     assertEquals(finished.errorKind, 'file');
@@ -160,6 +165,7 @@ Deno.test('that aborting uploads (logout) clears the last upload error', async (
 
     assertEquals(lastBroadcast().error, '');
     assertEquals(lastBroadcast().errorId, '');
+    assertEquals(lastBroadcast().errorExpiresAt, 0);
   });
 });
 

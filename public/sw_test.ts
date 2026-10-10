@@ -99,6 +99,13 @@ async function untilStarted(started: string[], count: number) {
   }
 }
 
+// Each label once per run of identical broadcasts.
+function progressLabels() {
+  return broadcasts.map((broadcast) => broadcast.uploadProgress).filter((label, index, labels) =>
+    label && label !== labels[index - 1]
+  );
+}
+
 function failingFetch() {
   return Promise.resolve(new Response('nope', { status: 500, statusText: 'Internal Server Error' }));
 }
@@ -253,8 +260,12 @@ Deno.test('that aborting a queued drop removes its items from the total', async 
     release('b.txt');
     await settle();
 
-    const progress = [...new Set(broadcasts.map((broadcast) => broadcast.uploadProgress).filter(Boolean))];
-    assertEquals(progress, ['Uploading a.txt (1/2)…', 'Uploading b.txt (2/2)…']);
+    assertEquals(progressLabels(), [
+      'Uploading a.txt (1/2)…',
+      'Uploading a.txt (1/3)…',
+      'Uploading a.txt (1/2)…',
+      'Uploading b.txt (2/2)…',
+    ]);
   });
 });
 
@@ -277,5 +288,44 @@ Deno.test('that a drop keeps its last error when its next file starts a new job,
     postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('c.txt', { batchId: 'second-drop' })] });
     await settle();
     assertEquals(lastBroadcast().error, '');
+  });
+});
+
+Deno.test('that the in-flight label counts files of its drop that are enqueued while it uploads', async () => {
+  await withFetch(succeedingFetch, async () => {
+    const { started, release } = stubHangingFetch();
+
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a.txt', { batchId: 'drop' })] });
+    await untilStarted(started, 1);
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('b.txt', { batchId: 'drop' })] });
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('c.txt', { batchId: 'drop' })] });
+
+    release('a.txt');
+    await untilStarted(started, 2);
+    release('b.txt');
+    await untilStarted(started, 3);
+    release('c.txt');
+    await settle();
+
+    assertEquals(progressLabels(), [
+      'Uploading a.txt…',
+      'Uploading a.txt (1/2)…',
+      'Uploading a.txt (1/3)…',
+      'Uploading b.txt (2/3)…',
+      'Uploading c.txt (3/3)…',
+    ]);
+  });
+});
+
+Deno.test('that a drop keeps counting when its next file starts a new job, but another drop starts over', async () => {
+  await withFetch(succeedingFetch, async () => {
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('d.txt', { batchId: 'first-drop' })] });
+    await settle();
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('e.txt', { batchId: 'first-drop' })] });
+    await settle();
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('f.txt', { batchId: 'second-drop' })] });
+    await settle();
+
+    assertEquals(progressLabels(), ['Uploading d.txt…', 'Uploading e.txt (2/2)…', 'Uploading f.txt…']);
   });
 });

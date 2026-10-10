@@ -1,5 +1,5 @@
 import { useSignal } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
 import { getUploadErrorAction } from '/public/ts/utils/files.ts';
 import { fetchExistingNamesByPath } from "./existingFileNames.js";
@@ -17,6 +17,10 @@ export function useUploadQueue({
   const isUploading = useSignal(false);
   const uploadProgress = useSignal('');
   const uploadError = useSignal('');
+  const lastFallbackBatch = useRef({
+    batchId: '',
+    uploadedCount: 0
+  });
   useEffect(() => {
     if (!isEnabled || !('serviceWorker' in navigator)) {
       return;
@@ -207,8 +211,12 @@ export function useUploadQueue({
     if (wasEnqueuedInServiceWorker) {
       return;
     }
+    const firstBatchId = itemsToUpload[0].batchId;
+    const previousCount = firstBatchId && firstBatchId === lastFallbackBatch.current.batchId ? lastFallbackBatch.current.uploadedCount : 0;
+    const totalCount = previousCount + itemsToUpload.length;
     for (const [index, item] of itemsToUpload.entries()) {
-      const itemLabel = itemsToUpload.length > 1 ? `Uploading ${item.file.name} (${index + 1}/${itemsToUpload.length})` : `Uploading ${item.file.name}`;
+      const itemNumber = previousCount + index + 1;
+      const itemLabel = totalCount > 1 ? `Uploading ${item.file.name} (${itemNumber}/${totalCount})` : `Uploading ${item.file.name}`;
       uploadProgress.value = `${itemLabel}…`;
       try {
         if (item.file.size >= CHUNK_SIZE_BYTES) {
@@ -221,6 +229,10 @@ export function useUploadQueue({
         uploadError.value = `(${item.file.name}): ${error instanceof Error ? error.message : String(error)}`;
       }
     }
+    lastFallbackBatch.current = {
+      batchId: firstBatchId || '',
+      uploadedCount: totalCount
+    };
     isUploading.value = false;
   }
   return {

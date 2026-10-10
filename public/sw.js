@@ -11,6 +11,9 @@ const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
 let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount }
 
+// A drop enqueues one file at a time, so its next file can start a new job after the queue drains: that job keeps counting from here.
+let drainedJob = null; // { batchId, totalCount }
+
 // Outlives the job so a tab that was frozen when the upload failed still gets the error on resync.
 let lastError = null; // { id, message, kind, sessionTag, batchId, createdAt }
 
@@ -61,6 +64,19 @@ function setLastError(job, fileName, message) {
   broadcastState();
 }
 
+// Rebuilt whenever totalCount changes too, not just when an item starts, since files of a drop join one at a time.
+function updateUploadProgress(job) {
+  if (job.currentItemCancelled || !job.currentFileName) {
+    job.uploadProgress = '';
+    return;
+  }
+
+  const itemNumber = job.totalCount - job.queue.length;
+  const countLabel = job.totalCount > 1 ? ` (${itemNumber}/${job.totalCount})` : '';
+  const chunkLabel = job.currentChunk ? `, chunk ${job.currentChunk.index + 1}/${job.currentChunk.total}` : '';
+  job.uploadProgress = `Uploading ${job.currentFileName}${countLabel}${chunkLabel}…`;
+}
+
 function abandonCurrentJob() {
   const job = currentJob;
 
@@ -106,12 +122,12 @@ function handleDirectoryDeleted(job, deletedPath) {
   if (currentAffected) {
     job.currentItemCancelled = true;
     job.currentItemKind = '';
-    job.uploadProgress = '';
     const previousAbortController = job.abortController;
     job.abortController = new AbortController();
     previousAbortController.abort();
   }
 
+  updateUploadProgress(job);
   broadcastState();
 }
 
@@ -127,12 +143,12 @@ function handleBatchAborted(job, batchId) {
   if (currentAffected) {
     job.currentItemCancelled = true;
     job.currentItemKind = '';
-    job.uploadProgress = '';
     const previousAbortController = job.abortController;
     job.abortController = new AbortController();
     previousAbortController.abort();
   }
 
+  updateUploadProgress(job);
   broadcastState();
 }
 
@@ -221,10 +237,8 @@ async function uploadFileChunked(job, file, parentPath, pathInView, overwrite) {
       throw new Error('upload cancelled');
     }
 
-    const itemNumber = job.totalCount - job.queue.length;
-    job.uploadProgress = job.totalCount > 1
-      ? `Uploading ${file.name} (${itemNumber}/${job.totalCount}), chunk ${chunkIndex + 1}/${totalChunks}…`
-      : `Uploading ${file.name}, chunk ${chunkIndex + 1}/${totalChunks}…`;
+    job.currentChunk = { index: chunkIndex, total: totalChunks };
+    updateUploadProgress(job);
     broadcastState();
 
     const start = chunkIndex * CHUNK_SIZE_BYTES;
@@ -270,15 +284,14 @@ async function processQueue(job) {
   while (job.queue.length > 0) {
     const { file, parentPath, pathInView, kind, overwrite, batchId } = job.queue.shift();
 
-    const itemNumber = job.totalCount - job.queue.length;
-    job.uploadProgress = job.totalCount > 1
-      ? `Uploading ${file.name} (${itemNumber}/${job.totalCount})…`
-      : `Uploading ${file.name}…`;
+    job.currentFileName = file.name;
+    job.currentChunk = undefined;
     job.currentItemKind = kind || 'file';
     job.currentItemParentPath = parentPath;
     job.currentItemBatchId = batchId;
     job.currentUploadId = undefined;
     job.currentItemCancelled = false;
+    updateUploadProgress(job);
     broadcastState();
 
     try {
@@ -320,6 +333,7 @@ async function processQueue(job) {
     }
   }
 
+  drainedJob = { batchId: job.currentItemBatchId, totalCount: job.totalCount };
   currentJob = null;
   broadcastState();
 }
@@ -343,6 +357,7 @@ self.addEventListener('message', (event) => {
 
     // Sent on logout, so the next user on this browser doesn't get this user's failure (basic auth shares an empty session tag).
     lastError = null;
+    drainedJob = null;
 
     if (!message.sessionTag || !currentJob || message.sessionTag === currentJob.sessionTag) {
       event.waitUntil(abandonCurrentJob());
@@ -376,18 +391,23 @@ self.addEventListener('message', (event) => {
         lastError = null;
       }
 
+      const continuesDrainedBatch = Boolean(drainedJob?.batchId) &&
+        message.items.some((item) => item.batchId === drainedJob.batchId);
+
       currentJob = {
         queue: [],
         uploadProgress: '',
         sessionTag: message.sessionTag,
         abortController: new AbortController(),
-        totalCount: 0,
+        totalCount: continuesDrainedBatch ? drainedJob.totalCount : 0,
       };
+      drainedJob = null;
     }
 
     currentJob.queue.push(...message.items);
     currentJob.totalCount += message.items.length;
 
+    updateUploadProgress(currentJob);
     broadcastState();
 
     if (isNewJob) {

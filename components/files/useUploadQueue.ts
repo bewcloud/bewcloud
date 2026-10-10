@@ -1,5 +1,5 @@
 import { Signal, useSignal } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
@@ -45,6 +45,8 @@ export function useUploadQueue(
   const isUploading = useSignal<boolean>(false);
   const uploadProgress = useSignal<string>('');
   const uploadError = useSignal<string>('');
+  // Same as the worker: a drop enqueues one file at a time, so its count carries over between calls.
+  const lastFallbackBatch = useRef({ batchId: '', uploadedCount: 0 });
 
   useEffect(() => {
     if (!isEnabled || !('serviceWorker' in navigator)) {
@@ -310,9 +312,16 @@ export function useUploadQueue(
     }
 
     // Fallback for browsers/contexts without an active service worker: upload directly, as before.
+    const firstBatchId = itemsToUpload[0].batchId;
+    const previousCount = firstBatchId && firstBatchId === lastFallbackBatch.current.batchId
+      ? lastFallbackBatch.current.uploadedCount
+      : 0;
+    const totalCount = previousCount + itemsToUpload.length;
+
     for (const [index, item] of itemsToUpload.entries()) {
-      const itemLabel = itemsToUpload.length > 1
-        ? `Uploading ${item.file.name} (${index + 1}/${itemsToUpload.length})`
+      const itemNumber = previousCount + index + 1;
+      const itemLabel = totalCount > 1
+        ? `Uploading ${item.file.name} (${itemNumber}/${totalCount})`
         : `Uploading ${item.file.name}`;
       uploadProgress.value = `${itemLabel}…`;
 
@@ -327,6 +336,8 @@ export function useUploadQueue(
         uploadError.value = `(${item.file.name}): ${error instanceof Error ? error.message : String(error)}`;
       }
     }
+
+    lastFallbackBatch.current = { batchId: firstBatchId || '', uploadedCount: totalCount };
 
     isUploading.value = false;
   }

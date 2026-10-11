@@ -4,6 +4,7 @@ declare global {
   }
 }
 
+import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
 import {
   RequestBody as PasskeyBeginRequestBody,
   ResponseBody as PasskeyBeginResponseBody,
@@ -30,6 +31,8 @@ function updateErrorMessage(message: string) {
 }
 
 async function handlePasswordlessLogin(redirectUrl: string) {
+  const safeRedirectUrl = getSafeRedirectUrl(redirectUrl);
+
   if (isLoading) {
     return;
   }
@@ -67,7 +70,7 @@ async function handlePasswordlessLogin(redirectUrl: string) {
     const verifyRequestBody: PasskeyVerifyRequestBody = {
       challenge: beginData.sessionData!.challenge,
       authenticationResponse,
-      redirectUrl: redirectUrl || '/',
+      redirectUrl: safeRedirectUrl,
     };
 
     const verifyResponse = await fetch('/api/auth/multi-factor/passkey/verify', {
@@ -76,7 +79,7 @@ async function handlePasswordlessLogin(redirectUrl: string) {
     });
 
     if (verifyResponse.ok) {
-      window.location.href = redirectUrl || '/';
+      window.location.href = safeRedirectUrl;
       return;
     }
 

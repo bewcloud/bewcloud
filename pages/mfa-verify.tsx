@@ -4,6 +4,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { MultiFactorAuthMethodType } from '/lib/types.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { createSessionResponse } from '/lib/auth.ts';
+import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
 import { getFormDataField } from '/public/ts/utils/form.ts';
 import { AppConfig } from '/lib/config.ts';
 import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
@@ -27,7 +28,7 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
   }
 
   const searchParams = new URL(request.url).searchParams;
-  const redirectUrl = searchParams.get('redirect') || '/';
+  const redirectUrl = getSafeRedirectUrl(searchParams.get('redirect'));
 
   const { user } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 
@@ -68,7 +69,7 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   }
 
   const searchParams = new URL(request.url).searchParams;
-  const redirectUrl = searchParams.get('redirect') || '/';
+  const redirectUrl = getSafeRedirectUrl(searchParams.get('redirect'));
 
   const { user } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 

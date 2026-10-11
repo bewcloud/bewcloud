@@ -15,6 +15,7 @@ import {
   verifyAuthJwt,
 } from '/lib/auth.ts';
 import { isRunningLocally } from '/public/ts/utils/misc.ts';
+import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
 import { AppConfig } from '/lib/config.ts';
 import { UserModel } from './user.ts';
 import { EmailModel } from './multi-factor-auth/email.ts';
@@ -66,10 +67,12 @@ export class MultiFactorAuthModel {
       urlToRedirectTo?: string;
     } = {},
   ) {
+    const safeRedirectUrl = getSafeRedirectUrl(urlToRedirectTo);
+
     const response = new Response('MFA Required', {
       status: 303,
       headers: {
-        'Location': `/mfa-verify?user=${user.id}&redirect=${encodeURIComponent(urlToRedirectTo)}`,
+        'Location': `/mfa-verify?user=${user.id}&redirect=${encodeURIComponent(safeRedirectUrl)}`,
         'Content-Type': 'text/html; charset=utf-8',
       },
     });

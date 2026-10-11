@@ -5,6 +5,7 @@ import { PasskeyModel } from '/lib/models/multi-factor-auth/passkey.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
 import { createSessionResponse } from '/lib/auth.ts';
+import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
 
 export interface RequestBody {
   email?: string;
@@ -94,7 +95,7 @@ async function post({ request }: RequestHandlerParams) {
   await UserModel.update(user);
 
   return await createSessionResponse(request, user, {
-    urlToRedirectTo: redirectUrl || '/',
+    urlToRedirectTo: getSafeRedirectUrl(redirectUrl),
   });
 }
 

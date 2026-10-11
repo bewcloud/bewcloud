@@ -329,3 +329,53 @@ Deno.test('that a drop keeps counting when its next file starts a new job, but a
     assertEquals(progressLabels(), ['Uploading d.txt…', 'Uploading e.txt (2/2)…', 'Uploading f.txt…']);
   });
 });
+
+Deno.test('that a drop that joined a drained job carries over only its own count', async () => {
+  await withFetch(succeedingFetch, async () => {
+    const { started, release } = stubHangingFetch();
+
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a1.txt', { batchId: 'drop-a' })] });
+    await untilStarted(started, 1);
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a2.txt', { batchId: 'drop-a' })] });
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a3.txt', { batchId: 'drop-a' })] });
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('b1.txt', { batchId: 'drop-b' })] });
+
+    for (const [index, name] of ['a1.txt', 'a2.txt', 'a3.txt', 'b1.txt'].entries()) {
+      await untilStarted(started, index + 1);
+      release(name);
+    }
+    await settle();
+    broadcasts.length = 0;
+
+    globalThis.fetch = succeedingFetch;
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('b2.txt', { batchId: 'drop-b' })] });
+    await settle();
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a4.txt', { batchId: 'drop-a' })] });
+    await settle();
+
+    assertEquals(progressLabels(), ['Uploading b2.txt (2/2)…', 'Uploading a4.txt (4/4)…']);
+  });
+});
+
+Deno.test('that a file cancelled after its response arrived does not count towards its drop in a new job', async () => {
+  await withFetch(succeedingFetch, async () => {
+    const { started, release } = stubHangingFetch();
+
+    postMessage({
+      type: 'ENQUEUE_UPLOAD',
+      sessionTag,
+      items: [makeItem('a1.txt', { parentPath: '/gone/', batchId: 'drop' })],
+    });
+    await untilStarted(started, 1);
+    release('a1.txt');
+    postMessage({ type: 'DIRECTORY_DELETED', sessionTag, path: '/gone/' });
+    await settle();
+    broadcasts.length = 0;
+
+    globalThis.fetch = succeedingFetch;
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a2.txt', { batchId: 'drop' })] });
+    await settle();
+
+    assertEquals(progressLabels(), ['Uploading a2.txt…']);
+  });
+});

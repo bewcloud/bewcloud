@@ -45,8 +45,8 @@ export function useUploadQueue(
   const isUploading = useSignal<boolean>(false);
   const uploadProgress = useSignal<string>('');
   const uploadError = useSignal<string>('');
-  // Same as the worker: a drop enqueues one file at a time, so its count carries over between calls.
-  const lastFallbackBatch = useRef({ batchId: '', uploadedCount: 0 });
+  // Same as the worker: a drop enqueues one file at a time, so each drop's count carries over between calls.
+  const uploadedCountByBatchId = useRef(new Map<string, number>());
 
   useEffect(() => {
     if (!isEnabled || !('serviceWorker' in navigator)) {
@@ -312,10 +312,8 @@ export function useUploadQueue(
     }
 
     // Fallback for browsers/contexts without an active service worker: upload directly, as before.
-    const firstBatchId = itemsToUpload[0].batchId;
-    const previousCount = firstBatchId && firstBatchId === lastFallbackBatch.current.batchId
-      ? lastFallbackBatch.current.uploadedCount
-      : 0;
+    const batchId = itemsToUpload[0].batchId;
+    const previousCount = (batchId && uploadedCountByBatchId.current.get(batchId)) || 0;
     const totalCount = previousCount + itemsToUpload.length;
 
     for (const [index, item] of itemsToUpload.entries()) {
@@ -337,7 +335,9 @@ export function useUploadQueue(
       }
     }
 
-    lastFallbackBatch.current = { batchId: firstBatchId || '', uploadedCount: totalCount };
+    if (batchId) {
+      uploadedCountByBatchId.current.set(batchId, totalCount);
+    }
 
     isUploading.value = false;
   }

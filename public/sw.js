@@ -9,10 +9,10 @@ const LAST_ERROR_TTL_MS = 5 * 60 * 1000;
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
-let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount }
+let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount, uploadedCountByBatchId }
 
-// A drop enqueues one file at a time, so its next file can start a new job after the queue drains: that job keeps counting from here.
-let drainedJob = null; // { batchId, totalCount }
+// A drop enqueues one file at a time, so its next file may start a new job after the queue drains.
+let drainedCountByBatchId = null; // Map<batchId, uploaded count>
 
 // Outlives the job so a tab that was frozen when the upload failed still gets the error on resync.
 let lastError = null; // { id, message, kind, sessionTag, batchId, createdAt }
@@ -331,9 +331,13 @@ async function processQueue(job) {
       await cleanupAbortedChunkUpload(job);
       setLastError(job, file.name, String(error?.message || error));
     }
+
+    if (batchId && !job.currentItemCancelled) {
+      job.uploadedCountByBatchId.set(batchId, (job.uploadedCountByBatchId.get(batchId) || 0) + 1);
+    }
   }
 
-  drainedJob = { batchId: job.currentItemBatchId, totalCount: job.totalCount };
+  drainedCountByBatchId = job.uploadedCountByBatchId;
   currentJob = null;
   broadcastState();
 }
@@ -357,7 +361,7 @@ self.addEventListener('message', (event) => {
 
     // Sent on logout, so the next user on this browser doesn't get this user's failure (basic auth shares an empty session tag).
     lastError = null;
-    drainedJob = null;
+    drainedCountByBatchId = null;
 
     if (!message.sessionTag || !currentJob || message.sessionTag === currentJob.sessionTag) {
       event.waitUntil(abandonCurrentJob());
@@ -391,17 +395,17 @@ self.addEventListener('message', (event) => {
         lastError = null;
       }
 
-      const continuesDrainedBatch = Boolean(drainedJob?.batchId) &&
-        message.items.some((item) => item.batchId === drainedJob.batchId);
+      const continuedBatchId = message.items.find((item) => drainedCountByBatchId?.has(item.batchId))?.batchId;
 
       currentJob = {
         queue: [],
         uploadProgress: '',
         sessionTag: message.sessionTag,
         abortController: new AbortController(),
-        totalCount: continuesDrainedBatch ? drainedJob.totalCount : 0,
+        totalCount: continuedBatchId ? drainedCountByBatchId.get(continuedBatchId) : 0,
+        uploadedCountByBatchId: continuedBatchId ? drainedCountByBatchId : new Map(),
       };
-      drainedJob = null;
+      drainedCountByBatchId = null;
     }
 
     currentJob.queue.push(...message.items);

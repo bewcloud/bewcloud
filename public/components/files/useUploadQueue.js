@@ -17,10 +17,7 @@ export function useUploadQueue({
   const isUploading = useSignal(false);
   const uploadProgress = useSignal('');
   const uploadError = useSignal('');
-  const lastFallbackBatch = useRef({
-    batchId: '',
-    uploadedCount: 0
-  });
+  const uploadedCountByBatchId = useRef(new Map());
   useEffect(() => {
     if (!isEnabled || !('serviceWorker' in navigator)) {
       return;
@@ -211,8 +208,8 @@ export function useUploadQueue({
     if (wasEnqueuedInServiceWorker) {
       return;
     }
-    const firstBatchId = itemsToUpload[0].batchId;
-    const previousCount = firstBatchId && firstBatchId === lastFallbackBatch.current.batchId ? lastFallbackBatch.current.uploadedCount : 0;
+    const batchId = itemsToUpload[0].batchId;
+    const previousCount = batchId && uploadedCountByBatchId.current.get(batchId) || 0;
     const totalCount = previousCount + itemsToUpload.length;
     for (const [index, item] of itemsToUpload.entries()) {
       const itemNumber = previousCount + index + 1;
@@ -229,10 +226,9 @@ export function useUploadQueue({
         uploadError.value = `(${item.file.name}): ${error instanceof Error ? error.message : String(error)}`;
       }
     }
-    lastFallbackBatch.current = {
-      batchId: firstBatchId || '',
-      uploadedCount: totalCount
-    };
+    if (batchId) {
+      uploadedCountByBatchId.current.set(batchId, totalCount);
+    }
     isUploading.value = false;
   }
   return {

@@ -2,6 +2,7 @@ import { renderToString } from 'preact-render-to-string';
 
 import page, { RequestHandlerParams } from '/lib/page.ts';
 import { escapeHtml, generateHash, html, validateEmail } from '/public/ts/utils/misc.ts';
+import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
 import { createSessionResponse, PASSWORD_SALT } from '/lib/auth.ts';
 import { FormField, generateFieldHtml, getFormDataField } from '/public/ts/utils/form.ts';
 import { UserModel, VerificationCodeModel } from '/lib/models/user.ts';
@@ -91,7 +92,7 @@ async function post({ request, match, user, session, isRunningLocally }: Request
   const formData = await request.clone().formData();
   const email = getFormDataField(formData, 'email');
 
-  const redirectUrl = searchParams.get('redirect') || '/';
+  const redirectUrl = getSafeRedirectUrl(searchParams.get('redirect'));
 
   let errorMessage: string | undefined = undefined;
 

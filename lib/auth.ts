@@ -3,6 +3,7 @@ import { Cookie, getCookies, setCookie } from '@std/http';
 import '@std/dotenv/load';
 
 import { generateHash, isRunningLocally } from '/public/ts/utils/misc.ts';
+import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
 import { User, UserSession } from '/lib/types.ts';
 import { UserModel, UserSessionModel, validateUserAndSession } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
@@ -231,7 +232,7 @@ export async function createSessionResponse(
 ) {
   const response = new Response('Logged In', {
     status: 303,
-    headers: { 'Location': urlToRedirectTo, 'Content-Type': 'text/html; charset=utf-8' },
+    headers: { 'Location': getSafeRedirectUrl(urlToRedirectTo), 'Content-Type': 'text/html; charset=utf-8' },
   });
 
   const responseWithCookie = await createSessionCookie(request, user, response);

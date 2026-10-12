@@ -163,62 +163,211 @@ export async function concurrentPromises<T>(
 }
 
 const MAX_RESPONSE_TIME_IN_MS = 10_000;
+const MAX_FETCH_REDIRECTS = 5;
+const FETCHABLE_PROTOCOLS = ['http:', 'https:'];
+const INTERNAL_HOSTNAME_SUFFIXES = ['.localhost', '.local', '.internal', '.home.arpa'];
 
-export async function fetchUrl(url: string) {
+function parseIpv4(hostname: string): number[] | null {
+  const parts = hostname.split('.');
+
+  if (parts.length !== 4) {
+    return null;
+  }
+
+  const numbers = parts.map((part) => /^\d{1,3}$/.test(part) ? Number(part) : NaN);
+
+  if (numbers.some((number) => isNaN(number) || number > 255)) {
+    return null;
+  }
+
+  return numbers;
+}
+
+/** Parses the bracketed, hexadecimal form `new URL()` normalizes IPv6 hostnames into. */
+function parseIpv6(hostname: string): number[] | null {
+  if (!hostname.startsWith('[') || !hostname.endsWith(']')) {
+    return null;
+  }
+
+  const halves = hostname.slice(1, -1).split('::');
+
+  if (halves.length > 2) {
+    return null;
+  }
+
+  const start = halves[0] ? halves[0].split(':') : [];
+  const end = halves[1] ? halves[1].split(':') : [];
+  const omitted = halves.length === 2 ? 8 - start.length - end.length : 0;
+
+  if (omitted < 0) {
+    return null;
+  }
+
+  const groups = [...start, ...Array.from({ length: omitted }).map(() => '0'), ...end]
+    .map((group) => /^[0-9a-f]{1,4}$/.test(group) ? parseInt(group, 16) : NaN);
+
+  if (groups.length !== 8 || groups.some((group) => isNaN(group))) {
+    return null;
+  }
+
+  return groups;
+}
+
+function isInternalIpv4([first, second, third]: number[]): boolean {
+  return first === 0 || // 0.0.0.0/8, "this network"
+    first === 10 || // private
+    first === 127 || // loopback
+    (first === 100 && second >= 64 && second <= 127) || // carrier-grade NAT
+    (first === 169 && second === 254) || // link-local, which includes the cloud metadata address
+    (first === 172 && second >= 16 && second <= 31) || // private
+    (first === 192 && second === 0 && third === 0) || // IETF protocol assignments
+    (first === 192 && second === 168) || // private
+    (first === 198 && (second === 18 || second === 19)) || // benchmarking
+    first >= 224; // multicast, reserved and the broadcast address
+}
+
+function isInternalIpv6(groups: number[]): boolean {
+  if (groups.every((group) => group === 0)) { // the unspecified address, ::
+    return true;
+  }
+
+  if (groups.slice(0, 7).every((group) => group === 0) && groups[7] === 1) { // loopback, ::1
+    return true;
+  }
+
+  if ((groups[0] & 0xfe00) === 0xfc00) { // unique local, fc00::/7
+    return true;
+  }
+
+  if ((groups[0] & 0xffc0) === 0xfe80) { // link-local, fe80::/10
+    return true;
+  }
+
+  if (groups.slice(0, 5).every((group) => group === 0) && groups[5] === 0xffff) { // IPv4-mapped
+    return isInternalIpv4([groups[6] >> 8, groups[6] & 0xff, groups[7] >> 8, groups[7] & 0xff]);
+  }
+
+  return false;
+}
+
+export function isInternalHostname(hostname: string): boolean {
+  const normalizedHostname = hostname.toLocaleLowerCase().replace(/\.+$/, '');
+
+  if (!normalizedHostname) {
+    return true;
+  }
+
+  const ipv6 = parseIpv6(normalizedHostname);
+
+  if (ipv6) {
+    return isInternalIpv6(ipv6);
+  }
+
+  const ipv4 = parseIpv4(normalizedHostname);
+
+  if (ipv4) {
+    return isInternalIpv4(ipv4);
+  }
+
+  if (
+    normalizedHostname === 'localhost' ||
+    INTERNAL_HOSTNAME_SUFFIXES.some((suffix) => normalizedHostname.endsWith(suffix))
+  ) {
+    return true;
+  }
+
+  // A single-label name only resolves inside the network, which is how container hostnames
+  // like `radicale` in the default docker compose setup are reached.
+  return !normalizedHostname.includes('.');
+}
+
+/**
+ * Whether the server may fetch this URL on a user's behalf. Feed and preview URLs come
+ * straight from the user, so without this the server reaches loopback, private, link-local
+ * and container addresses for them.
+ *
+ * This checks the URL itself: a public hostname that resolves to a private address still
+ * gets through.
+ */
+export function isFetchableUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+
+    if (!FETCHABLE_PROTOCOLS.includes(parsedUrl.protocol)) {
+      return false;
+    }
+
+    return !isInternalHostname(parsedUrl.hostname);
+  } catch (_error) {
+    return false;
+  }
+}
+
+/**
+ * Fetches a user-supplied URL, checking every hop. Redirects are followed manually because
+ * `fetch` would otherwise follow them for us, and a public URL is free to redirect to an
+ * internal one.
+ */
+async function fetchFetchableUrl(url: string, requestInit: RequestInit = {}): Promise<Response> {
+  let currentUrl = url;
+
+  for (let redirectCount = 0; redirectCount <= MAX_FETCH_REDIRECTS; redirectCount++) {
+    if (!isFetchableUrl(currentUrl)) {
+      throw new Error(`Refusing to fetch non-public URL: ${currentUrl}`);
+    }
+
+    const response = await fetch(currentUrl, { ...requestInit, redirect: 'manual' });
+
+    const location = response.headers.get('location');
+
+    if (!(response.status >= 300 && response.status <= 399) || !location) {
+      return response;
+    }
+
+    await response.body?.cancel();
+
+    currentUrl = new URL(location, currentUrl).toString();
+  }
+
+  throw new Error(`Too many redirects when fetching: ${url}`);
+}
+
+async function fetchUrlContents(url: string, requestInit: RequestInit = {}) {
   const abortController = new AbortController();
   const requestCancelTimeout = setTimeout(() => {
     abortController.abort();
   }, MAX_RESPONSE_TIME_IN_MS);
 
-  const response = await fetch(url, {
-    signal: abortController.signal,
-  });
+  try {
+    const response = await fetchFetchableUrl(url, { ...requestInit, signal: abortController.signal });
 
-  if (requestCancelTimeout) {
-    clearTimeout(requestCancelTimeout);
+    const urlContents = await response.text();
+    return urlContents;
+  } finally {
+    if (requestCancelTimeout) {
+      clearTimeout(requestCancelTimeout);
+    }
   }
+}
 
-  const urlContents = await response.text();
-  return urlContents;
+export async function fetchUrl(url: string) {
+  return await fetchUrlContents(url);
 }
 
 export async function fetchUrlAsGooglebot(url: string) {
-  const abortController = new AbortController();
-  const requestCancelTimeout = setTimeout(() => {
-    abortController.abort();
-  }, MAX_RESPONSE_TIME_IN_MS);
-
-  const response = await fetch(url, {
+  return await fetchUrlContents(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
     },
-    signal: abortController.signal,
   });
-
-  if (requestCancelTimeout) {
-    clearTimeout(requestCancelTimeout);
-  }
-
-  const urlContents = await response.text();
-  return urlContents;
 }
 
 export async function fetchUrlWithProxy(url: string) {
-  const abortController = new AbortController();
-  const requestCancelTimeout = setTimeout(() => {
-    abortController.abort();
-  }, MAX_RESPONSE_TIME_IN_MS);
-
-  const response = await fetch(`https://api.allorigins.win/raw?url=${url}`, {
-    signal: abortController.signal,
-  });
-
-  if (requestCancelTimeout) {
-    clearTimeout(requestCancelTimeout);
+  if (!isFetchableUrl(url)) {
+    throw new Error(`Refusing to fetch non-public URL: ${url}`);
   }
 
-  const urlContents = await response.text();
-  return urlContents;
+  return await fetchUrlContents(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
 }
 
 export async function fetchUrlWithRetries(url: string) {

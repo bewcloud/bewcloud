@@ -9,7 +9,7 @@ const LAST_ERROR_TTL_MS = 5 * 60 * 1000;
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
-let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount, uploadedCountByBatchId }
+let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount, carriedCount, carriedBatchId, uploadedCountByBatchId }
 
 // A drop enqueues one file at a time, so its next file may start a new job after the queue drains.
 let drainedCountByBatchId = null; // Map<batchId, uploaded count>
@@ -396,16 +396,25 @@ self.addEventListener('message', (event) => {
       }
 
       const continuedBatchId = message.items.find((item) => drainedCountByBatchId?.has(item.batchId))?.batchId;
+      const carriedCount = continuedBatchId ? drainedCountByBatchId.get(continuedBatchId) : 0;
 
       currentJob = {
         queue: [],
         uploadProgress: '',
         sessionTag: message.sessionTag,
         abortController: new AbortController(),
-        totalCount: continuedBatchId ? drainedCountByBatchId.get(continuedBatchId) : 0,
+        totalCount: carriedCount,
+        carriedCount,
+        carriedBatchId: continuedBatchId,
         uploadedCountByBatchId: continuedBatchId ? drainedCountByBatchId : new Map(),
       };
       drainedCountByBatchId = null;
+    }
+
+    // The carried count only applies while the job is still that one drop.
+    if (currentJob.carriedCount && message.items.some((item) => item.batchId !== currentJob.carriedBatchId)) {
+      currentJob.totalCount -= currentJob.carriedCount;
+      currentJob.carriedCount = 0;
     }
 
     currentJob.queue.push(...message.items);

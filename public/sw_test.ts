@@ -330,22 +330,39 @@ Deno.test('that a drop keeps counting when its next file starts a new job, but a
   });
 });
 
+// Three files of drop A and the first of drop B share one job, which then drains.
+async function runMixedJob() {
+  const { started, release } = stubHangingFetch();
+
+  postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a1.txt', { batchId: 'drop-a' })] });
+  await untilStarted(started, 1);
+  postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a2.txt', { batchId: 'drop-a' })] });
+  postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a3.txt', { batchId: 'drop-a' })] });
+  postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('b1.txt', { batchId: 'drop-b' })] });
+
+  for (const [index, name] of ['a1.txt', 'a2.txt', 'a3.txt', 'b1.txt'].entries()) {
+    await untilStarted(started, index + 1);
+    release(name);
+  }
+  await settle();
+
+  assertEquals(progressLabels(), [
+    'Uploading a1.txt…',
+    'Uploading a1.txt (1/2)…',
+    'Uploading a1.txt (1/3)…',
+    'Uploading a1.txt (1/4)…',
+    'Uploading a2.txt (2/4)…',
+    'Uploading a3.txt (3/4)…',
+    'Uploading b1.txt (4/4)…',
+  ]);
+  broadcasts.length = 0;
+
+  return { started, release };
+}
+
 Deno.test('that a drop that joined a drained job carries over only its own count', async () => {
   await withFetch(succeedingFetch, async () => {
-    const { started, release } = stubHangingFetch();
-
-    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a1.txt', { batchId: 'drop-a' })] });
-    await untilStarted(started, 1);
-    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a2.txt', { batchId: 'drop-a' })] });
-    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a3.txt', { batchId: 'drop-a' })] });
-    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('b1.txt', { batchId: 'drop-b' })] });
-
-    for (const [index, name] of ['a1.txt', 'a2.txt', 'a3.txt', 'b1.txt'].entries()) {
-      await untilStarted(started, index + 1);
-      release(name);
-    }
-    await settle();
-    broadcasts.length = 0;
+    await runMixedJob();
 
     globalThis.fetch = succeedingFetch;
     postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('b2.txt', { batchId: 'drop-b' })] });
@@ -377,5 +394,22 @@ Deno.test('that a file cancelled after its response arrived does not count towar
     await settle();
 
     assertEquals(progressLabels(), ['Uploading a2.txt…']);
+  });
+});
+
+Deno.test('that a carried count is dropped once another drop joins the job', async () => {
+  await withFetch(succeedingFetch, async () => {
+    const { started, release } = await runMixedJob();
+
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('a4.txt', { batchId: 'drop-a' })] });
+    await untilStarted(started, 5);
+    postMessage({ type: 'ENQUEUE_UPLOAD', sessionTag, items: [makeItem('b2.txt', { batchId: 'drop-b' })] });
+
+    release('a4.txt');
+    await untilStarted(started, 6);
+    release('b2.txt');
+    await settle();
+
+    assertEquals(progressLabels(), ['Uploading a4.txt (4/4)…', 'Uploading a4.txt (1/2)…', 'Uploading b2.txt (2/2)…']);
   });
 });

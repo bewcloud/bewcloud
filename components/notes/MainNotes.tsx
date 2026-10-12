@@ -301,7 +301,7 @@ export default function MainNotes({ initialDirectories, initialFiles, initialPat
         {createNoteError.value
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
-              Creating the note failed — {createNoteError.value}
+              Creating the note failed {createNoteError.value}
             </span>
           )
           : null}

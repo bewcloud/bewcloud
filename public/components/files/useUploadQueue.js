@@ -1,8 +1,10 @@
 import { useSignal } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
+import { getUploadErrorAction } from '/public/ts/utils/files.ts';
 import { fetchExistingNamesByPath } from "./existingFileNames.js";
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
+const LAST_SEEN_UPLOAD_ERROR_ID_KEY = 'bewcloud-last-seen-upload-error-id';
 export function useUploadQueue({
   isEnabled,
   path,
@@ -15,11 +17,32 @@ export function useUploadQueue({
   const isUploading = useSignal(false);
   const uploadProgress = useSignal('');
   const uploadError = useSignal('');
+  const uploadedCountByBatchId = useRef(new Map());
   useEffect(() => {
     if (!isEnabled || !('serviceWorker' in navigator)) {
       return;
     }
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
+    let lastSeenErrorId = '';
+    let shownWorkerError = '';
+    let errorExpiryTimeoutId;
+    function stopErrorExpiryTimer() {
+      if (errorExpiryTimeoutId) {
+        clearTimeout(errorExpiryTimeoutId);
+      }
+    }
+    function clearShownWorkerError() {
+      stopErrorExpiryTimer();
+      if (shownWorkerError && uploadError.value === shownWorkerError) {
+        uploadError.value = '';
+      }
+      shownWorkerError = '';
+    }
+    try {
+      lastSeenErrorId = sessionStorage.getItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY) || '';
+    } catch (error) {
+      console.error(error);
+    }
     uploadChannel.onmessage = event => {
       const state = event.data;
       if (!state || state.type !== 'STATE') {
@@ -30,9 +53,23 @@ export function useUploadQueue({
       }
       isUploading.value = state.kindsInProgress ? state.kindsInProgress.includes(uploadKind) : state.isUploading;
       uploadProgress.value = state.kind === uploadKind ? state.uploadProgress || '' : '';
-      if (state.error && state.kind === uploadKind) {
+      const errorAction = getUploadErrorAction(state, uploadKind, uploadSessionTag, lastSeenErrorId, Boolean(shownWorkerError) && uploadError.value === shownWorkerError);
+      if (errorAction === 'show') {
+        lastSeenErrorId = state.errorId;
+        shownWorkerError = state.error;
+        try {
+          sessionStorage.setItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY, lastSeenErrorId);
+        } catch (error) {
+          console.error(error);
+        }
         console.error(new Error(state.error));
         uploadError.value = state.error;
+        stopErrorExpiryTimer();
+        if (state.errorExpiresAt) {
+          errorExpiryTimeoutId = setTimeout(clearShownWorkerError, state.errorExpiresAt - Date.now());
+        }
+      } else if (errorAction === 'clear') {
+        clearShownWorkerError();
       }
       if (state.newFiles && state.pathInView === path.value) {
         files.value = [...state.newFiles];
@@ -41,12 +78,25 @@ export function useUploadQueue({
         directories.value = [...state.newDirectories];
       }
     };
+    function resyncState() {
+      if (document.visibilityState === 'visible') {
+        postToUploadServiceWorker({
+          type: 'QUERY_STATE',
+          sessionTag: uploadSessionTag
+        });
+      }
+    }
+    document.addEventListener('visibilitychange', resyncState);
+    globalThis.addEventListener('pageshow', resyncState);
     postToUploadServiceWorker({
       type: 'QUERY_STATE',
       sessionTag: uploadSessionTag
     });
     return () => {
       uploadChannel.close();
+      stopErrorExpiryTimer();
+      document.removeEventListener('visibilitychange', resyncState);
+      globalThis.removeEventListener('pageshow', resyncState);
     };
   }, []);
   async function uploadFileSingle(file, parentPath, pathInView, overwrite) {
@@ -71,12 +121,12 @@ export function useUploadQueue({
     files.value = [...result.newFiles];
     directories.value = [...result.newDirectories];
   }
-  async function uploadFileChunked(file, parentPath, pathInView, overwrite) {
+  async function uploadFileChunked(file, parentPath, pathInView, overwrite, itemLabel) {
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE_BYTES);
     const uploadId = crypto.randomUUID();
     try {
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        uploadProgress.value = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
+        uploadProgress.value = `${itemLabel}, chunk ${chunkIndex + 1}/${totalChunks}…`;
         const start = chunkIndex * CHUNK_SIZE_BYTES;
         const end = Math.min(start + CHUNK_SIZE_BYTES, file.size);
         const chunkBlob = file.slice(start, end);
@@ -136,7 +186,7 @@ export function useUploadQueue({
       const existingNamesByParentPath = await fetchExistingNamesByPath(items.map(item => item.parentPath));
       itemsToUpload = items.filter(item => {
         if (existingNamesByParentPath.get(item.parentPath)?.fileNames.has(item.file.name)) {
-          uploadError.value = `${item.file.name}: A file with this name already exists.`;
+          uploadError.value = `(${item.file.name}): A file with this name already exists.`;
           return false;
         }
         return true;
@@ -158,17 +208,26 @@ export function useUploadQueue({
     if (wasEnqueuedInServiceWorker) {
       return;
     }
-    for (const item of itemsToUpload) {
+    const batchId = itemsToUpload[0].batchId;
+    const previousCount = batchId && uploadedCountByBatchId.current.get(batchId) || 0;
+    const totalCount = previousCount + itemsToUpload.length;
+    for (const [index, item] of itemsToUpload.entries()) {
+      const itemNumber = previousCount + index + 1;
+      const itemLabel = totalCount > 1 ? `Uploading ${item.file.name} (${itemNumber}/${totalCount})` : `Uploading ${item.file.name}`;
+      uploadProgress.value = `${itemLabel}…`;
       try {
         if (item.file.size >= CHUNK_SIZE_BYTES) {
-          await uploadFileChunked(item.file, item.parentPath, pathInView, !!item.overwrite);
+          await uploadFileChunked(item.file, item.parentPath, pathInView, !!item.overwrite, itemLabel);
         } else {
           await uploadFileSingle(item.file, item.parentPath, pathInView, !!item.overwrite);
         }
       } catch (error) {
         console.error(error);
-        uploadError.value = `${item.file.name}: ${error instanceof Error ? error.message : String(error)}`;
+        uploadError.value = `(${item.file.name}): ${error instanceof Error ? error.message : String(error)}`;
       }
+    }
+    if (batchId) {
+      uploadedCountByBatchId.current.set(batchId, totalCount);
     }
     isUploading.value = false;
   }

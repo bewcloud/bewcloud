@@ -128,3 +128,23 @@ export function sortFiles(files: DirectoryFile[], options: SortOptions): Directo
 
   return sorted;
 }
+
+// Whether a STATE broadcast brings a worker error this tab hasn't shown yet, or drops the one it's showing.
+// Per-file errors come as "(name): message", the rest as a plain sentence.
+export function formatUploadError(error: string) {
+  return error.startsWith('(') ? `Upload failed ${error}` : `Upload failed: ${error}`;
+}
+
+export function getUploadErrorAction(
+  state: { error?: string; errorId?: string; errorKind?: string; errorSessionTag?: string },
+  uploadKind: string,
+  uploadSessionTag: string,
+  lastSeenErrorId: string,
+  isShowingWorkerError: boolean,
+): 'show' | 'clear' | null {
+  if (state.error && state.errorKind === uploadKind && state.errorSessionTag === uploadSessionTag) {
+    return state.errorId !== lastSeenErrorId ? 'show' : null;
+  }
+
+  return isShowingWorkerError ? 'clear' : null;
+}

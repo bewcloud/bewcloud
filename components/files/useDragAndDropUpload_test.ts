@@ -168,7 +168,7 @@ Deno.test('that a dropped directory whose name a file already has is skipped and
     await hook.uploadFiles([nestedFile, new File(['b'], 'b.txt')]);
 
     assertEquals(enqueued.map((item) => item.file.name), ['b.txt']);
-    assertEquals(uploadError.value, '/photos: A file with this name already exists.');
+    assertEquals(uploadError.value, '(/photos): A file with this name already exists.');
   } finally {
     globalThis.fetch = originalFetch;
   }

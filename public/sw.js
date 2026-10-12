@@ -4,10 +4,18 @@ const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
 const BROADCAST_CHANNEL_NAME = 'bewcloud-uploads';
 // If the server dies mid-request (a restart/deploy), the socket can sit open with no RST and no response for minutes, so a plain fetch() neither resolves nor rejects: nothing left to catch, the queue never finishes, and the UI is stuck on "Uploading" forever. A timeout guarantees the request eventually fails instead.
 const REQUEST_TIMEOUT_MS = 2 * 60 * 1000;
+// Long enough for a tab frozen mid-upload to pick up a failure on resync, short enough that it doesn't resurface on later visits.
+const LAST_ERROR_TTL_MS = 5 * 60 * 1000;
 
 const broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
 
-let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController }
+let currentJob = null; // { queue: [{ file, parentPath, pathInView, overwrite, batchId }], uploadProgress, sessionTag, abortController, totalCount, carriedCount, carriedBatchId, uploadedCountByBatchId }
+
+// A drop enqueues one file at a time, so its next file may start a new job after the queue drains.
+let drainedCountByBatchId = null; // Map<batchId, uploaded count>
+
+// Outlives the job so a tab that was frozen when the upload failed still gets the error on resync.
+let lastError = null; // { id, message, kind, sessionTag, batchId, createdAt }
 
 // A queue outlives the session that created it, so the upload endpoints refuse requests tagged with a session other than the one their cookie now belongs to. When that happens there's nothing left to retry: the rest of the queue is dropped instead of being uploaded as whoever is logged in now.
 class UploadSessionGoneError extends Error {}
@@ -21,6 +29,10 @@ self.addEventListener('activate', (event) => {
 });
 
 function broadcastState(extra = {}) {
+  if (lastError && Date.now() - lastError.createdAt > LAST_ERROR_TTL_MS) {
+    lastError = null;
+  }
+
   broadcastChannel.postMessage({
     type: 'STATE',
     isUploading: Boolean(currentJob),
@@ -28,8 +40,41 @@ function broadcastState(extra = {}) {
     sessionTag: currentJob?.sessionTag || '',
     kindsInProgress: getKindsInProgress(currentJob),
     kind: currentJob?.currentItemKind || '',
+    error: lastError?.message || '',
+    errorId: lastError?.id || '',
+    errorKind: lastError?.kind || '',
+    errorSessionTag: lastError?.sessionTag || '',
+    // The tab clears it itself at this time, since this worker may not broadcast again (or even be running) by then.
+    errorExpiresAt: lastError ? lastError.createdAt + LAST_ERROR_TTL_MS : 0,
     ...extra,
   });
+}
+
+function setLastError(job, fileName, message) {
+  lastError = {
+    // A UUID instead of a counter, since a restarted worker would reuse ids a tab has already seen.
+    id: crypto.randomUUID(),
+    message: `(${fileName}): ${message}`,
+    kind: job.currentItemKind || 'file',
+    sessionTag: job.sessionTag,
+    batchId: job.currentItemBatchId,
+    createdAt: Date.now(),
+  };
+
+  broadcastState();
+}
+
+// Rebuilt whenever totalCount changes too, not just when an item starts, since files of a drop join one at a time.
+function updateUploadProgress(job) {
+  if (job.currentItemCancelled || !job.currentFileName) {
+    job.uploadProgress = '';
+    return;
+  }
+
+  const itemNumber = job.totalCount - job.queue.length;
+  const countLabel = job.totalCount > 1 ? ` (${itemNumber}/${job.totalCount})` : '';
+  const chunkLabel = job.currentChunk ? `, chunk ${job.currentChunk.index + 1}/${job.currentChunk.total}` : '';
+  job.uploadProgress = `Uploading ${job.currentFileName}${countLabel}${chunkLabel}…`;
 }
 
 function abandonCurrentJob() {
@@ -67,35 +112,43 @@ function isUnderDeletedPath(parentPath, deletedPath) {
 
 // Drops queued items that would land in the directory that just got deleted (or a subdirectory of it), without touching queued items for anywhere else. If the in-flight item is affected, only that fetch is aborted: replace the job AbortController so later items can still run.
 function handleDirectoryDeleted(job, deletedPath) {
-  const currentAffected = isUnderDeletedPath(job.currentItemParentPath, deletedPath);
+  const currentAffected = !job.currentItemCancelled && isUnderDeletedPath(job.currentItemParentPath, deletedPath);
+  const queueLengthBefore = job.queue.length;
   job.queue = job.queue.filter((item) => !isUnderDeletedPath(item.parentPath, deletedPath));
+
+  const removedCount = queueLengthBefore - job.queue.length + (currentAffected ? 1 : 0);
+  job.totalCount = Math.max(0, job.totalCount - removedCount);
 
   if (currentAffected) {
     job.currentItemCancelled = true;
     job.currentItemKind = '';
-    job.uploadProgress = '';
     const previousAbortController = job.abortController;
     job.abortController = new AbortController();
     previousAbortController.abort();
   }
 
+  updateUploadProgress(job);
   broadcastState();
 }
 
 // Drops one batch's items, leaving other batches alone. Same approach as handleDirectoryDeleted for the in-flight item.
 function handleBatchAborted(job, batchId) {
   const currentAffected = !job.currentItemCancelled && job.currentItemBatchId === batchId;
+  const queueLengthBefore = job.queue.length;
   job.queue = job.queue.filter((item) => item.batchId !== batchId);
+
+  const removedCount = queueLengthBefore - job.queue.length + (currentAffected ? 1 : 0);
+  job.totalCount = Math.max(0, job.totalCount - removedCount);
 
   if (currentAffected) {
     job.currentItemCancelled = true;
     job.currentItemKind = '';
-    job.uploadProgress = '';
     const previousAbortController = job.abortController;
     job.abortController = new AbortController();
     previousAbortController.abort();
   }
 
+  updateUploadProgress(job);
   broadcastState();
 }
 
@@ -184,7 +237,8 @@ async function uploadFileChunked(job, file, parentPath, pathInView, overwrite) {
       throw new Error('upload cancelled');
     }
 
-    job.uploadProgress = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
+    job.currentChunk = { index: chunkIndex, total: totalChunks };
+    updateUploadProgress(job);
     broadcastState();
 
     const start = chunkIndex * CHUNK_SIZE_BYTES;
@@ -230,12 +284,14 @@ async function processQueue(job) {
   while (job.queue.length > 0) {
     const { file, parentPath, pathInView, kind, overwrite, batchId } = job.queue.shift();
 
-    job.uploadProgress = '';
+    job.currentFileName = file.name;
+    job.currentChunk = undefined;
     job.currentItemKind = kind || 'file';
     job.currentItemParentPath = parentPath;
     job.currentItemBatchId = batchId;
     job.currentUploadId = undefined;
     job.currentItemCancelled = false;
+    updateUploadProgress(job);
     broadcastState();
 
     try {
@@ -261,9 +317,11 @@ async function processQueue(job) {
         const droppedCount = job.queue.length + 1;
 
         console.error(error);
-        broadcastState({
-          error: `${file.name}: ${error.message} (${droppedCount} upload${droppedCount === 1 ? '' : 's'} dropped).`,
-        });
+        setLastError(
+          job,
+          file.name,
+          `${error.message} (${droppedCount} upload${droppedCount === 1 ? '' : 's'} dropped).`,
+        );
         await abandonCurrentJob();
 
         return;
@@ -271,10 +329,15 @@ async function processQueue(job) {
 
       console.error(error);
       await cleanupAbortedChunkUpload(job);
-      broadcastState({ error: `${file.name}: ${String(error?.message || error)}` });
+      setLastError(job, file.name, String(error?.message || error));
+    }
+
+    if (batchId && !job.currentItemCancelled) {
+      job.uploadedCountByBatchId.set(batchId, (job.uploadedCountByBatchId.get(batchId) || 0) + 1);
     }
   }
 
+  drainedCountByBatchId = job.uploadedCountByBatchId;
   currentJob = null;
   broadcastState();
 }
@@ -295,6 +358,10 @@ self.addEventListener('message', (event) => {
 
       return;
     }
+
+    // Sent on logout, so the next user on this browser doesn't get this user's failure (basic auth shares an empty session tag).
+    lastError = null;
+    drainedCountByBatchId = null;
 
     if (!message.sessionTag || !currentJob || message.sessionTag === currentJob.sessionTag) {
       event.waitUntil(abandonCurrentJob());
@@ -320,16 +387,40 @@ self.addEventListener('message', (event) => {
     const isNewJob = !currentJob;
 
     if (isNewJob) {
+      // A drop enqueues each file as it's answered, so the queue can drain between two files of the same drop.
+      const isSameBatchAsLastError = Boolean(lastError?.batchId) &&
+        message.items.some((item) => item.batchId === lastError.batchId);
+
+      if (!isSameBatchAsLastError) {
+        lastError = null;
+      }
+
+      const continuedBatchId = message.items.find((item) => drainedCountByBatchId?.has(item.batchId))?.batchId;
+      const carriedCount = continuedBatchId ? drainedCountByBatchId.get(continuedBatchId) : 0;
+
       currentJob = {
         queue: [],
         uploadProgress: '',
         sessionTag: message.sessionTag,
         abortController: new AbortController(),
+        totalCount: carriedCount,
+        carriedCount,
+        carriedBatchId: continuedBatchId,
+        uploadedCountByBatchId: continuedBatchId ? drainedCountByBatchId : new Map(),
       };
+      drainedCountByBatchId = null;
+    }
+
+    // The carried count only applies while the job is still that one drop.
+    if (currentJob.carriedCount && message.items.some((item) => item.batchId !== currentJob.carriedBatchId)) {
+      currentJob.totalCount -= currentJob.carriedCount;
+      currentJob.carriedCount = 0;
     }
 
     currentJob.queue.push(...message.items);
+    currentJob.totalCount += message.items.length;
 
+    updateUploadProgress(currentJob);
     broadcastState();
 
     if (isNewJob) {

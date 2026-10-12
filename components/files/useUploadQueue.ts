@@ -1,14 +1,16 @@
 import { Signal, useSignal } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { ResponseBody as UploadResponseBody } from '/pages/api/files/upload.ts';
 import { ResponseBody as ChunkUploadResponseBody } from '/pages/api/files/upload-chunk.ts';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
+import { getUploadErrorAction } from '/public/ts/utils/files.ts';
 import { fetchExistingNamesByPath } from './existingFileNames.ts';
 
 // 10 MB chunks keep each request faster.
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024;
+const LAST_SEEN_UPLOAD_ERROR_ID_KEY = 'bewcloud-last-seen-upload-error-id';
 
 interface UploadQueueItem {
   file: File;
@@ -43,6 +45,8 @@ export function useUploadQueue(
   const isUploading = useSignal<boolean>(false);
   const uploadProgress = useSignal<string>('');
   const uploadError = useSignal<string>('');
+  // Same as the worker: a drop enqueues one file at a time, so each drop's count carries over between calls.
+  const uploadedCountByBatchId = useRef(new Map<string, number>());
 
   useEffect(() => {
     if (!isEnabled || !('serviceWorker' in navigator)) {
@@ -50,6 +54,33 @@ export function useUploadQueue(
     }
 
     const uploadChannel = new BroadcastChannel('bewcloud-uploads');
+
+    // Kept in sessionStorage so revisiting the page in this tab doesn't show (and log) the same failure again.
+    let lastSeenErrorId = '';
+    let shownWorkerError = '';
+    let errorExpiryTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    function stopErrorExpiryTimer() {
+      if (errorExpiryTimeoutId) {
+        clearTimeout(errorExpiryTimeoutId);
+      }
+    }
+
+    function clearShownWorkerError() {
+      stopErrorExpiryTimer();
+
+      if (shownWorkerError && uploadError.value === shownWorkerError) {
+        uploadError.value = '';
+      }
+
+      shownWorkerError = '';
+    }
+
+    try {
+      lastSeenErrorId = sessionStorage.getItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY) || '';
+    } catch (error) {
+      console.error(error);
+    }
 
     uploadChannel.onmessage = (event) => {
       const state = event.data as {
@@ -62,6 +93,10 @@ export function useUploadQueue(
         newDirectories?: Directory[];
         pathInView?: string;
         error?: string;
+        errorId?: string;
+        errorKind?: string;
+        errorSessionTag?: string;
+        errorExpiresAt?: number;
         sessionTag?: string;
       };
 
@@ -76,9 +111,34 @@ export function useUploadQueue(
       isUploading.value = state.kindsInProgress ? state.kindsInProgress.includes(uploadKind) : state.isUploading;
       uploadProgress.value = state.kind === uploadKind ? (state.uploadProgress || '') : '';
 
-      if (state.error && state.kind === uploadKind) {
+      const errorAction = getUploadErrorAction(
+        state,
+        uploadKind,
+        uploadSessionTag,
+        lastSeenErrorId,
+        Boolean(shownWorkerError) && uploadError.value === shownWorkerError,
+      );
+
+      if (errorAction === 'show') {
+        lastSeenErrorId = state.errorId!;
+        shownWorkerError = state.error!;
+
+        try {
+          sessionStorage.setItem(LAST_SEEN_UPLOAD_ERROR_ID_KEY, lastSeenErrorId);
+        } catch (error) {
+          console.error(error);
+        }
+
         console.error(new Error(state.error));
-        uploadError.value = state.error;
+        uploadError.value = state.error!;
+
+        stopErrorExpiryTimer();
+
+        if (state.errorExpiresAt) {
+          errorExpiryTimeoutId = setTimeout(clearShownWorkerError, state.errorExpiresAt - Date.now());
+        }
+      } else if (errorAction === 'clear') {
+        clearShownWorkerError();
       }
 
       // Only apply the file/directory listing from an upload if it matches this tab's own current path; another tab may have uploaded into a different directory.
@@ -91,10 +151,23 @@ export function useUploadQueue(
       }
     };
 
+    // Prevents isUploading/uploadProgress from getting stuck
+    function resyncState() {
+      if (document.visibilityState === 'visible') {
+        postToUploadServiceWorker({ type: 'QUERY_STATE', sessionTag: uploadSessionTag });
+      }
+    }
+
+    document.addEventListener('visibilitychange', resyncState);
+    globalThis.addEventListener('pageshow', resyncState);
+
     postToUploadServiceWorker({ type: 'QUERY_STATE', sessionTag: uploadSessionTag });
 
     return () => {
       uploadChannel.close();
+      stopErrorExpiryTimer();
+      document.removeEventListener('visibilitychange', resyncState);
+      globalThis.removeEventListener('pageshow', resyncState);
     };
   }, []);
 
@@ -126,13 +199,19 @@ export function useUploadQueue(
     directories.value = [...result.newDirectories];
   }
 
-  async function uploadFileChunked(file: File, parentPath: string, pathInView: string, overwrite: boolean) {
+  async function uploadFileChunked(
+    file: File,
+    parentPath: string,
+    pathInView: string,
+    overwrite: boolean,
+    itemLabel: string,
+  ) {
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE_BYTES);
     const uploadId = crypto.randomUUID();
 
     try {
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        uploadProgress.value = `Uploading ${file.name} (${chunkIndex + 1}/${totalChunks})…`;
+        uploadProgress.value = `${itemLabel}, chunk ${chunkIndex + 1}/${totalChunks}…`;
 
         const start = chunkIndex * CHUNK_SIZE_BYTES;
         const end = Math.min(start + CHUNK_SIZE_BYTES, file.size);
@@ -209,7 +288,7 @@ export function useUploadQueue(
 
       itemsToUpload = items.filter((item) => {
         if (existingNamesByParentPath.get(item.parentPath)?.fileNames.has(item.file.name)) {
-          uploadError.value = `${item.file.name}: A file with this name already exists.`;
+          uploadError.value = `(${item.file.name}): A file with this name already exists.`;
           return false;
         }
 
@@ -233,17 +312,31 @@ export function useUploadQueue(
     }
 
     // Fallback for browsers/contexts without an active service worker: upload directly, as before.
-    for (const item of itemsToUpload) {
+    const batchId = itemsToUpload[0].batchId;
+    const previousCount = (batchId && uploadedCountByBatchId.current.get(batchId)) || 0;
+    const totalCount = previousCount + itemsToUpload.length;
+
+    for (const [index, item] of itemsToUpload.entries()) {
+      const itemNumber = previousCount + index + 1;
+      const itemLabel = totalCount > 1
+        ? `Uploading ${item.file.name} (${itemNumber}/${totalCount})`
+        : `Uploading ${item.file.name}`;
+      uploadProgress.value = `${itemLabel}…`;
+
       try {
         if (item.file.size >= CHUNK_SIZE_BYTES) {
-          await uploadFileChunked(item.file, item.parentPath, pathInView, !!item.overwrite);
+          await uploadFileChunked(item.file, item.parentPath, pathInView, !!item.overwrite, itemLabel);
         } else {
           await uploadFileSingle(item.file, item.parentPath, pathInView, !!item.overwrite);
         }
       } catch (error) {
         console.error(error);
-        uploadError.value = `${item.file.name}: ${error instanceof Error ? error.message : String(error)}`;
+        uploadError.value = `(${item.file.name}): ${error instanceof Error ? error.message : String(error)}`;
       }
+    }
+
+    if (batchId) {
+      uploadedCountByBatchId.current.set(batchId, totalCount);
     }
 
     isUploading.value = false;

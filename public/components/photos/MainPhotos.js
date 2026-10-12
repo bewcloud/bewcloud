@@ -7,6 +7,7 @@ import ListFiles from "/public/components/files/ListFiles.js";
 import FilesBreadcrumb from "/public/components/files/FilesBreadcrumb.js";
 import ListPhotos from "/public/components/photos/ListPhotos.js";
 import { isPhotoFile, PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
+import { formatUploadError } from '/public/ts/utils/files.ts';
 export default function MainPhotos({
   initialDirectories,
   initialFiles,
@@ -198,11 +199,19 @@ export default function MainPhotos({
     class: "white mr-2",
     width: 18,
     height: 18
-  }), uploadProgress.value || 'Uploading...') : null, !isAdding.value && !isResolvingConflicts.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
+  }), h("span", {
+    class: "truncate min-w-0"
+  }, uploadProgress.value || 'Uploading...')) : null, !isAdding.value && !isResolvingConflicts.value && !isUploading.value ? h(Fragment, null, "\xA0") : null), uploadError.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Upload failed \u2014 ", uploadError.value) : null, skippedFilesNotice.value ? h("span", {
+  }, h("span", {
+    class: "truncate min-w-0",
+    title: formatUploadError(uploadError.value)
+  }, formatUploadError(uploadError.value))) : null, skippedFilesNotice.value ? h("span", {
     class: "flex justify-end items-center text-sm mt-1 mx-2 text-red-400"
-  }, "Upload partially successful \u2014 ", skippedFilesNotice.value) : null), h(CreateDirectoryModal, {
+  }, h("span", {
+    class: "truncate min-w-0",
+    title: `Upload partially successful: ${skippedFilesNotice.value}`
+  }, "Upload partially successful: ", skippedFilesNotice.value)) : null), h(CreateDirectoryModal, {
     isOpen: isNewDirectoryModalOpen.value,
     onClickSave: onClickSaveDirectory,
     onClose: onCloseCreateDirectory

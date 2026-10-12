@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 
 import { Directory, DirectoryFile } from '/lib/types.ts';
-import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
+import { formatUploadError, SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
 import { postToUploadServiceWorker } from '/public/ts/service-worker.ts';
 import { RequestBody as RenameRequestBody, ResponseBody as RenameResponseBody } from '/pages/api/files/rename.ts';
 import { RequestBody as MoveRequestBody, ResponseBody as MoveResponseBody } from '/pages/api/files/move.ts';
@@ -229,7 +229,7 @@ export default function MainFiles(
       }
     } catch (error) {
       console.error(`Failed to create directory ${dirPath}:`, error);
-      uploadError.value = `${dirPath}: ${error instanceof Error ? error.message : String(error)}`;
+      uploadError.value = `(${dirPath}): ${error instanceof Error ? error.message : String(error)}`;
     } finally {
       isCreatingDirectories.value = false;
       currentDirectoryName.value = '';
@@ -1020,7 +1020,7 @@ export default function MainFiles(
             ? (
               <>
                 <img src='/public/images/loading.svg' class='white mr-2' width={18} height={18} />
-                {uploadProgress.value || 'Uploading...'}
+                <span class='truncate min-w-0'>{uploadProgress.value || 'Uploading...'}</span>
               </>
             )
             : null}
@@ -1040,7 +1040,9 @@ export default function MainFiles(
         {uploadError.value
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
-              Upload failed — {uploadError.value}
+              <span class='truncate min-w-0' title={formatUploadError(uploadError.value)}>
+                {formatUploadError(uploadError.value)}
+              </span>
             </span>
           )
           : null}
@@ -1048,7 +1050,9 @@ export default function MainFiles(
         {skippedFilesNotice.value
           ? (
             <span class='flex justify-end items-center text-sm mt-1 mx-2 text-red-400'>
-              Upload partially successful — {skippedFilesNotice.value}
+              <span class='truncate min-w-0' title={`Upload partially successful: ${skippedFilesNotice.value}`}>
+                Upload partially successful: {skippedFilesNotice.value}
+              </span>
             </span>
           )
           : null}

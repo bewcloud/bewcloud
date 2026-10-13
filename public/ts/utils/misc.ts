@@ -167,53 +167,17 @@ const MAX_FETCH_REDIRECTS = 5;
 const FETCHABLE_PROTOCOLS = ['http:', 'https:'];
 const INTERNAL_HOSTNAME_SUFFIXES = ['.localhost', '.local', '.internal', '.home.arpa'];
 
-function parseIpv4(hostname: string): number[] | null {
-  const parts = hostname.split('.');
+const DOTTED_IPV4_MATCH = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
-  if (parts.length !== 4) {
-    return null;
+function isInternalIpv4(hostname: string): boolean {
+  const octets = hostname.match(DOTTED_IPV4_MATCH);
+
+  if (!octets) {
+    return false;
   }
 
-  const numbers = parts.map((part) => /^\d{1,3}$/.test(part) ? Number(part) : NaN);
+  const [first, second, third] = octets.slice(1).map(Number);
 
-  if (numbers.some((number) => isNaN(number) || number > 255)) {
-    return null;
-  }
-
-  return numbers;
-}
-
-/** Parses the bracketed, hexadecimal form `new URL()` normalizes IPv6 hostnames into. */
-function parseIpv6(hostname: string): number[] | null {
-  if (!hostname.startsWith('[') || !hostname.endsWith(']')) {
-    return null;
-  }
-
-  const halves = hostname.slice(1, -1).split('::');
-
-  if (halves.length > 2) {
-    return null;
-  }
-
-  const start = halves[0] ? halves[0].split(':') : [];
-  const end = halves[1] ? halves[1].split(':') : [];
-  const omitted = halves.length === 2 ? 8 - start.length - end.length : 0;
-
-  if (omitted < 0) {
-    return null;
-  }
-
-  const groups = [...start, ...Array.from({ length: omitted }).map(() => '0'), ...end]
-    .map((group) => /^[0-9a-f]{1,4}$/.test(group) ? parseInt(group, 16) : NaN);
-
-  if (groups.length !== 8 || groups.some((group) => isNaN(group))) {
-    return null;
-  }
-
-  return groups;
-}
-
-function isInternalIpv4([first, second, third]: number[]): boolean {
   return first === 0 || // 0.0.0.0/8, "this network"
     first === 10 || // private
     first === 127 || // loopback
@@ -226,47 +190,38 @@ function isInternalIpv4([first, second, third]: number[]): boolean {
     first >= 224; // multicast, reserved and the broadcast address
 }
 
-function isInternalIpv6(groups: number[]): boolean {
-  if (groups.every((group) => group === 0)) { // the unspecified address, ::
-    return true;
-  }
-
-  if (groups.slice(0, 7).every((group) => group === 0) && groups[7] === 1) { // loopback, ::1
-    return true;
-  }
-
-  if ((groups[0] & 0xfe00) === 0xfc00) { // unique local, fc00::/7
-    return true;
-  }
-
-  if ((groups[0] & 0xffc0) === 0xfe80) { // link-local, fe80::/10
-    return true;
-  }
-
-  if (groups.slice(0, 5).every((group) => group === 0) && groups[5] === 0xffff) { // IPv4-mapped
-    return isInternalIpv4([groups[6] >> 8, groups[6] & 0xff, groups[7] >> 8, groups[7] & 0xff]);
-  }
-
-  return false;
+/** Takes the address without the brackets `new URL()` wraps an IPv6 hostname in. */
+function isInternalIpv6(address: string): boolean {
+  return address === '::' || // the unspecified address
+    address === '::1' || // loopback
+    /^f[cd][0-9a-f]{2}:/.test(address) || // unique local, fc00::/7
+    /^fe[89ab][0-9a-f]:/.test(address) || // link-local, fe80::/10
+    address.startsWith('::ffff:'); // IPv4-mapped, which would otherwise reach the ranges above
 }
 
-export function isInternalHostname(hostname: string): boolean {
-  const normalizedHostname = hostname.toLocaleLowerCase().replace(/\.+$/, '');
+/**
+ * Whether a hostname only resolves inside the network.
+ *
+ * This takes the canonical form `new URL()` produces, which is why there is no parsing to do:
+ * it rewrites the short, decimal and octal IPv4 notations into dotted form (`127.1` and
+ * `0177.0.0.1` both become `127.0.0.1`), and IPv6 into the bracketed, lowercase, compressed
+ * form.
+ */
+function isInternalHostname(hostname: string): boolean {
+  const normalizedHostname = hostname.toLowerCase().replace(/\.+$/, '');
 
   if (!normalizedHostname) {
     return true;
   }
 
-  const ipv6 = parseIpv6(normalizedHostname);
-
-  if (ipv6) {
-    return isInternalIpv6(ipv6);
+  // A bracketed hostname is an IPv6 address, the one case where having no dot in it does
+  // not make it a single-label name.
+  if (normalizedHostname.startsWith('[') && normalizedHostname.endsWith(']')) {
+    return isInternalIpv6(normalizedHostname.slice(1, -1));
   }
 
-  const ipv4 = parseIpv4(normalizedHostname);
-
-  if (ipv4) {
-    return isInternalIpv4(ipv4);
+  if (isInternalIpv4(normalizedHostname)) {
+    return true;
   }
 
   if (

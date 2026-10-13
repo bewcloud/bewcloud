@@ -2,6 +2,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/server';
 
 import { PasskeyModel } from '/lib/models/multi-factor-auth/passkey.ts';
+import { AuthenticationChallengeModel } from '/lib/models/authentication-challenge.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
 
@@ -39,6 +40,8 @@ async function post({ request }: RequestHandlerParams) {
   // Discoverable credential flow: no email provided, let the authenticator present all credentials
   if (!email) {
     const options = await PasskeyModel.generateAuthenticationOptions(config.auth.baseUrl);
+
+    await AuthenticationChallengeModel.create(options.challenge);
 
     const responseBody: ResponseBody = {
       success: true,
@@ -78,6 +81,8 @@ async function post({ request }: RequestHandlerParams) {
     config.auth.baseUrl,
     allowedCredentials,
   );
+
+  await AuthenticationChallengeModel.create(options.challenge);
 
   const responseBody: ResponseBody = {
     success: true,

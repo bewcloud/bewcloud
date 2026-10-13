@@ -2,6 +2,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { AuthenticationResponseJSON } from '@simplewebauthn/server';
 
 import { PasskeyModel } from '/lib/models/multi-factor-auth/passkey.ts';
+import { AuthenticationChallengeModel } from '/lib/models/authentication-challenge.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
 import { createSessionResponse } from '/lib/auth.ts';
@@ -38,6 +39,18 @@ async function post({ request }: RequestHandlerParams) {
     const responseBody: ResponseBody = {
       success: false,
       error: 'Challenge and authentication response are required',
+    };
+
+    return new Response(JSON.stringify(responseBody), { status: 400 });
+  }
+
+  // The challenge must be one the server issued and never consumed before, otherwise a captured assertion could be replayed
+  const isChallengeValid = await AuthenticationChallengeModel.consume(challenge);
+
+  if (!isChallengeValid) {
+    const responseBody: ResponseBody = {
+      success: false,
+      error: 'Invalid or expired challenge',
     };
 
     return new Response(JSON.stringify(responseBody), { status: 400 });

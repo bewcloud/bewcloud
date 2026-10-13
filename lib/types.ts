@@ -47,6 +47,13 @@ export interface VerificationCode {
   created_at: Date;
 }
 
+export interface AuthenticationChallenge {
+  id: string;
+  challenge: string;
+  expires_at: Date;
+  created_at: Date;
+}
+
 export interface DashboardLink {
   url: string;
   name: string;

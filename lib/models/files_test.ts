@@ -2,7 +2,13 @@ import { assertEquals } from '@std/assert';
 import { join, relative } from '@std/path';
 
 import { AppConfig } from '/lib/config.ts';
-import { DirectoryModel, FileModel, getDirectorySize, getDirectorySizes } from '/lib/models/files.ts';
+import {
+  cacheDirectorySize,
+  DirectoryModel,
+  FileModel,
+  getDirectorySize,
+  getDirectorySizes,
+} from '/lib/models/files.ts';
 import { bytesFromHumanFileSize } from '/public/ts/utils/files.ts';
 
 async function withUserDirectory(test: (userRootPath: string, userId: string) => Promise<void>) {
@@ -381,5 +387,27 @@ Deno.test('that getDirectorySizes stops starting du once enough are running, ins
     }
 
     await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+});
+
+Deno.test('that the directory size cache evicts the oldest measurement once full', async () => {
+  await withFakeDu('0', async (logPath) => {
+    const [remeasuredPath, oldestPath, ...otherPaths] = Array.from(
+      { length: 1_001 },
+      () => `/nonexistent/${crypto.randomUUID()}`,
+    );
+
+    cacheDirectorySize(remeasuredPath, 1);
+    cacheDirectorySize(oldestPath, 2);
+    cacheDirectorySize(remeasuredPath, 1);
+
+    for (const path of otherPaths) {
+      cacheDirectorySize(path, 3);
+    }
+
+    assertEquals(await getDirectorySize(remeasuredPath), 1);
+    assertEquals(await getDirectorySize(otherPaths[otherPaths.length - 1]), 3);
+    assertEquals(await getDirectorySize(oldestPath), bytesFromHumanFileSize('12 KB'));
+    assertEquals(await readLog(logPath), ['started', 'finished']);
   });
 });

@@ -854,6 +854,7 @@ const DIRECTORY_SIZE_WAIT_IN_MILLISECONDS = 1_000;
 const DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS = 5 * 60_000;
 const SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS = 10 * 60_000;
 const MAX_RUNNING_DIRECTORY_SIZES = 8;
+const MAX_CACHED_DIRECTORY_SIZES = 1_000;
 
 // NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
 async function calculateDirectorySizeWithDu(path: string, signal: AbortSignal): Promise<number> {
@@ -919,6 +920,17 @@ interface CachedDirectorySize {
 const cachedDirectorySizes = new Map<string, CachedDirectorySize>();
 const directorySizesInProgress = new Map<string, Promise<number | null>>();
 
+// Evicts the oldest measurement, so paths that are renamed, deleted or never listed again don't stay in memory
+export function cacheDirectorySize(path: string, sizeInBytes: number) {
+  cachedDirectorySizes.delete(path);
+  cachedDirectorySizes.set(path, { sizeInBytes, calculatedAt: Date.now() });
+
+  if (cachedDirectorySizes.size > MAX_CACHED_DIRECTORY_SIZES) {
+    const [oldestPath] = cachedDirectorySizes.keys();
+    cachedDirectorySizes.delete(oldestPath);
+  }
+}
+
 // Null once too many are running, since each one keeps going after its listing stops waiting
 function startCalculatingDirectorySize(path: string): Promise<number | null> | null {
   const inProgress = directorySizesInProgress.get(path);
@@ -939,7 +951,7 @@ function startCalculatingDirectorySize(path: string): Promise<number | null> | n
 
       if (sizeInBytes !== null) {
         if (Date.now() - startedAt >= DIRECTORY_SIZE_WAIT_IN_MILLISECONDS) {
-          cachedDirectorySizes.set(path, { sizeInBytes, calculatedAt: Date.now() });
+          cacheDirectorySize(path, sizeInBytes);
         } else {
           cachedDirectorySizes.delete(path);
         }

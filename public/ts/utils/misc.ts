@@ -164,6 +164,7 @@ export async function concurrentPromises<T>(
 
 const MAX_RESPONSE_TIME_IN_MS = 10_000;
 const MAX_FETCH_REDIRECTS = 5;
+const REDIRECT_STATUSES = [301, 302, 303, 307, 308];
 const FETCHABLE_PROTOCOLS = ['http:', 'https:'];
 const INTERNAL_HOSTNAME_SUFFIXES = ['.localhost', '.local', '.internal', '.home.arpa'];
 
@@ -199,14 +200,7 @@ function isInternalIpv6(address: string): boolean {
     address.startsWith('::ffff:'); // IPv4-mapped, which would otherwise reach the ranges above
 }
 
-/**
- * Whether a hostname only resolves inside the network.
- *
- * This takes the canonical form `new URL()` produces, which is why there is no parsing to do:
- * it rewrites the short, decimal and octal IPv4 notations into dotted form (`127.1` and
- * `0177.0.0.1` both become `127.0.0.1`), and IPv6 into the bracketed, lowercase, compressed
- * form.
- */
+/** Takes the canonical hostname `new URL()` produces, so there is no IP notation left to parse. */
 function isInternalHostname(hostname: string): boolean {
   const normalizedHostname = hostname.toLowerCase().replace(/\.+$/, '');
 
@@ -214,8 +208,7 @@ function isInternalHostname(hostname: string): boolean {
     return true;
   }
 
-  // A bracketed hostname is an IPv6 address, the one case where having no dot in it does
-  // not make it a single-label name.
+  // Bracketed means IPv6, the one dotless hostname that isn't a single-label name
   if (normalizedHostname.startsWith('[') && normalizedHostname.endsWith(']')) {
     return isInternalIpv6(normalizedHostname.slice(1, -1));
   }
@@ -231,19 +224,11 @@ function isInternalHostname(hostname: string): boolean {
     return true;
   }
 
-  // A single-label name only resolves inside the network, which is how container hostnames
-  // like `radicale` in the default docker compose setup are reached.
+  // Single-label names only resolve inside the network (e.g. `radicale` in docker compose)
   return !normalizedHostname.includes('.');
 }
 
-/**
- * Whether the server may fetch this URL on a user's behalf. Feed and preview URLs come
- * straight from the user, so without this the server reaches loopback, private, link-local
- * and container addresses for them.
- *
- * This checks the URL itself: a public hostname that resolves to a private address still
- * gets through.
- */
+/** Whether the server may fetch this user-supplied URL. Checks the URL only, not what it resolves to. */
 export function isFetchableUrl(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
@@ -258,11 +243,7 @@ export function isFetchableUrl(url: string): boolean {
   }
 }
 
-/**
- * Fetches a user-supplied URL, checking every hop. Redirects are followed manually because
- * `fetch` would otherwise follow them for us, and a public URL is free to redirect to an
- * internal one.
- */
+/** Follows redirects manually so every hop gets checked, since a public URL can redirect to an internal one. */
 async function fetchFetchableUrl(url: string, requestInit: RequestInit = {}): Promise<Response> {
   let currentUrl = url;
 
@@ -275,7 +256,7 @@ async function fetchFetchableUrl(url: string, requestInit: RequestInit = {}): Pr
 
     const location = response.headers.get('location');
 
-    if (!(response.status >= 300 && response.status <= 399) || !location) {
+    if (!REDIRECT_STATUSES.includes(response.status) || !location) {
       return response;
     }
 

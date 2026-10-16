@@ -445,6 +445,19 @@ Deno.test('that fetchUrl still follows a redirect to another public URL', async 
   }
 });
 
+Deno.test('that fetchUrl only follows redirect statuses, not every 3xx with a location', async () => {
+  const fetchStub = stubFetch(() =>
+    new Response('<rss />', { status: 300, headers: { location: 'http://169.254.169.254/latest/meta-data/' } })
+  );
+
+  try {
+    assertEquals(await fetchUrl('https://example.com/feed.xml'), '<rss />');
+    assertEquals(fetchStub.requestedUrls, ['https://example.com/feed.xml']);
+  } finally {
+    fetchStub.restore();
+  }
+});
+
 Deno.test('that fetchUrlWithProxy checks and encodes the URL it tunnels', async () => {
   const internalFetchStub = stubFetch(() => new Response('secret', { status: 200 }));
 

@@ -58,6 +58,12 @@ These are the amazing entities or individuals who are sponsoring this project fo
   </a>
 </p>
 
+<p align="center" width="100%">
+  <a href="https://podby.com" title="PodBy - Simple EU hosting for static sites and apps">
+    <img src="https://podby.com/logo.svg" alt="PodBy - Simple EU hosting for static sites and apps" width="256" />
+  </a>
+</p>
+
 ## Development
 
 ### Requirements

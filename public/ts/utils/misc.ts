@@ -163,62 +163,147 @@ export async function concurrentPromises<T>(
 }
 
 const MAX_RESPONSE_TIME_IN_MS = 10_000;
+const MAX_FETCH_REDIRECTS = 5;
+const REDIRECT_STATUSES = [301, 302, 303, 307, 308];
+const FETCHABLE_PROTOCOLS = ['http:', 'https:'];
+const INTERNAL_HOSTNAME_SUFFIXES = ['.localhost', '.local', '.internal', '.home.arpa'];
 
-export async function fetchUrl(url: string) {
+const DOTTED_IPV4_MATCH = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+
+function isInternalIpv4(hostname: string): boolean {
+  const octets = hostname.match(DOTTED_IPV4_MATCH);
+
+  if (!octets) {
+    return false;
+  }
+
+  const [first, second, third] = octets.slice(1).map(Number);
+
+  return first === 0 || // 0.0.0.0/8, "this network"
+    first === 10 || // private
+    first === 127 || // loopback
+    (first === 100 && second >= 64 && second <= 127) || // carrier-grade NAT
+    (first === 169 && second === 254) || // link-local, which includes the cloud metadata address
+    (first === 172 && second >= 16 && second <= 31) || // private
+    (first === 192 && second === 0 && third === 0) || // IETF protocol assignments
+    (first === 192 && second === 168) || // private
+    (first === 198 && (second === 18 || second === 19)) || // benchmarking
+    first >= 224; // multicast, reserved and the broadcast address
+}
+
+/** Takes the address without the brackets `new URL()` wraps an IPv6 hostname in. */
+function isInternalIpv6(address: string): boolean {
+  return address === '::' || // the unspecified address
+    address === '::1' || // loopback
+    /^f[cd][0-9a-f]{2}:/.test(address) || // unique local, fc00::/7
+    /^fe[89ab][0-9a-f]:/.test(address) || // link-local, fe80::/10
+    address.startsWith('::ffff:'); // IPv4-mapped, which would otherwise reach the ranges above
+}
+
+/** Takes the canonical hostname `new URL()` produces, so there is no IP notation left to parse. */
+function isInternalHostname(hostname: string): boolean {
+  const normalizedHostname = hostname.toLowerCase().replace(/\.+$/, '');
+
+  if (!normalizedHostname) {
+    return true;
+  }
+
+  // Bracketed means IPv6, the one dotless hostname that isn't a single-label name
+  if (normalizedHostname.startsWith('[') && normalizedHostname.endsWith(']')) {
+    return isInternalIpv6(normalizedHostname.slice(1, -1));
+  }
+
+  if (isInternalIpv4(normalizedHostname)) {
+    return true;
+  }
+
+  if (
+    normalizedHostname === 'localhost' ||
+    INTERNAL_HOSTNAME_SUFFIXES.some((suffix) => normalizedHostname.endsWith(suffix))
+  ) {
+    return true;
+  }
+
+  // Single-label names only resolve inside the network (e.g. `radicale` in docker compose)
+  return !normalizedHostname.includes('.');
+}
+
+/** Whether the server may fetch this user-supplied URL. Checks the URL only, not what it resolves to. */
+export function isFetchableUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+
+    if (!FETCHABLE_PROTOCOLS.includes(parsedUrl.protocol)) {
+      return false;
+    }
+
+    return !isInternalHostname(parsedUrl.hostname);
+  } catch (_error) {
+    return false;
+  }
+}
+
+/** Follows redirects manually so every hop gets checked, since a public URL can redirect to an internal one. */
+async function fetchFetchableUrl(url: string, requestInit: RequestInit = {}): Promise<Response> {
+  let currentUrl = url;
+
+  for (let redirectCount = 0; redirectCount <= MAX_FETCH_REDIRECTS; redirectCount++) {
+    if (!isFetchableUrl(currentUrl)) {
+      throw new Error(`Refusing to fetch non-public URL: ${currentUrl}`);
+    }
+
+    const response = await fetch(currentUrl, { ...requestInit, redirect: 'manual' });
+
+    const location = response.headers.get('location');
+
+    if (!REDIRECT_STATUSES.includes(response.status) || !location) {
+      return response;
+    }
+
+    await response.body?.cancel();
+
+    currentUrl = new URL(location, currentUrl).toString();
+  }
+
+  throw new Error(`Too many redirects when fetching: ${url}`);
+}
+
+async function fetchUrlContents(url: string, requestInit: RequestInit = {}) {
   const abortController = new AbortController();
   const requestCancelTimeout = setTimeout(() => {
     abortController.abort();
   }, MAX_RESPONSE_TIME_IN_MS);
 
-  const response = await fetch(url, {
-    signal: abortController.signal,
-  });
+  try {
+    const response = await fetchFetchableUrl(url, { ...requestInit, signal: abortController.signal });
 
-  if (requestCancelTimeout) {
-    clearTimeout(requestCancelTimeout);
+    const urlContents = await response.text();
+    return urlContents;
+  } finally {
+    if (requestCancelTimeout) {
+      clearTimeout(requestCancelTimeout);
+    }
   }
+}
 
-  const urlContents = await response.text();
-  return urlContents;
+export async function fetchUrl(url: string) {
+  return await fetchUrlContents(url);
 }
 
 export async function fetchUrlAsGooglebot(url: string) {
-  const abortController = new AbortController();
-  const requestCancelTimeout = setTimeout(() => {
-    abortController.abort();
-  }, MAX_RESPONSE_TIME_IN_MS);
-
-  const response = await fetch(url, {
+  return await fetchUrlContents(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
     },
-    signal: abortController.signal,
   });
-
-  if (requestCancelTimeout) {
-    clearTimeout(requestCancelTimeout);
-  }
-
-  const urlContents = await response.text();
-  return urlContents;
 }
 
 export async function fetchUrlWithProxy(url: string) {
-  const abortController = new AbortController();
-  const requestCancelTimeout = setTimeout(() => {
-    abortController.abort();
-  }, MAX_RESPONSE_TIME_IN_MS);
-
-  const response = await fetch(`https://api.allorigins.win/raw?url=${url}`, {
-    signal: abortController.signal,
-  });
-
-  if (requestCancelTimeout) {
-    clearTimeout(requestCancelTimeout);
+  if (!isFetchableUrl(url)) {
+    throw new Error(`Refusing to fetch non-public URL: ${url}`);
   }
 
-  const urlContents = await response.text();
-  return urlContents;
+  return await fetchUrlContents(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
 }
 
 export async function fetchUrlWithRetries(url: string) {

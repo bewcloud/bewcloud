@@ -2,6 +2,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 
 import { NewsFeed } from '/lib/types.ts';
 import { FeedModel } from '/lib/models/news.ts';
+import { isFetchableUrl } from '/public/ts/utils/misc.ts';
 import { fetchNewArticles } from '/crons/news.ts';
 import { AppConfig } from '/lib/config.ts';
 
@@ -22,6 +23,10 @@ async function post({ request, user }: RequestHandlerParams) {
   const requestBody = await request.clone().json() as RequestBody;
 
   if (requestBody.feedUrl) {
+    if (!isFetchableUrl(requestBody.feedUrl)) {
+      return new Response('Bad request', { status: 400 });
+    }
+
     const newFeed = await FeedModel.create(user!.id, requestBody.feedUrl);
 
     if (!newFeed) {

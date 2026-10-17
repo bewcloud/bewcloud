@@ -5,6 +5,16 @@ import { FeedModel } from '/lib/models/news.ts';
 
 const db = new Database();
 
+// A feed that fails to crawl (unreachable, rejected URL) must not stop the other feeds from being crawled
+export async function crawlFeed(newsFeed: NewsFeed) {
+  try {
+    await FeedModel.crawl(newsFeed);
+  } catch (error) {
+    console.error(error);
+    console.error(`Failed to crawl feed: "${newsFeed.feed_url}"`);
+  }
+}
+
 export async function fetchNewArticles(forceFetch = false) {
   const fourHoursAgo = forceFetch ? new Date() : new Date(new Date().setUTCHours(new Date().getUTCHours() - 4));
 
@@ -18,7 +28,7 @@ export async function fetchNewArticles(forceFetch = false) {
 
     console.info('Will crawl', feedsToCrawl.length, 'news feeds');
 
-    await concurrentPromises(feedsToCrawl.map((newsFeed) => () => FeedModel.crawl(newsFeed)), 3);
+    await concurrentPromises(feedsToCrawl.map((newsFeed) => () => crawlFeed(newsFeed)), 3);
 
     console.info('Crawled', feedsToCrawl.length, 'news feeds');
   } catch (error) {

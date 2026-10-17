@@ -380,8 +380,10 @@ function stubFetch(handler: (url: string) => Response) {
   const originalFetch = globalThis.fetch;
   const requestedUrls: string[] = [];
 
-  globalThis.fetch = (input: string | URL | Request, _init?: RequestInit) => {
+  globalThis.fetch = (input: string | URL | Request, init?: RequestInit) => {
     const url = input instanceof Request ? input.url : input.toString();
+    // The whole point of fetchUrl is that fetch never follows a redirect on its own.
+    assertEquals(init?.redirect, 'manual', `fetch for ${url} must be called with redirect: 'manual'`);
     requestedUrls.push(url);
     return Promise.resolve(handler(url));
   };

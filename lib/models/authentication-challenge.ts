@@ -6,7 +6,7 @@ const db = new Database();
 const CHALLENGE_EXPIRATION_MINUTES = 5;
 
 export class AuthenticationChallengeModel {
-  static async create(challenge: string) {
+  static async create(challenge: string): Promise<void> {
     await db.query(sql`DELETE FROM "bewcloud_authentication_challenges" WHERE "expires_at" <= now()`);
 
     const expiresAt = new Date(Date.now() + CHALLENGE_EXPIRATION_MINUTES * 60 * 1000);

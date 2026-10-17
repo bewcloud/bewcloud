@@ -4,8 +4,7 @@ import Database, { sql } from '/lib/interfaces/database.ts';
 
 import { AuthenticationChallengeModel } from '/lib/models/authentication-challenge.ts';
 
-// These tests need a reachable PostgreSQL instance (via the POSTGRESQL_* environment variables),
-// so they are skipped when it isn't configured (like in CI)
+// These tests need a reachable PostgreSQL instance, so they are skipped without one (like in CI)
 const isPostgresConfigured = Boolean(Deno.env.get('POSTGRESQL_HOST'));
 
 const db = new Database({ throwOnConnectionError: true });

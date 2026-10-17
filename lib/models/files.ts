@@ -861,7 +861,8 @@ async function calculateDirectorySizeWithDu(path: string, signal: AbortSignal): 
   let output: Deno.CommandOutput;
 
   try {
-    output = await new Deno.Command(`du`, { args: [`-sh`, path], signal }).output();
+    // Listings include directory symlinks; -H sizes their targets without following links inside the tree.
+    output = await new Deno.Command(`du`, { args: [`-shH`, path], signal }).output();
   } catch (error) {
     // Only walk the tree when "du" isn't installed (looking at Windows, non WSL, mostly), as it's much slower than "du"
     if (error instanceof Deno.errors.NotFound) {

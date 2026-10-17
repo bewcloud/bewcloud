@@ -34,12 +34,7 @@ async function get({ request, user }: RequestHandlerParams) {
   const directoryPath = `${join(parentPath, name)}/`;
 
   try {
-    await ensureUserPathIsValidAndSecurelyAccessible(user!.id, directoryPath);
-
-    // Get the actual filesystem path
-    const filesRootPath = config.files?.rootPath || 'data-files';
-    const userRootPath = join(filesRootPath, user!.id);
-    const fullDirectoryPath = join(userRootPath, directoryPath);
+    const fullDirectoryPath = await ensureUserPathIsValidAndSecurelyAccessible(user!.id, directoryPath);
 
     // Pre-flight: directory must exist and be readable before we spawn zip
     try {

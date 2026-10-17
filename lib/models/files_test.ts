@@ -1,4 +1,4 @@
-import { assertEquals } from '@std/assert';
+import { assert, assertEquals } from '@std/assert';
 import { join, relative } from '@std/path';
 
 import { AppConfig } from '/lib/config.ts';
@@ -232,11 +232,26 @@ Deno.test('that DirectoryModel.create does not create a directory outside the us
   }
 });
 
-// Puts a fake "du" first on the PATH, which appends "started"/"finished" to the returned log path
+// PATH is shared by parallel test workers, but Deno.Command belongs to this worker.
+async function withDuCommand(commandPath: string, test: () => Promise<void>) {
+  const OriginalCommand = Deno.Command;
+
+  Deno.Command = class extends OriginalCommand {
+    constructor(command: string | URL, options?: Deno.CommandOptions) {
+      super(command === 'du' ? commandPath : command, options);
+    }
+  };
+
+  try {
+    await test();
+  } finally {
+    Deno.Command = OriginalCommand;
+  }
+}
+
 async function withFakeDu(duration: string, test: (logPath: string) => Promise<void>) {
   const binPath = await Deno.makeTempDir();
   const logPath = join(binPath, 'du.log');
-  const originalPath = Deno.env.get('PATH') || '';
 
   await Deno.writeTextFile(
     join(binPath, 'du'),
@@ -244,12 +259,9 @@ async function withFakeDu(duration: string, test: (logPath: string) => Promise<v
     { mode: 0o755 },
   );
 
-  Deno.env.set('PATH', `${binPath}:${originalPath}`);
-
   try {
-    await test(logPath);
+    await withDuCommand(join(binPath, 'du'), () => test(logPath));
   } finally {
-    Deno.env.set('PATH', originalPath);
     await Deno.remove(binPath, { recursive: true });
   }
 }
@@ -257,6 +269,40 @@ async function withFakeDu(duration: string, test: (logPath: string) => Promise<v
 async function readLog(logPath: string): Promise<string[]> {
   return (await Deno.readTextFile(logPath)).split('\n').filter(Boolean);
 }
+
+Deno.test('that a fake du does not change PATH for other test workers', async () => {
+  const originalPath = Deno.env.get('PATH');
+
+  await withFakeDu('0', async () => {
+    assertEquals(await getDirectorySize(`/nonexistent/${crypto.randomUUID()}`), 12 * 1024);
+    assertEquals(Deno.env.get('PATH'), originalPath);
+  });
+});
+
+Deno.test('that getDirectorySize follows the requested directory symlink but not nested symlinks', async () => {
+  const directoryPath = await Deno.makeTempDir();
+  const targetPath = join(directoryPath, 'target');
+  const outsidePath = join(directoryPath, 'outside');
+  const linkPath = join(directoryPath, 'link');
+
+  try {
+    await Deno.mkdir(targetPath);
+    await Deno.mkdir(outsidePath);
+    const contents = new Uint8Array(12 * 1024 * 1024);
+    await Deno.writeFile(join(targetPath, 'file.bin'), contents);
+    await Deno.writeFile(join(outsidePath, 'file.bin'), contents);
+    await Deno.symlink(outsidePath, join(targetPath, 'nested-link'), { type: 'dir' });
+    await Deno.symlink(targetPath, linkPath, { type: 'dir' });
+
+    const sizeInBytes = await getDirectorySize(linkPath);
+
+    assert(sizeInBytes !== null);
+    assert(sizeInBytes >= 12 * 1024 * 1024);
+    assert(sizeInBytes < 20 * 1024 * 1024);
+  } finally {
+    await Deno.remove(directoryPath, { recursive: true });
+  }
+});
 
 Deno.test('that getDirectorySize recalculates fast directories every time', async () => {
   await withFakeDu('0', async (logPath) => {
@@ -269,21 +315,17 @@ Deno.test('that getDirectorySize recalculates fast directories every time', asyn
   });
 });
 
-// Puts a fake "du" first on the PATH that runs the given script instead
 async function withScriptedDu(script: string, test: () => Promise<void>) {
   const binPath = await Deno.makeTempDir();
-  const originalPath = Deno.env.get('PATH') || '';
   const originalConsoleError = console.error;
 
   await Deno.writeTextFile(join(binPath, 'du'), `#!/bin/sh\n${script}\n`, { mode: 0o755 });
 
-  Deno.env.set('PATH', `${binPath}:${originalPath}`);
   console.error = () => {};
 
   try {
-    await test();
+    await withDuCommand(join(binPath, 'du'), test);
   } finally {
-    Deno.env.set('PATH', originalPath);
     console.error = originalConsoleError;
     await Deno.remove(binPath, { recursive: true });
   }
@@ -311,18 +353,16 @@ Deno.test('that getDirectorySize uses what du could read when it fails partway',
 Deno.test('that getDirectorySize walks the directory when du is missing', async () => {
   const binPath = await Deno.makeTempDir();
   const directoryPath = await Deno.makeTempDir();
-  const originalPath = Deno.env.get('PATH') || '';
 
   await Deno.mkdir(join(directoryPath, 'subdirectory'));
   await Deno.writeTextFile(join(directoryPath, 'file.txt'), '12345');
   await Deno.writeTextFile(join(directoryPath, 'subdirectory', 'file.txt'), '123');
 
-  Deno.env.set('PATH', binPath);
-
   try {
-    assertEquals(await getDirectorySize(directoryPath), 8);
+    await withDuCommand(join(binPath, 'du'), async () => {
+      assertEquals(await getDirectorySize(directoryPath), 8);
+    });
   } finally {
-    Deno.env.set('PATH', originalPath);
     await Deno.remove(binPath, { recursive: true });
     await Deno.remove(directoryPath, { recursive: true });
   }

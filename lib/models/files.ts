@@ -42,17 +42,19 @@ export class DirectoryModel {
       ? await FileShareModel.getByParentFilePath(userId, path)
       : [];
 
-    for (const entry of directoryEntries) {
+    const directorySizes = await getDirectorySizes(directoryEntries.map((entry) => join(rootPath, entry.name)));
+
+    for (const [index, entry] of directoryEntries.entries()) {
       const stat = await Deno.stat(join(rootPath, entry.name));
 
-      const directorySize = await getDirectorySize(join(rootPath, entry.name));
+      const directorySize = directorySizes[index];
 
       const directory: Directory = {
         user_id: userId,
         parent_path: path,
         directory_name: entry.name,
         has_write_access: true,
-        size_in_bytes: directorySize || stat.size,
+        size_in_bytes: directorySize,
         file_share_id: fileShares.find((fileShare) => fileShare.file_path === `${join(path, entry.name)}/`)?.id || null,
         updated_at: stat.mtime || new Date(),
         created_at: stat.birthtime || new Date(),
@@ -134,7 +136,11 @@ export class DirectoryModel {
       const output = new TextDecoder().decode(stdout);
       const matchingDirectories = output.split('\n').map((directoryPath) => directoryPath.trim()).filter(Boolean);
 
-      for (const relativeDirectoryPath of matchingDirectories) {
+      const directorySizes = await getDirectorySizes(
+        matchingDirectories.map((relativeDirectoryPath) => join(rootPath, relativeDirectoryPath)),
+      );
+
+      for (const [index, relativeDirectoryPath] of matchingDirectories.entries()) {
         const fileShares = (await AppConfig.isPublicFileSharingAllowed())
           ? await FileShareModel.getByParentFilePath(userId, relativeDirectoryPath)
           : [];
@@ -147,14 +153,14 @@ export class DirectoryModel {
           parentPath = '/';
         }
 
-        const directorySize = await getDirectorySize(join(rootPath, relativeDirectoryPath));
+        const directorySize = directorySizes[index];
 
         const directory: Directory = {
           user_id: userId,
           parent_path: parentPath,
           directory_name: directoryName,
           has_write_access: true,
-          size_in_bytes: directorySize || stat.size,
+          size_in_bytes: directorySize,
           file_share_id: fileShares.find((fileShare) =>
             fileShare.file_path === `${join(relativeDirectoryPath, directoryName)}/`
           )?.id || null,
@@ -821,61 +827,191 @@ export async function getPathInfo(userId: string, path: string): Promise<{ isDir
   };
 }
 
-async function getDirectorySizeFallback(path: string): Promise<number> {
+async function getDirectorySizeFallback(path: string, signal: AbortSignal): Promise<number> {
   let totalSize = 0;
   try {
     for await (const entry of Deno.readDir(path)) {
+      signal.throwIfAborted();
       const entryPath = join(path, entry.name);
       const stat = await Deno.lstat(entryPath);
       if (stat.isDirectory) {
-        totalSize += await getDirectorySizeFallback(entryPath);
+        totalSize += await getDirectorySizeFallback(entryPath, signal);
       } else {
         totalSize += stat.size;
       }
     }
   } catch (error) {
+    if (signal.aborted) {
+      throw error;
+    }
+
     console.error(error);
   }
   return totalSize;
 }
 
+const DIRECTORY_SIZE_WAIT_IN_MILLISECONDS = 1_000;
+const DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS = 5 * 60_000;
+const SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS = 10 * 60_000;
+const MAX_RUNNING_DIRECTORY_SIZES = 8;
+const MAX_CACHED_DIRECTORY_SIZES = 1_000;
+
 // NOTE: We're using `-h` (human readable) and parsing the output because that's more stable than `-B 1B` across different systems for a reliable byte size.
-export async function getDirectorySize(path: string): Promise<number> {
+async function calculateDirectorySizeWithDu(path: string, signal: AbortSignal): Promise<number> {
+  let output: Deno.CommandOutput;
+
   try {
-    const controller = new AbortController();
-    const commandTimeout = setTimeout(() => controller.abort(), 5_000);
-
-    const command = new Deno.Command(`du`, {
-      args: [
-        `-sh`,
-        path,
-      ],
-      signal: controller.signal,
-    });
-
-    const { code, stdout, stderr } = await command.output();
-
-    if (commandTimeout) {
-      clearTimeout(commandTimeout);
+    output = await new Deno.Command(`du`, { args: [`-sh`, path], signal }).output();
+  } catch (error) {
+    // Only walk the tree when "du" isn't installed (looking at Windows, non WSL, mostly), as it's much slower than "du"
+    if (error instanceof Deno.errors.NotFound) {
+      return getDirectorySizeFallback(path, signal);
     }
 
-    if (code !== 0) {
-      if (stderr) {
-        throw new Error(new TextDecoder().decode(stderr));
+    throw error;
+  }
+
+  signal.throwIfAborted();
+
+  const value = new TextDecoder().decode(output.stdout).split('\t')[0].trim();
+
+  if (output.code !== 0) {
+    const error = new Error(new TextDecoder().decode(output.stderr) || `"du" exited with code ${output.code}`);
+
+    if (!value) {
+      throw error;
+    }
+
+    // "du" still prints the size of what it could read, e.g. past an unreadable subdirectory
+    console.error(error);
+  }
+
+  const number = Number.parseFloat(value.match(/\d+(\.\d+)?/)?.[0] || '0');
+  const unit = value.match(/[A-Z]+/)?.[0] || 'B'.toUpperCase();
+
+  return bytesFromHumanFileSize(`${number} ${unit}B`);
+}
+
+// Null only when it took too long, so a failure doesn't sort as the biggest directory or zip as a big one
+async function calculateDirectorySize(path: string): Promise<number | null> {
+  const controller = new AbortController();
+  const commandTimeout = setTimeout(() => controller.abort(), DIRECTORY_SIZE_TIMEOUT_IN_MILLISECONDS);
+
+  try {
+    return await calculateDirectorySizeWithDu(path, controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      return null;
+    }
+
+    console.error(error);
+    return 0;
+  } finally {
+    clearTimeout(commandTimeout);
+  }
+}
+
+interface CachedDirectorySize {
+  sizeInBytes: number;
+  calculatedAt: number;
+}
+
+// Only slow directories are cached, so fast ones stay current after uploads/deletes
+const cachedDirectorySizes = new Map<string, CachedDirectorySize>();
+const directorySizesInProgress = new Map<string, Promise<number | null>>();
+
+// Evicts the oldest measurement, so paths that are renamed, deleted or never listed again don't stay in memory
+export function cacheDirectorySize(path: string, sizeInBytes: number) {
+  cachedDirectorySizes.delete(path);
+  cachedDirectorySizes.set(path, { sizeInBytes, calculatedAt: Date.now() });
+
+  if (cachedDirectorySizes.size > MAX_CACHED_DIRECTORY_SIZES) {
+    const [oldestPath] = cachedDirectorySizes.keys();
+    cachedDirectorySizes.delete(oldestPath);
+  }
+}
+
+// Null once too many are running, since each one keeps going after its listing stops waiting
+function startCalculatingDirectorySize(path: string): Promise<number | null> | null {
+  const inProgress = directorySizesInProgress.get(path);
+
+  if (inProgress) {
+    return inProgress;
+  }
+
+  if (directorySizesInProgress.size >= MAX_RUNNING_DIRECTORY_SIZES) {
+    return null;
+  }
+
+  const calculation = (async () => {
+    const startedAt = Date.now();
+
+    try {
+      const sizeInBytes = await calculateDirectorySize(path);
+
+      if (sizeInBytes !== null) {
+        if (Date.now() - startedAt >= DIRECTORY_SIZE_WAIT_IN_MILLISECONDS) {
+          cacheDirectorySize(path, sizeInBytes);
+        } else {
+          cachedDirectorySizes.delete(path);
+        }
       }
 
-      throw new Error(`Unknown error running "du"`);
+      return sizeInBytes;
+    } finally {
+      directorySizesInProgress.delete(path);
     }
+  })();
 
-    const output = new TextDecoder().decode(stdout);
+  directorySizesInProgress.set(path, calculation);
 
-    const value = output.split('\t')[0].trim();
+  return calculation;
+}
 
-    const number = Number.parseFloat(value.match(/\d+(\.\d+)?/)?.[0] || '0');
-    const unit = value.match(/[A-Z]+/)?.[0] || 'B'.toUpperCase();
+/**
+ * Gets the size of a directory, or its last known size (or null) if "du" takes too long, in which case it continues in the background, or if too many are already running.
+ *
+ * @param path - The full path of the directory
+ */
+export async function getDirectorySize(path: string): Promise<number | null> {
+  const cached = cachedDirectorySizes.get(path);
 
-    return bytesFromHumanFileSize(`${number} ${unit}B`);
-  } catch {
-    return getDirectorySizeFallback(path);
+  if (cached && Date.now() - cached.calculatedAt < SLOW_DIRECTORY_SIZE_MAX_AGE_IN_MILLISECONDS) {
+    return cached.sizeInBytes;
   }
+
+  const calculation = startCalculatingDirectorySize(path);
+
+  if (!calculation) {
+    return cached?.sizeInBytes ?? null;
+  }
+
+  const wait = Promise.withResolvers<undefined>();
+  const waitTimeout = setTimeout(() => wait.resolve(undefined), DIRECTORY_SIZE_WAIT_IN_MILLISECONDS);
+
+  const sizeInBytes = await Promise.race([calculation, wait.promise]);
+
+  clearTimeout(waitTimeout);
+
+  if (sizeInBytes === undefined) {
+    return cached?.sizeInBytes ?? null;
+  }
+
+  return sizeInBytes;
+}
+
+// A few at a time, since a directory can have hundreds of subdirectories, each spawning "du"
+export async function getDirectorySizes(paths: string[]): Promise<(number | null)[]> {
+  const directorySizes: (number | null)[] = [];
+  let nextIndex = 0;
+
+  async function sizeRemainingPaths() {
+    for (let index = nextIndex++; index < paths.length; index = nextIndex++) {
+      directorySizes[index] = await getDirectorySize(paths[index]);
+    }
+  }
+
+  await Promise.all(Array.from({ length: MAX_RUNNING_DIRECTORY_SIZES }, sizeRemainingPaths));
+
+  return directorySizes;
 }

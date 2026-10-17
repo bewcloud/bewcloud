@@ -96,7 +96,7 @@ export interface Directory {
   parent_path: string;
   directory_name: string;
   has_write_access: boolean;
-  size_in_bytes: number;
+  size_in_bytes: number | null;
   file_share_id: string | null;
   updated_at: Date;
   created_at: Date;

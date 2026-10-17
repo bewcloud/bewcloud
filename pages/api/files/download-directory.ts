@@ -59,7 +59,10 @@ async function get({ request, user }: RequestHandlerParams) {
     }
 
     const directorySizeInBytes = await getDirectorySize(fullDirectoryPath);
-    const compressionArgs = directorySizeInBytes > FAST_COMPRESSION_MIN_SIZE_IN_BYTES ? ['-1'] : [];
+    // An unknown size means it could not be calculated quickly, so the directory is likely big
+    const compressionArgs = directorySizeInBytes === null || directorySizeInBytes > FAST_COMPRESSION_MIN_SIZE_IN_BYTES
+      ? ['-1']
+      : [];
 
     // Use the zip command to create the archive, streaming its stdout straight to the client instead of buffering the whole archive in memory
     let child: Deno.ChildProcess;

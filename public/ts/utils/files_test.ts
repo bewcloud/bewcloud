@@ -1,6 +1,13 @@
 import { assertEquals } from '@std/assert';
 
-import { bytesFromHumanFileSize, formatUploadError, getUploadErrorAction, humanFileSize } from './files.ts';
+import { Directory } from '/lib/types.ts';
+import {
+  bytesFromHumanFileSize,
+  formatUploadError,
+  getUploadErrorAction,
+  humanFileSize,
+  sortDirectories,
+} from './files.ts';
 
 Deno.test('that humanFileSize works', () => {
   const tests: { input: number; expected: string }[] = [
@@ -92,6 +99,20 @@ Deno.test('that bytesFromHumanFileSize works', () => {
     const output = bytesFromHumanFileSize(test.input);
     assertEquals(output, test.expected, `Expected ${test.input} to be ${test.expected} but got ${output}`);
   }
+});
+
+Deno.test('that sortDirectories sorts unknown sizes as the biggest', () => {
+  const directories = [
+    { directory_name: 'unknown', size_in_bytes: null },
+    { directory_name: 'big', size_in_bytes: 2_000 },
+    { directory_name: 'small', size_in_bytes: 1_000 },
+  ] as Directory[];
+
+  const ascending = sortDirectories(directories, { sortBy: 'size_in_bytes', sortOrder: 'asc' });
+  assertEquals(ascending.map((directory) => directory.directory_name), ['small', 'big', 'unknown']);
+
+  const descending = sortDirectories(directories, { sortBy: 'size_in_bytes', sortOrder: 'desc' });
+  assertEquals(descending.map((directory) => directory.directory_name), ['unknown', 'big', 'small']);
 });
 
 Deno.test('that getUploadErrorAction shows each worker error once and clears it when the worker drops it', () => {

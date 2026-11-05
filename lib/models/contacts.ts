@@ -138,9 +138,19 @@ export class ContactModel {
 
     const addressBooks: AddressBook[] = davAddressBooks.map((davAddressBook) => {
       const uid = davAddressBook.url.split('/').filter(Boolean).pop()!;
+      let displayName = davAddressBook.displayName;
+
+      if (displayName) {
+        try {
+          displayName = decodeURIComponent(displayName);
+        } catch {
+          // Other CardDAV clients can store names with literal percent signs.
+        }
+      }
 
       return {
         ...davAddressBook,
+        displayName,
         uid,
       };
     });

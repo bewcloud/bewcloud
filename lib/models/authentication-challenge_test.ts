@@ -4,10 +4,22 @@ import Database, { sql } from '/lib/interfaces/database.ts';
 
 import { AuthenticationChallengeModel } from '/lib/models/authentication-challenge.ts';
 
-// These tests need a reachable PostgreSQL instance, so they are skipped without one (like in CI)
-const isPostgresConfigured = Boolean(Deno.env.get('POSTGRESQL_HOST'));
-
 const db = new Database({ throwOnConnectionError: true });
+
+// Skip integration tests when PostgreSQL is unconfigured or not running.
+let isPostgresAvailable = Boolean(Deno.env.get('POSTGRESQL_HOST'));
+
+if (isPostgresAvailable) {
+  try {
+    await db.query(sql`SELECT 1`);
+  } catch (error) {
+    if (!(error instanceof Deno.errors.ConnectionRefused)) {
+      throw error;
+    }
+
+    isPostgresAvailable = false;
+  }
+}
 
 async function insertChallenge(challenge: string, expiresAt: Date) {
   await db.query(
@@ -33,7 +45,7 @@ async function isChallengeStored(challenge: string) {
 
 Deno.test({
   name: 'that an authentication challenge can only be consumed once',
-  ignore: !isPostgresConfigured,
+  ignore: !isPostgresAvailable,
   fn: async () => {
     const challenge = `test-consumed-once-${crypto.randomUUID()}`;
 
@@ -50,7 +62,7 @@ Deno.test({
 
 Deno.test({
   name: 'that a challenge the server never issued is rejected',
-  ignore: !isPostgresConfigured,
+  ignore: !isPostgresAvailable,
   fn: async () => {
     assertEquals(
       await AuthenticationChallengeModel.consume(`never-issued-${crypto.randomUUID()}`),
@@ -61,7 +73,7 @@ Deno.test({
 
 Deno.test({
   name: 'that an expired challenge is rejected',
-  ignore: !isPostgresConfigured,
+  ignore: !isPostgresAvailable,
   fn: async () => {
     const challenge = `test-expired-${crypto.randomUUID()}`;
     const anHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -74,7 +86,7 @@ Deno.test({
 
 Deno.test({
   name: 'that stale challenges are purged when new ones are created',
-  ignore: !isPostgresConfigured,
+  ignore: !isPostgresAvailable,
   fn: async () => {
     const staleChallenge = `test-stale-${crypto.randomUUID()}`;
     const freshChallenge = `test-fresh-${crypto.randomUUID()}`;

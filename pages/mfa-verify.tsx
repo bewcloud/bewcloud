@@ -11,6 +11,7 @@ import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
 import {
   getEnabledMultiFactorAuthMethodsFromUser,
   isMultiFactorAuthEnabledForUser,
+  shouldSendEmailCodeOnLogin,
 } from '/public/ts/utils/multi-factor-auth.ts';
 import { TOTPModel } from '/lib/models/multi-factor-auth/totp.ts';
 import { EmailModel } from '/lib/models/multi-factor-auth/email.ts';
@@ -49,6 +50,7 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
     email: user.email,
     redirectUrl,
     availableMethods,
+    isEmailCodeSent: shouldSendEmailCodeOnLogin(user),
   });
 
   return basicLayoutResponse(htmlContent, {
@@ -86,10 +88,43 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
   const availableMethods = enabledMethods.map((method) => method.type);
 
+  let isEmailCodeSent = shouldSendEmailCodeOnLogin(user);
+
   try {
     const formData = await request.formData();
     const code = getFormDataField(formData, 'code');
     const token = getFormDataField(formData, 'token');
+    const shouldSendEmailCode = getFormDataField(formData, 'send_email_code') === 'true';
+
+    if (shouldSendEmailCode) {
+      const emailMethod = enabledMethods.find((method) => method.type === 'email');
+
+      if (!emailMethod) {
+        throw new Error('Email verification is not enabled');
+      }
+
+      await EmailModel.createAndSendCode(emailMethod.id, user);
+
+      const htmlContent = defaultHtmlContent({
+        email: user.email,
+        redirectUrl,
+        availableMethods,
+        isEmailCodeSent: true,
+      });
+
+      return basicLayoutResponse(htmlContent, {
+        currentPath: match.pathname.input,
+        titlePrefix,
+        match,
+        request,
+        session,
+        isRunningLocally,
+      });
+    }
+
+    if (code) {
+      isEmailCodeSent = true;
+    }
 
     if (!code && !token) {
       throw new Error('Authentication code/token is required');
@@ -146,6 +181,7 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
       email: user.email,
       redirectUrl,
       availableMethods,
+      isEmailCodeSent,
     });
 
     return basicLayoutResponse(htmlContent, {
@@ -159,7 +195,7 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   }
 }
 
-function defaultHtmlContent({ email, redirectUrl, availableMethods, error }: {
+function defaultHtmlContent({ email, redirectUrl, availableMethods, isEmailCodeSent, error }: {
   error?: {
     title: string;
     message: string;
@@ -167,12 +203,14 @@ function defaultHtmlContent({ email, redirectUrl, availableMethods, error }: {
   email?: string;
   redirectUrl?: string;
   availableMethods?: MultiFactorAuthMethodType[];
+  isEmailCodeSent?: boolean;
 }) {
   const multiFactorAuthVerifyFormReactNode = (
     <MultiFactorAuthVerifyForm
       email={email || ''}
       redirectUrl={redirectUrl || '/'}
       availableMethods={availableMethods || []}
+      isEmailCodeSent={isEmailCodeSent || false}
       error={error}
     />
   );

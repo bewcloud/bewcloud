@@ -4,6 +4,7 @@ import { MultiFactorAuthMethod, User } from '/lib/types.ts';
 import {
   getEnabledMultiFactorAuthMethodsFromUser,
   getMultiFactorAuthMethodByIdFromUser,
+  shouldSendEmailCodeOnLogin,
 } from '/public/ts/utils/multi-factor-auth.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
@@ -78,12 +79,14 @@ export class MultiFactorAuthModel {
     });
 
     try {
-      const enabledMultiFactorAuthMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
+      if (shouldSendEmailCodeOnLogin(user)) {
+        const enabledMultiFactorAuthMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
 
-      const emailMethod = enabledMultiFactorAuthMethods.find((method) => method.type === 'email');
+        const emailMethod = enabledMultiFactorAuthMethods.find((method) => method.type === 'email');
 
-      if (emailMethod) {
-        await EmailModel.createAndSendCode(emailMethod.id, user);
+        if (emailMethod) {
+          await EmailModel.createAndSendCode(emailMethod.id, user);
+        }
       }
     } catch (error) {
       console.error(error);

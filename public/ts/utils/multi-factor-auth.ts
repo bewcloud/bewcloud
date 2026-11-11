@@ -21,6 +21,19 @@ export function getMultiFactorAuthMethodByIdFromUser(
   return getMultiFactorAuthMethodsFromUser(user).find((method) => method.id === id);
 }
 
+/**
+ * The email code is only sent automatically at login if it's the only way to complete multi-factor authentication.
+ * Otherwise, the user has to ask for it, so they don't get an email they don't need when using another method.
+ */
+export function shouldSendEmailCodeOnLogin(
+  user: { extra: Pick<User['extra'], 'multi_factor_auth_methods'> },
+): boolean {
+  const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
+
+  return enabledMethods.some((method) => method.type === 'email') &&
+    enabledMethods.every((method) => method.type === 'email');
+}
+
 export function isMultiFactorAuthEnabledForUser(
   user: { extra: Pick<User['extra'], 'multi_factor_auth_methods'> },
 ): boolean {

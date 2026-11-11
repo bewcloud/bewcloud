@@ -1,10 +1,12 @@
 import page, { RequestHandlerParams } from '/lib/page.ts';
 
-import { ArticleModel } from '/lib/models/news.ts';
+import { ArticleModel, FeedModel } from '/lib/models/news.ts';
 import { AppConfig } from '/lib/config.ts';
 
 export interface RequestBody {
   articleId: string;
+  /** Only used when `articleId` is `all`, to limit which feed's articles are marked as read */
+  feedId?: string;
 }
 
 export interface ResponseBody {
@@ -20,7 +22,15 @@ async function post({ request, user }: RequestHandlerParams) {
 
   if (requestBody.articleId) {
     if (requestBody.articleId === 'all') {
-      await ArticleModel.markAllRead(user!.id);
+      if (requestBody.feedId) {
+        const feed = await FeedModel.get(requestBody.feedId, user!.id);
+
+        if (!feed) {
+          return new Response('Not found', { status: 404 });
+        }
+      }
+
+      await ArticleModel.markAllRead(user!.id, requestBody.feedId);
     } else {
       const article = await ArticleModel.get(requestBody.articleId, user!.id);
 

@@ -1,10 +1,10 @@
 import page, { RequestHandlerParams } from '/lib/page.ts';
 
 import { AppConfig } from '/lib/config.ts';
-import { ArticleModel } from '/lib/models/news.ts';
+import { ArticleModel, FeedModel } from '/lib/models/news.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
-import { NewsFeedArticle } from '/lib/types.ts';
+import { NewsFeed, NewsFeedArticle } from '/lib/types.ts';
 import Loading from '/components/Loading.ts';
 
 const titlePrefix = 'News';
@@ -15,8 +15,9 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
   }
 
   const userArticles = await ArticleModel.listUnread(user!.id);
+  const userFeeds = await FeedModel.list(user!.id);
 
-  const htmlContent = defaultHtmlContent({ userArticles });
+  const htmlContent = defaultHtmlContent({ userArticles, userFeeds });
 
   return basicLayoutResponse(htmlContent, {
     currentPath: match.pathname.input,
@@ -29,7 +30,11 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
   });
 }
 
-function defaultHtmlContent({ userArticles }: { userArticles: NewsFeedArticle[] }) {
+function defaultHtmlContent(
+  { userArticles, userFeeds }: { userArticles: NewsFeedArticle[]; userFeeds: NewsFeed[] },
+) {
+  const feeds = userFeeds.map((feed) => ({ id: feed.id, title: feed.extra.title || feed.feed_url }));
+
   return html`
     <main id="main">
       <section id="articles">
@@ -51,6 +56,7 @@ function defaultHtmlContent({ userArticles }: { userArticles: NewsFeedArticle[] 
     if (articlesElement) {
       const articlesApp = h(Articles, {
         initialArticles: ${serializeForInlineScript(userArticles || [])},
+        feeds: ${serializeForInlineScript(feeds)},
       });
 
       render(articlesApp, articlesElement);

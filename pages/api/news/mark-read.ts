@@ -22,7 +22,11 @@ async function post({ request, user }: RequestHandlerParams) {
 
   if (requestBody.articleId) {
     if (requestBody.articleId === 'all') {
-      if (requestBody.feedId) {
+      if (requestBody.feedId !== undefined) {
+        if (typeof requestBody.feedId !== 'string' || requestBody.feedId === '') {
+          return new Response('Bad Request', { status: 400 });
+        }
+
         const feed = await FeedModel.get(requestBody.feedId, user!.id);
 
         if (!feed) {

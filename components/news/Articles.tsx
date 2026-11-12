@@ -168,9 +168,9 @@ export default function Articles({ initialArticles, feeds }: ArticlesProps) {
 
   return (
     <>
-      <section class='flex flex-row items-center justify-between mb-4'>
+      <section class='flex flex-row flex-wrap items-center justify-between gap-y-2 mb-4'>
         <a href='/news/feeds' class='mr-2'>Manage feeds</a>
-        <section class='flex items-center'>
+        <section class='flex flex-wrap items-center'>
           {feeds.length > 1
             ? (
               <select
@@ -279,6 +279,7 @@ export default function Articles({ initialArticles, feeds }: ArticlesProps) {
             <section class='divide-y divide-slate-800 shadow-sm rounded-md'>
               {filteredArticles.map((article) => (
                 <details
+                  key={article.id}
                   class={`group order-first mx-auto max-w-full relative bg-slate-700 duration-150 first:rounded-tl-md first:rounded-tr-md last:rounded-bl-md last:rounded-br-md`}
                 >
                   <summary

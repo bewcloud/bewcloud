@@ -1,12 +1,14 @@
 import { useSignal } from '@preact/signals';
 let hasFetchedAllArticlesOnce = false;
 export default function Articles({
-  initialArticles
+  initialArticles,
+  feeds
 }) {
   const isRefreshing = useSignal(false);
   const articles = useSignal(initialArticles);
   const filter = useSignal({
-    status: 'unread'
+    status: 'unread',
+    feedId: 'all'
   });
   const sessionReadArticleIds = useSignal(new Set());
   const isFilterDropdownOpen = useSignal(false);
@@ -38,6 +40,9 @@ export default function Articles({
     isRefreshing.value = false;
   }
   const filteredArticles = articles.value.filter(article => {
+    if (filter.value.feedId !== 'all' && article.feed_id !== filter.value.feedId) {
+      return false;
+    }
     if (filter.value.status === 'unread') {
       if (article.is_read && !sessionReadArticleIds.value.has(article.id)) {
         return false;
@@ -79,7 +84,11 @@ export default function Articles({
     }
   }
   async function onClickMarkAllRead() {
+    const feedId = filter.value.feedId;
     const newArticles = [...articles.value].map(article => {
+      if (feedId !== 'all' && article.feed_id !== feedId) {
+        return article;
+      }
       article.is_read = true;
       sessionReadArticleIds.value.add(article.id);
       return article;
@@ -87,7 +96,8 @@ export default function Articles({
     articles.value = [...newArticles];
     try {
       const requestBody = {
-        articleId: 'all'
+        articleId: 'all',
+        feedId: feedId === 'all' ? undefined : feedId
       };
       const response = await fetch(`/api/news/mark-read`, {
         method: 'POST',
@@ -119,13 +129,28 @@ export default function Articles({
     isFilterDropdownOpen.value = false;
   }
   return h(Fragment, null, h("section", {
-    class: "flex flex-row items-center justify-between mb-4"
+    class: "flex flex-row flex-wrap items-center justify-between gap-y-2 mb-4"
   }, h("a", {
     href: "/news/feeds",
     class: "mr-2"
   }, "Manage feeds"), h("section", {
-    class: "flex items-center"
-  }, h("section", {
+    class: "flex flex-wrap items-center"
+  }, feeds.length > 1 ? h("select", {
+    class: "input-field w-auto! max-w-48 sm:max-w-xs ml-2",
+    name: "feed",
+    id: "feed",
+    title: "Filter by feed",
+    "aria-label": "Filter by feed",
+    value: filter.value.feedId,
+    onChange: event => setNewFilter({
+      feedId: event.currentTarget.value
+    })
+  }, h("option", {
+    value: "all"
+  }, "All feeds"), feeds.map(feed => h("option", {
+    key: feed.id,
+    value: feed.id
+  }, feed.title))) : null, h("section", {
     class: "relative inline-block text-left ml-2"
   }, h("div", null, h("button", {
     type: "button",
@@ -192,6 +217,7 @@ export default function Articles({
   }, "There are no new articles to show.") : h("section", {
     class: "divide-y divide-slate-800 shadow-sm rounded-md"
   }, filteredArticles.map(article => h("details", {
+    key: article.id,
     class: `group order-first mx-auto max-w-full relative bg-slate-700 duration-150 first:rounded-tl-md first:rounded-tr-md last:rounded-bl-md last:rounded-br-md`
   }, h("summary", {
     class: `bg-slate-700 hover:bg-slate-600 px-4 py-4 cursor-pointer flex justify-between group-first:rounded-tl-md group-first:rounded-tr-md ${article.is_read ? 'opacity-50' : 'font-semibold'}`,

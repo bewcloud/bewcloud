@@ -34,13 +34,6 @@ export class EmailModel {
     await EmailTransportModel.sendLoginVerificationEmail(user.email, code);
   }
 
-  static async hasPendingCode(
-    methodId: string,
-    user: User,
-  ): Promise<boolean> {
-    return await VerificationCodeModel.hasPending(user, `${user.email}-${methodId}`, 'email');
-  }
-
   static async verifyCode(
     methodId: string,
     code: string,

@@ -1,7 +1,7 @@
 import { renderToString } from 'preact-render-to-string';
 
 import page, { RequestHandlerParams } from '/lib/page.ts';
-import { MultiFactorAuthMethod, MultiFactorAuthMethodType, User } from '/lib/types.ts';
+import { MultiFactorAuthMethodType } from '/lib/types.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { createSessionResponse } from '/lib/auth.ts';
 import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
@@ -21,20 +21,6 @@ import MultiFactorAuthVerifyForm from '/components/auth/MultiFactorAuthVerifyFor
 
 const titlePrefix = 'Multi-Factor Authentication Verification';
 
-async function isEmailCodePending(user: User, enabledMethods: MultiFactorAuthMethod[]) {
-  if (shouldSendEmailCodeOnLogin(user)) {
-    return true;
-  }
-
-  const emailMethod = enabledMethods.find((method) => method.type === 'email');
-
-  if (!emailMethod) {
-    return false;
-  }
-
-  return await EmailModel.hasPendingCode(emailMethod.id, user);
-}
-
 async function get({ request, match, session, isRunningLocally }: RequestHandlerParams) {
   const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
 
@@ -45,7 +31,7 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
   const searchParams = new URL(request.url).searchParams;
   const redirectUrl = getSafeRedirectUrl(searchParams.get('redirect'));
 
-  const { user } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
+  const { user, isEmailCodeSent: wasEmailCodeSent } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 
   if (!user) {
     return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
@@ -64,7 +50,7 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
     email: user.email,
     redirectUrl,
     availableMethods,
-    isEmailCodeSent: await isEmailCodePending(user, enabledMethods),
+    isEmailCodeSent: shouldSendEmailCodeOnLogin(user) || Boolean(wasEmailCodeSent),
   });
 
   return basicLayoutResponse(htmlContent, {
@@ -87,7 +73,7 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   const searchParams = new URL(request.url).searchParams;
   const redirectUrl = getSafeRedirectUrl(searchParams.get('redirect'));
 
-  const { user } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
+  const { user, isEmailCodeSent: wasEmailCodeSent } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 
   if (!user) {
     return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
@@ -102,7 +88,7 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
   const availableMethods = enabledMethods.map((method) => method.type);
 
-  let isEmailCodeSent = false;
+  let isEmailCodeSent = shouldSendEmailCodeOnLogin(user) || Boolean(wasEmailCodeSent);
 
   const renderPage = (error?: { title: string; message: string }) => {
     const htmlContent = defaultHtmlContent({
@@ -124,8 +110,6 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   };
 
   try {
-    isEmailCodeSent = await isEmailCodePending(user, enabledMethods);
-
     const formData = await request.formData();
     const code = getFormDataField(formData, 'code');
     const token = getFormDataField(formData, 'token');
@@ -142,7 +126,7 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
 
       isEmailCodeSent = true;
 
-      return renderPage();
+      return await MultiFactorAuthModel.markEmailCodeAsSent(request, user, await renderPage());
     }
 
     if (code) {

@@ -24,6 +24,13 @@ import { EmailModel } from './multi-factor-auth/email.ts';
 const COOKIE_NAME = `${AUTH_COOKIE_NAME}-mfa`;
 const MFA_SESSION_ID = 'mfa';
 
+interface MultiFactorAuthJwtData extends JwtData {
+  data: JwtData['data'] & {
+    // Scoped to the pending login (this cookie), so a new login starts without it
+    is_email_code_sent?: boolean;
+  };
+}
+
 export interface MultiFactorAuthSetup {
   method: MultiFactorAuthMethod;
   qrCodeUrl?: string;
@@ -97,12 +104,21 @@ export class MultiFactorAuthModel {
     return responseWithCookie;
   }
 
+  static async markEmailCodeAsSent(request: Request, user: User, response: Response) {
+    return await this.createSessionCookie(request, user, response, { isEmailCodeSent: true });
+  }
+
   private static async createSessionCookie(
     request: Request,
     user: User,
     response: Response,
+    { isEmailCodeSent = false }: { isEmailCodeSent?: boolean } = {},
   ) {
-    const token = await generateToken({ user_id: user.id, session_id: MFA_SESSION_ID });
+    const token = await generateToken<MultiFactorAuthJwtData['data']>({
+      user_id: user.id,
+      session_id: MFA_SESSION_ID,
+      ...(isEmailCodeSent ? { is_email_code_sent: true } : {}),
+    });
 
     const cookie: Cookie = {
       name: COOKIE_NAME,
@@ -124,7 +140,7 @@ export class MultiFactorAuthModel {
     return response;
   }
 
-  static async getDataFromRequest(request: Request): Promise<{ user: User } | null> {
+  static async getDataFromRequest(request: Request): Promise<{ user: User; isEmailCodeSent: boolean } | null> {
     const cookies = getCookies(request.headers);
 
     if (cookies[COOKIE_NAME]) {
@@ -138,7 +154,9 @@ export class MultiFactorAuthModel {
     return null;
   }
 
-  private static async getDataFromCookie(cookieValue: string): Promise<{ user: User } | null> {
+  private static async getDataFromCookie(
+    cookieValue: string,
+  ): Promise<{ user: User; isEmailCodeSent: boolean } | null> {
     if (!cookieValue) {
       return null;
     }
@@ -146,7 +164,7 @@ export class MultiFactorAuthModel {
     const key = await generateKey(JWT_SECRET);
 
     try {
-      const token = await verifyAuthJwt(key, cookieValue) as JwtData;
+      const token = await verifyAuthJwt<MultiFactorAuthJwtData>(key, cookieValue);
 
       const user = await UserModel.getById(token.data.user_id);
 
@@ -154,7 +172,7 @@ export class MultiFactorAuthModel {
         throw new Error('Not Found');
       }
 
-      return { user };
+      return { user, isEmailCodeSent: token.data.is_email_code_sent === true };
     } catch (error) {
       console.error(error);
     }

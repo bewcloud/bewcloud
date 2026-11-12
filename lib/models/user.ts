@@ -269,28 +269,6 @@ export class VerificationCodeModel {
     return code;
   }
 
-  static async hasPending(
-    user: User,
-    verificationId: string,
-    type: VerificationCode['verification']['type'],
-  ) {
-    const verificationCode = (await db.query<VerificationCode>(
-      sql`SELECT "id" FROM "bewcloud_verification_codes"
-        WHERE "user_id" = $1 AND
-          "verification" ->> 'type' = $2 AND
-          "verification" ->> 'id' = $3 AND
-          "expires_at" > now()
-        LIMIT 1`,
-      [
-        user.id,
-        type,
-        verificationId,
-      ],
-    ))[0];
-
-    return Boolean(verificationCode);
-  }
-
   static async validate(
     user: User,
     verificationId: string,

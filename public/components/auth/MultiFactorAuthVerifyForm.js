@@ -3,6 +3,7 @@ export default function MultiFactorAuthVerifyForm({
   email,
   redirectUrl,
   availableMethods,
+  isEmailCodeSent,
   error
 }) {
   const hasPasskey = availableMethods.includes('passkey');
@@ -18,33 +19,7 @@ export default function MultiFactorAuthVerifyForm({
     class: "mt-2 text-center text-sm text-gray-300"
   }, "You are required to authenticate with an additional method")), error ? h("section", {
     class: "notification-error"
-  }, h("h3", null, error.title), h("p", null, error.message)) : null, hasEmail ? h("form", {
-    class: "mb-6",
-    method: "POST",
-    action: `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`
-  }, h("fieldset", {
-    class: "block mb-4"
-  }, h("label", {
-    class: "text-slate-300 block pb-1",
-    for: "token"
-  }, "Email Verification Code"), h("input", {
-    type: "text",
-    id: "code",
-    name: "code",
-    placeholder: "123456",
-    class: "mt-1 input-field",
-    autocomplete: "off",
-    required: true
-  })), h("section", {
-    class: "flex justify-center mt-8 mb-4"
-  }, h("button", {
-    type: "submit",
-    class: "button"
-  }, "Verify Code"))) : null, hasEmail && hasTotp ? h("section", {
-    class: "text-center -mt-10 mb-6 block"
-  }, h("p", {
-    class: "text-gray-400 text-sm"
-  }, "or")) : null, hasTotp ? h("form", {
+  }, h("h3", null, error.title), h("p", null, error.message)) : null, hasTotp ? h("form", {
     class: "mb-6",
     method: "POST",
     action: `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`
@@ -66,7 +41,46 @@ export default function MultiFactorAuthVerifyForm({
   }, h("button", {
     type: "submit",
     class: "button"
-  }, "Verify Code"))) : null, (hasEmail || hasTotp) && hasPasskey ? h("section", {
+  }, "Verify Code"))) : null, hasTotp && hasEmail ? h("section", {
+    class: "text-center -mt-10 mb-6 block"
+  }, h("p", {
+    class: "text-gray-400 text-sm"
+  }, "or")) : null, hasEmail && isEmailCodeSent ? h("form", {
+    class: "mb-6",
+    method: "POST",
+    action: `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`
+  }, h("fieldset", {
+    class: "block mb-4"
+  }, h("label", {
+    class: "text-slate-300 block pb-1",
+    for: "code"
+  }, "Email Verification Code"), h("input", {
+    type: "text",
+    id: "code",
+    name: "code",
+    placeholder: "123456",
+    class: "mt-1 input-field",
+    autocomplete: "off",
+    required: true
+  })), h("section", {
+    class: "flex justify-center mt-8 mb-4"
+  }, h("button", {
+    type: "submit",
+    class: "button"
+  }, "Verify Code"))) : null, hasEmail && !isEmailCodeSent ? h("form", {
+    class: "mb-6",
+    method: "POST",
+    action: `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`
+  }, h("input", {
+    type: "hidden",
+    name: "send_email_code",
+    value: "true"
+  }), h("section", {
+    class: "flex justify-center mt-8 mb-4"
+  }, h("button", {
+    type: "submit",
+    class: "button-secondary"
+  }, "Send 2FA code by email"))) : null, (hasEmail || hasTotp) && hasPasskey ? h("section", {
     class: "text-center -mt-10 mb-6 block"
   }, h("p", {
     class: "text-gray-400 text-sm"

@@ -1,7 +1,7 @@
 import { renderToString } from 'preact-render-to-string';
 
 import page, { RequestHandlerParams } from '/lib/page.ts';
-import { MultiFactorAuthMethodType } from '/lib/types.ts';
+import { MultiFactorAuthMethod, MultiFactorAuthMethodType, User } from '/lib/types.ts';
 import { UserModel } from '/lib/models/user.ts';
 import { createSessionResponse } from '/lib/auth.ts';
 import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
@@ -20,6 +20,20 @@ import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import MultiFactorAuthVerifyForm from '/components/auth/MultiFactorAuthVerifyForm.tsx';
 
 const titlePrefix = 'Multi-Factor Authentication Verification';
+
+async function isEmailCodePending(user: User, enabledMethods: MultiFactorAuthMethod[]) {
+  if (shouldSendEmailCodeOnLogin(user)) {
+    return true;
+  }
+
+  const emailMethod = enabledMethods.find((method) => method.type === 'email');
+
+  if (!emailMethod) {
+    return false;
+  }
+
+  return await EmailModel.hasPendingCode(emailMethod.id, user);
+}
 
 async function get({ request, match, session, isRunningLocally }: RequestHandlerParams) {
   const isMultiFactorAuthEnabled = await AppConfig.isMultiFactorAuthEnabled();
@@ -50,7 +64,7 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
     email: user.email,
     redirectUrl,
     availableMethods,
-    isEmailCodeSent: shouldSendEmailCodeOnLogin(user),
+    isEmailCodeSent: await isEmailCodePending(user, enabledMethods),
   });
 
   return basicLayoutResponse(htmlContent, {
@@ -88,9 +102,30 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
   const availableMethods = enabledMethods.map((method) => method.type);
 
-  let isEmailCodeSent = shouldSendEmailCodeOnLogin(user);
+  let isEmailCodeSent = false;
+
+  const renderPage = (error?: { title: string; message: string }) => {
+    const htmlContent = defaultHtmlContent({
+      error,
+      email: user.email,
+      redirectUrl,
+      availableMethods,
+      isEmailCodeSent,
+    });
+
+    return basicLayoutResponse(htmlContent, {
+      currentPath: match.pathname.input,
+      titlePrefix,
+      match,
+      request,
+      session,
+      isRunningLocally,
+    });
+  };
 
   try {
+    isEmailCodeSent = await isEmailCodePending(user, enabledMethods);
+
     const formData = await request.formData();
     const code = getFormDataField(formData, 'code');
     const token = getFormDataField(formData, 'token');
@@ -105,21 +140,9 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
 
       await EmailModel.createAndSendCode(emailMethod.id, user);
 
-      const htmlContent = defaultHtmlContent({
-        email: user.email,
-        redirectUrl,
-        availableMethods,
-        isEmailCodeSent: true,
-      });
+      isEmailCodeSent = true;
 
-      return basicLayoutResponse(htmlContent, {
-        currentPath: match.pathname.input,
-        titlePrefix,
-        match,
-        request,
-        session,
-        isRunningLocally,
-      });
+      return renderPage();
     }
 
     if (code) {
@@ -173,24 +196,9 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   } catch (error) {
     console.error('Multi-factor authentication verification error:', error);
 
-    const htmlContent = defaultHtmlContent({
-      error: {
-        title: 'Verification Failed',
-        message: (error as Error).message,
-      },
-      email: user.email,
-      redirectUrl,
-      availableMethods,
-      isEmailCodeSent,
-    });
-
-    return basicLayoutResponse(htmlContent, {
-      currentPath: match.pathname.input,
-      titlePrefix,
-      match,
-      request,
-      session,
-      isRunningLocally,
+    return renderPage({
+      title: 'Verification Failed',
+      message: (error as Error).message,
     });
   }
 }

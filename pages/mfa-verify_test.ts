@@ -39,7 +39,7 @@ interface Context {
     handler: Handler,
     cookie: string,
     fields?: Record<string, string>,
-  ) => Promise<{ html: string; cookie: string }>;
+  ) => Promise<{ html: string; cookie: string; setCookie: string }>;
 }
 
 async function withStubs({ user }: { user: User }, fn: (context: Context) => Promise<void>) {
@@ -86,7 +86,11 @@ async function withStubs({ user }: { user: User }, fn: (context: Context) => Pro
 
     assertEquals(response.status, 200);
 
-    return { html: await response.text(), cookie: getCookie(response) || cookie };
+    return {
+      html: await response.text(),
+      cookie: getCookie(response) || cookie,
+      setCookie: response.headers.get('set-cookie') || '',
+    };
   };
 
   try {
@@ -97,6 +101,10 @@ async function withStubs({ user }: { user: User }, fn: (context: Context) => Pro
     EmailModel.createAndSendCode = originalCreateAndSendCode;
     TOTPModel.verifyMethodToken = originalVerifyMethodToken;
   }
+}
+
+function getExpiry(setCookie: string) {
+  return new Date(/expires=([^;]+)/i.exec(setCookie)![1]).getTime();
 }
 
 function hasSendButton(html: string) {
@@ -190,6 +198,40 @@ Deno.test('that a new login starts with the send button even if a previous login
 
     assertEquals(hasEmailCodeField(reopenedFirstLogin.html), true);
     assertEquals(sentCodes.length, 1);
+  });
+});
+
+Deno.test('that requesting the email code keeps the pending login expiry', async () => {
+  await withStubs({ user: createUser(['totp', 'email']) }, async ({ request }) => {
+    const loginResponse = await MultiFactorAuthModel.createSessionResponse(
+      new Request('http://localhost:8000/login'),
+      createUser(['totp', 'email']),
+    );
+    const loginSetCookie = loginResponse.headers.get('set-cookie')!;
+    const loginCookie = loginSetCookie.split(';')[0];
+    const originalDateNow = Date.now;
+
+    // The email code is requested 20 minutes after the password was entered
+    Date.now = () => originalDateNow() + 1000 * 60 * 20;
+
+    try {
+      const sent = await request('post', loginCookie, { send_email_code: 'true' });
+
+      assertEquals(hasEmailCodeField(sent.html), true);
+      assertEquals(getExpiry(sent.setCookie), getExpiry(loginSetCookie));
+
+      // The original window still applies, so the pending login is gone once it passes
+      Date.now = () => originalDateNow() + 1000 * 60 * 31;
+
+      assertEquals(
+        await MultiFactorAuthModel.getDataFromRequest(
+          new Request('http://localhost:8000/mfa-verify', { headers: { cookie: sent.cookie } }),
+        ),
+        null,
+      );
+    } finally {
+      Date.now = originalDateNow;
+    }
   });
 });
 

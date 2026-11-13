@@ -73,7 +73,8 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   const searchParams = new URL(request.url).searchParams;
   const redirectUrl = getSafeRedirectUrl(searchParams.get('redirect'));
 
-  const { user, isEmailCodeSent: wasEmailCodeSent } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
+  const { user, isEmailCodeSent: wasEmailCodeSent, expiresAt } =
+    (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 
   if (!user) {
     return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
@@ -126,7 +127,7 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
 
       isEmailCodeSent = true;
 
-      return await MultiFactorAuthModel.markEmailCodeAsSent(request, user, await renderPage());
+      return await MultiFactorAuthModel.markEmailCodeAsSent(request, user, await renderPage(), { expiresAt });
     }
 
     if (code) {

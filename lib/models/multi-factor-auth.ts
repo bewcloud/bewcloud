@@ -28,6 +28,8 @@ interface MultiFactorAuthJwtData extends JwtData {
   data: JwtData['data'] & {
     // Scoped to the pending login (this cookie), so a new login starts without it
     is_email_code_sent?: boolean;
+    // Epoch milliseconds of when the pending login expires, kept when the cookie is reissued
+    expires_at?: number;
   };
 }
 
@@ -104,26 +106,35 @@ export class MultiFactorAuthModel {
     return responseWithCookie;
   }
 
-  static async markEmailCodeAsSent(request: Request, user: User, response: Response) {
-    return await this.createSessionCookie(request, user, response, { isEmailCodeSent: true });
+  static async markEmailCodeAsSent(
+    request: Request,
+    user: User,
+    response: Response,
+    { expiresAt }: { expiresAt?: Date } = {},
+  ) {
+    return await this.createSessionCookie(request, user, response, { isEmailCodeSent: true, expiresAt });
   }
 
   private static async createSessionCookie(
     request: Request,
     user: User,
     response: Response,
-    { isEmailCodeSent = false }: { isEmailCodeSent?: boolean } = {},
+    { isEmailCodeSent = false, expiresAt = new Date(Date.now() + 1000 * 60 * 30) }: {
+      isEmailCodeSent?: boolean;
+      expiresAt?: Date; // defaults to 30 minutes
+    } = {},
   ) {
     const token = await generateToken<MultiFactorAuthJwtData['data']>({
       user_id: user.id,
       session_id: MFA_SESSION_ID,
+      expires_at: expiresAt.getTime(),
       ...(isEmailCodeSent ? { is_email_code_sent: true } : {}),
     });
 
     const cookie: Cookie = {
       name: COOKIE_NAME,
       value: token,
-      expires: new Date(Date.now() + 1000 * 60 * 30), // 30 minutes
+      expires: expiresAt,
       path: '/',
       secure: isRunningLocally(request) ? false : true,
       httpOnly: true,
@@ -140,7 +151,9 @@ export class MultiFactorAuthModel {
     return response;
   }
 
-  static async getDataFromRequest(request: Request): Promise<{ user: User; isEmailCodeSent: boolean } | null> {
+  static async getDataFromRequest(
+    request: Request,
+  ): Promise<{ user: User; isEmailCodeSent: boolean; expiresAt?: Date } | null> {
     const cookies = getCookies(request.headers);
 
     if (cookies[COOKIE_NAME]) {
@@ -156,7 +169,7 @@ export class MultiFactorAuthModel {
 
   private static async getDataFromCookie(
     cookieValue: string,
-  ): Promise<{ user: User; isEmailCodeSent: boolean } | null> {
+  ): Promise<{ user: User; isEmailCodeSent: boolean; expiresAt?: Date } | null> {
     if (!cookieValue) {
       return null;
     }
@@ -172,7 +185,15 @@ export class MultiFactorAuthModel {
         throw new Error('Not Found');
       }
 
-      return { user, isEmailCodeSent: token.data.is_email_code_sent === true };
+      if (token.data.expires_at && token.data.expires_at <= Date.now()) {
+        throw new Error('Expired');
+      }
+
+      return {
+        user,
+        isEmailCodeSent: token.data.is_email_code_sent === true,
+        expiresAt: token.data.expires_at ? new Date(token.data.expires_at) : undefined,
+      };
     } catch (error) {
       console.error(error);
     }

@@ -4,6 +4,8 @@ import { NewsFeedArticle } from '/lib/types.ts';
 import { ResponseBody as RefreshResponseBody } from '/pages/api/news/refresh-articles.ts';
 import { RequestBody as ReadRequestBody, ResponseBody as ReadResponseBody } from '/pages/api/news/mark-read.ts';
 
+import FilterDropdown from './FilterDropdown.tsx';
+
 interface ArticlesProps {
   initialArticles: NewsFeedArticle[];
   feeds: { id: string; title: string }[];
@@ -11,7 +13,7 @@ interface ArticlesProps {
 
 interface Filter {
   status: 'all' | 'unread';
-  feedId: 'all' | string;
+  feedId: string;
 }
 
 let hasFetchedAllArticlesOnce = false;
@@ -21,7 +23,6 @@ export default function Articles({ initialArticles, feeds }: ArticlesProps) {
   const articles = useSignal<NewsFeedArticle[]>(initialArticles);
   const filter = useSignal<Filter>({ status: 'unread', feedId: 'all' });
   const sessionReadArticleIds = useSignal<Set<string>>(new Set());
-  const isFilterDropdownOpen = useSignal<boolean>(false);
 
   const dateFormatOptions: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
 
@@ -151,10 +152,6 @@ export default function Articles({ initialArticles, feeds }: ArticlesProps) {
     }
   }
 
-  function toggleFilterDropdown() {
-    isFilterDropdownOpen.value = !isFilterDropdownOpen.value;
-  }
-
   function setNewFilter(newFilter: Partial<Filter>) {
     filter.value = { ...filter.value, ...newFilter };
 
@@ -162,86 +159,31 @@ export default function Articles({ initialArticles, feeds }: ArticlesProps) {
       refreshArticles();
       hasFetchedAllArticlesOnce = true;
     }
-
-    isFilterDropdownOpen.value = false;
   }
 
   return (
     <>
       <section class='flex flex-row flex-wrap items-center justify-between gap-y-2 mb-4'>
         <a href='/news/feeds' class='mr-2'>Manage feeds</a>
-        <section class='flex flex-wrap items-center'>
-          {feeds.length > 1
-            ? (
-              <select
-                class='input-field w-auto! max-w-48 sm:max-w-xs ml-2'
-                name='feed'
-                id='feed'
-                title='Filter by feed'
-                aria-label='Filter by feed'
-                value={filter.value.feedId}
-                onChange={(event) => setNewFilter({ feedId: event.currentTarget.value })}
-              >
-                <option value='all'>All feeds</option>
-                {feeds.map((feed) => <option key={feed.id} value={feed.id}>{feed.title}</option>)}
-              </select>
-            )
-            : null}
-          <section class='relative inline-block text-left ml-2'>
-            <div>
-              <button
-                type='button'
-                class='inline-flex w-full justify-center gap-x-1.5 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-600'
-                id='filter-button'
-                aria-expanded='true'
-                aria-haspopup='true'
-                onClick={() => toggleFilterDropdown()}
-              >
-                Filter
-                <svg class='-mr-1 h-5 w-5 text-slate-400' viewBox='0 0 20 20' fill='currentColor' aria-hidden='true'>
-                  <path
-                    fill-rule='evenodd'
-                    d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'
-                    clip-rule='evenodd'
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div
-              class={`absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none ${
-                !isFilterDropdownOpen.value ? 'hidden' : ''
-              }`}
-              role='menu'
-              aria-orientation='vertical'
-              aria-labelledby='filter-button'
-              tabindex={-1}
-            >
-              <div class='py-1'>
-                <button
-                  class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600 ${
-                    filter.value.status === 'unread' ? 'font-semibold' : ''
-                  }`}
-                  onClick={() => setNewFilter({ status: 'unread' })}
-                  type='button'
-                >
-                  Show only unread
-                </button>
-                <button
-                  class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600 ${
-                    filter.value.status === 'all' ? 'font-semibold' : ''
-                  }`}
-                  onClick={() => setNewFilter({ status: 'all' })}
-                  type='button'
-                >
-                  Show all
-                </button>
-              </div>
-            </div>
-          </section>
+        <section class='flex max-w-full items-center gap-2'>
+          {feeds.length > 1 && (
+            <FilterDropdown
+              isFeedPicker
+              label={feeds.find((feed) => feed.id === filter.value.feedId)?.title || 'All feeds'}
+              selected={filter.value.feedId}
+              options={[{ id: 'all', title: 'All feeds' }, ...feeds]}
+              onSelect={(feedId) => setNewFilter({ feedId })}
+            />
+          )}
+          <FilterDropdown<Filter['status']>
+            label='Filter'
+            selected={filter.value.status}
+            options={[{ id: 'unread', title: 'Show only unread' }, { id: 'all', title: 'Show all' }]}
+            onSelect={(status) => setNewFilter({ status })}
+          />
 
           <button
-            class='inline-block justify-center gap-x-1.5 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-600 ml-2'
+            class='inline-block justify-center gap-x-1.5 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-600 shrink-0'
             type='button'
             title='Mark all read'
             onClick={() => onClickMarkAllRead()}
@@ -256,7 +198,7 @@ export default function Articles({ initialArticles, feeds }: ArticlesProps) {
           </button>
 
           <button
-            class='inline-block justify-center gap-x-1.5 rounded-md bg-[#51A4FB] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-400 ml-2'
+            class='inline-block justify-center gap-x-1.5 rounded-md bg-[#51A4FB] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-400 shrink-0'
             type='button'
             title='Fetch new articles'
             onClick={() => refreshArticles()}

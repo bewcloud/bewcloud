@@ -31,10 +31,10 @@ Deno.test('Articles lets users pick a feed when there are multiple feeds', () =>
     feeds: [{ id: 'feed-1', title: 'First feed' }, { id: 'feed-2', title: 'Second feed' }],
   }));
 
-  assertStringIncludes(html, 'id="feed"');
-  assertStringIncludes(html, 'All feeds</option>');
-  assertStringIncludes(html, 'First feed</option>');
-  assertStringIncludes(html, 'Second feed</option>');
+  assertStringIncludes(html, 'Filter by feed:');
+  assertStringIncludes(html, 'All feeds</button>');
+  assertStringIncludes(html, 'First feed</button>');
+  assertStringIncludes(html, 'Second feed</button>');
 });
 
 Deno.test('Articles shows articles from every feed by default', () => {
@@ -53,5 +53,5 @@ Deno.test('Articles does not show the feed picker when there is at most one feed
     feeds: [{ id: 'feed-1', title: 'First feed' }],
   }));
 
-  assertEquals(html.includes('id="feed"'), false);
+  assertEquals(html.includes('Filter by feed:'), false);
 });

@@ -1,4 +1,5 @@
 import { useSignal } from '@preact/signals';
+import FilterDropdown from "./FilterDropdown.js";
 let hasFetchedAllArticlesOnce = false;
 export default function Articles({
   initialArticles,
@@ -11,7 +12,6 @@ export default function Articles({
     feedId: 'all'
   });
   const sessionReadArticleIds = useSignal(new Set());
-  const isFilterDropdownOpen = useSignal(false);
   const dateFormatOptions = {
     dateStyle: 'medium'
   };
@@ -114,9 +114,6 @@ export default function Articles({
       console.error(error);
     }
   }
-  function toggleFilterDropdown() {
-    isFilterDropdownOpen.value = !isFilterDropdownOpen.value;
-  }
   function setNewFilter(newFilter) {
     filter.value = {
       ...filter.value,
@@ -126,7 +123,6 @@ export default function Articles({
       refreshArticles();
       hasFetchedAllArticlesOnce = true;
     }
-    isFilterDropdownOpen.value = false;
   }
   return h(Fragment, null, h("section", {
     class: "flex flex-row flex-wrap items-center justify-between gap-y-2 mb-4"
@@ -134,62 +130,33 @@ export default function Articles({
     href: "/news/feeds",
     class: "mr-2"
   }, "Manage feeds"), h("section", {
-    class: "flex flex-wrap items-center"
-  }, feeds.length > 1 ? h("select", {
-    class: "input-field w-auto! max-w-48 sm:max-w-xs ml-2",
-    name: "feed",
-    id: "feed",
-    title: "Filter by feed",
-    "aria-label": "Filter by feed",
-    value: filter.value.feedId,
-    onChange: event => setNewFilter({
-      feedId: event.currentTarget.value
+    class: "flex max-w-full items-center gap-2"
+  }, feeds.length > 1 && h(FilterDropdown, {
+    isFeedPicker: true,
+    label: feeds.find(feed => feed.id === filter.value.feedId)?.title || 'All feeds',
+    selected: filter.value.feedId,
+    options: [{
+      id: 'all',
+      title: 'All feeds'
+    }, ...feeds],
+    onSelect: feedId => setNewFilter({
+      feedId
     })
-  }, h("option", {
-    value: "all"
-  }, "All feeds"), feeds.map(feed => h("option", {
-    key: feed.id,
-    value: feed.id
-  }, feed.title))) : null, h("section", {
-    class: "relative inline-block text-left ml-2"
-  }, h("div", null, h("button", {
-    type: "button",
-    class: "inline-flex w-full justify-center gap-x-1.5 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-600",
-    id: "filter-button",
-    "aria-expanded": "true",
-    "aria-haspopup": "true",
-    onClick: () => toggleFilterDropdown()
-  }, "Filter", h("svg", {
-    class: "-mr-1 h-5 w-5 text-slate-400",
-    viewBox: "0 0 20 20",
-    fill: "currentColor",
-    "aria-hidden": "true"
-  }, h("path", {
-    "fill-rule": "evenodd",
-    d: "M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z",
-    "clip-rule": "evenodd"
-  })))), h("div", {
-    class: `absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-md bg-slate-700 shadow-lg ring-1 ring-black/15 focus:outline-none ${!isFilterDropdownOpen.value ? 'hidden' : ''}`,
-    role: "menu",
-    "aria-orientation": "vertical",
-    "aria-labelledby": "filter-button",
-    tabindex: -1
-  }, h("div", {
-    class: "py-1"
-  }, h("button", {
-    class: `text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600 ${filter.value.status === 'unread' ? 'font-semibold' : ''}`,
-    onClick: () => setNewFilter({
-      status: 'unread'
-    }),
-    type: "button"
-  }, "Show only unread"), h("button", {
-    class: `text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600 ${filter.value.status === 'all' ? 'font-semibold' : ''}`,
-    onClick: () => setNewFilter({
-      status: 'all'
-    }),
-    type: "button"
-  }, "Show all")))), h("button", {
-    class: "inline-block justify-center gap-x-1.5 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-600 ml-2",
+  }), h(FilterDropdown, {
+    label: "Filter",
+    selected: filter.value.status,
+    options: [{
+      id: 'unread',
+      title: 'Show only unread'
+    }, {
+      id: 'all',
+      title: 'Show all'
+    }],
+    onSelect: status => setNewFilter({
+      status
+    })
+  }), h("button", {
+    class: "inline-block justify-center gap-x-1.5 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-600 shrink-0",
     type: "button",
     title: "Mark all read",
     onClick: () => onClickMarkAllRead()
@@ -200,7 +167,7 @@ export default function Articles({
     width: 20,
     height: 20
   })), h("button", {
-    class: "inline-block justify-center gap-x-1.5 rounded-md bg-[#51A4FB] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-400 ml-2",
+    class: "inline-block justify-center gap-x-1.5 rounded-md bg-[#51A4FB] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-400 shrink-0",
     type: "button",
     title: "Fetch new articles",
     onClick: () => refreshArticles()

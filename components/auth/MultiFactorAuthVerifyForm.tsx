@@ -12,40 +12,37 @@ interface MultiFactorAuthVerifyFormProps {
 export default function MultiFactorAuthVerifyForm(
   { email, redirectUrl, availableMethods, isEmailCodeSent, error }: MultiFactorAuthVerifyFormProps,
 ) {
-  const hasPasskey = availableMethods.includes('passkey');
+  const hasPasskey = availableMethods.includes('passkey') && Boolean(email);
   const hasTotp = availableMethods.includes('totp');
   const hasEmail = availableMethods.includes('email');
+  const action = `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`;
 
   return (
-    <section class='max-w-md w-full mb-12 mx-auto'>
+    <section class='max-w-md w-full mb-12 mx-auto px-4'>
       <section class='mb-6'>
-        <h2 class='mt-6 text-center text-3xl font-extrabold text-white'>
+        <h1 class='mt-6 text-center text-3xl font-extrabold text-white'>
           Multi-Factor Authentication
-        </h2>
+        </h1>
         <p class='mt-2 text-center text-sm text-gray-300'>
-          You are required to authenticate with an additional method
+          Verify your identity to finish logging in.
         </p>
       </section>
 
       {error
         ? (
-          <section class='notification-error'>
+          <section class='notification-error' role='alert'>
             <h3>{error.title}</h3>
             <p>{error.message}</p>
           </section>
         )
         : null}
 
-      {hasTotp
-        ? (
-          <form
-            class='mb-6'
-            method='POST'
-            action={`/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`}
-          >
-            <fieldset class='block mb-4'>
+      <section class='grid gap-4'>
+        {hasTotp && (
+          <form class='w-full min-w-0 p-0 text-center' method='POST' action={action}>
+            <fieldset class='mb-4 text-left'>
               <label class='text-slate-300 block pb-1' for='token'>
-                Authentication Token or Backup Code
+                Authenticator or backup code
               </label>
               <input
                 type='text'
@@ -57,97 +54,44 @@ export default function MultiFactorAuthVerifyForm(
                 required
               />
             </fieldset>
-
-            <section class='flex justify-center mt-8 mb-4'>
-              <button
-                type='submit'
-                class='button'
-              >
-                Verify Code
-              </button>
-            </section>
+            <button type='submit' class='button'>Verify code</button>
           </form>
-        )
-        : null}
+        )}
 
-      {hasTotp && hasEmail
-        ? (
-          <section class='text-center -mt-10 mb-6 block'>
-            <p class='text-gray-400 text-sm'>or</p>
-          </section>
-        )
-        : null}
+        {hasTotp && hasEmail && <p class='text-center text-gray-400 text-sm'>or</p>}
 
-      {hasEmail && isEmailCodeSent
-        ? (
-          <form
-            class='mb-6'
-            method='POST'
-            action={`/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`}
-          >
-            <fieldset class='block mb-4'>
-              <label class='text-slate-300 block pb-1' for='code'>
-                Email Verification Code
-              </label>
-              <input
-                type='text'
-                id='code'
-                name='code'
-                placeholder='123456'
-                class='mt-1 input-field'
-                autocomplete='off'
-                required
-              />
-            </fieldset>
-
-            <section class='flex justify-center mt-8 mb-4'>
-              <button
-                type='submit'
-                class='button'
-              >
-                Verify Code
-              </button>
-            </section>
+        {hasEmail && (
+          <form class='w-full min-w-0 p-0 text-center' method='POST' action={action}>
+            {isEmailCodeSent
+              ? (
+                <>
+                  <fieldset class='mb-4 text-left'>
+                    <label class='text-slate-300 block pb-1' for='code'>Email verification code</label>
+                    <input
+                      type='text'
+                      id='code'
+                      name='code'
+                      placeholder='123456'
+                      class='mt-1 input-field'
+                      inputmode='numeric'
+                      autocomplete='one-time-code'
+                      required
+                    />
+                  </fieldset>
+                  <button type='submit' class='button'>Verify email code</button>
+                </>
+              )
+              : (
+                <button type='submit' class='button-secondary' name='send_email_code' value='true'>
+                  Send 2FA code by email
+                </button>
+              )}
           </form>
-        )
-        : null}
+        )}
 
-      {hasEmail && !isEmailCodeSent
-        ? (
-          <form
-            class='mb-6'
-            method='POST'
-            action={`/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`}
-          >
-            <input type='hidden' name='send_email_code' value='true' />
-
-            <section class='flex justify-center mt-8 mb-4'>
-              <button
-                type='submit'
-                class='button-secondary'
-              >
-                Send 2FA code by email
-              </button>
-            </section>
-          </form>
-        )
-        : null}
-
-      {(hasEmail || hasTotp) && hasPasskey
-        ? (
-          <section class='text-center -mt-10 mb-6 block'>
-            <p class='text-gray-400 text-sm'>or</p>
-          </section>
-        )
-        : null}
-
-      {hasPasskey && email
-        ? (
-          <section class='mb-8'>
-            <PasswordlessPasskeyLogin email={email} redirectUrl={redirectUrl} />
-          </section>
-        )
-        : null}
+        {(hasEmail || hasTotp) && hasPasskey && <p class='text-center text-gray-400 text-sm'>or</p>}
+        {hasPasskey && <PasswordlessPasskeyLogin email={email} redirectUrl={redirectUrl} />}
+      </section>
 
       <section class='text-center mt-6'>
         <a href='/login' class='text-blue-400 hover:text-blue-300 text-sm'>

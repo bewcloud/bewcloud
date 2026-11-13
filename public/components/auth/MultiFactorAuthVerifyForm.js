@@ -6,29 +6,33 @@ export default function MultiFactorAuthVerifyForm({
   isEmailCodeSent,
   error
 }) {
-  const hasPasskey = availableMethods.includes('passkey');
+  const hasPasskey = availableMethods.includes('passkey') && Boolean(email);
   const hasTotp = availableMethods.includes('totp');
   const hasEmail = availableMethods.includes('email');
+  const action = `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`;
   return h("section", {
-    class: "max-w-md w-full mb-12 mx-auto"
+    class: "max-w-md w-full mb-12 mx-auto px-4"
   }, h("section", {
     class: "mb-6"
-  }, h("h2", {
+  }, h("h1", {
     class: "mt-6 text-center text-3xl font-extrabold text-white"
   }, "Multi-Factor Authentication"), h("p", {
     class: "mt-2 text-center text-sm text-gray-300"
-  }, "You are required to authenticate with an additional method")), error ? h("section", {
-    class: "notification-error"
-  }, h("h3", null, error.title), h("p", null, error.message)) : null, hasTotp ? h("form", {
-    class: "mb-6",
+  }, "Verify your identity to finish logging in.")), error ? h("section", {
+    class: "notification-error",
+    role: "alert"
+  }, h("h3", null, error.title), h("p", null, error.message)) : null, h("section", {
+    class: "grid gap-4"
+  }, hasTotp && h("form", {
+    class: "w-full min-w-0 p-0 text-center",
     method: "POST",
-    action: `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`
+    action: action
   }, h("fieldset", {
-    class: "block mb-4"
+    class: "mb-4 text-left"
   }, h("label", {
     class: "text-slate-300 block pb-1",
     for: "token"
-  }, "Authentication Token or Backup Code"), h("input", {
+  }, "Authenticator or backup code"), h("input", {
     type: "text",
     id: "token",
     name: "token",
@@ -36,60 +40,43 @@ export default function MultiFactorAuthVerifyForm({
     class: "mt-1 input-field",
     autocomplete: "one-time-code",
     required: true
-  })), h("section", {
-    class: "flex justify-center mt-8 mb-4"
-  }, h("button", {
+  })), h("button", {
     type: "submit",
     class: "button"
-  }, "Verify Code"))) : null, hasTotp && hasEmail ? h("section", {
-    class: "text-center -mt-10 mb-6 block"
-  }, h("p", {
-    class: "text-gray-400 text-sm"
-  }, "or")) : null, hasEmail && isEmailCodeSent ? h("form", {
-    class: "mb-6",
+  }, "Verify code")), hasTotp && hasEmail && h("p", {
+    class: "text-center text-gray-400 text-sm"
+  }, "or"), hasEmail && h("form", {
+    class: "w-full min-w-0 p-0 text-center",
     method: "POST",
-    action: `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`
-  }, h("fieldset", {
-    class: "block mb-4"
+    action: action
+  }, isEmailCodeSent ? h(Fragment, null, h("fieldset", {
+    class: "mb-4 text-left"
   }, h("label", {
     class: "text-slate-300 block pb-1",
     for: "code"
-  }, "Email Verification Code"), h("input", {
+  }, "Email verification code"), h("input", {
     type: "text",
     id: "code",
     name: "code",
     placeholder: "123456",
     class: "mt-1 input-field",
-    autocomplete: "off",
+    inputmode: "numeric",
+    autocomplete: "one-time-code",
     required: true
-  })), h("section", {
-    class: "flex justify-center mt-8 mb-4"
-  }, h("button", {
+  })), h("button", {
     type: "submit",
     class: "button"
-  }, "Verify Code"))) : null, hasEmail && !isEmailCodeSent ? h("form", {
-    class: "mb-6",
-    method: "POST",
-    action: `/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`
-  }, h("input", {
-    type: "hidden",
+  }, "Verify email code")) : h("button", {
+    type: "submit",
+    class: "button-secondary",
     name: "send_email_code",
     value: "true"
-  }), h("section", {
-    class: "flex justify-center mt-8 mb-4"
-  }, h("button", {
-    type: "submit",
-    class: "button-secondary"
-  }, "Send 2FA code by email"))) : null, (hasEmail || hasTotp) && hasPasskey ? h("section", {
-    class: "text-center -mt-10 mb-6 block"
-  }, h("p", {
-    class: "text-gray-400 text-sm"
-  }, "or")) : null, hasPasskey && email ? h("section", {
-    class: "mb-8"
-  }, h(PasswordlessPasskeyLogin, {
+  }, "Send 2FA code by email")), (hasEmail || hasTotp) && hasPasskey && h("p", {
+    class: "text-center text-gray-400 text-sm"
+  }, "or"), hasPasskey && h(PasswordlessPasskeyLogin, {
     email: email,
     redirectUrl: redirectUrl
-  })) : null, h("section", {
+  })), h("section", {
     class: "text-center mt-6"
   }, h("a", {
     href: "/login",

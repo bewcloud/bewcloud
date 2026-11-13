@@ -4,6 +4,7 @@ import { MultiFactorAuthMethod, User } from '/lib/types.ts';
 import {
   getEnabledMultiFactorAuthMethodsFromUser,
   getMultiFactorAuthMethodByIdFromUser,
+  shouldSendEmailCodeOnLogin,
 } from '/public/ts/utils/multi-factor-auth.ts';
 import {
   COOKIE_NAME as AUTH_COOKIE_NAME,
@@ -22,6 +23,15 @@ import { EmailModel } from './multi-factor-auth/email.ts';
 
 const COOKIE_NAME = `${AUTH_COOKIE_NAME}-mfa`;
 const MFA_SESSION_ID = 'mfa';
+
+interface MultiFactorAuthJwtData extends JwtData {
+  data: JwtData['data'] & {
+    // Scoped to the pending login (this cookie), so a new login starts without it
+    is_email_code_sent?: boolean;
+    // Epoch milliseconds of when the pending login expires, kept when the cookie is reissued
+    expires_at?: number;
+  };
+}
 
 export interface MultiFactorAuthSetup {
   method: MultiFactorAuthMethod;
@@ -78,12 +88,14 @@ export class MultiFactorAuthModel {
     });
 
     try {
-      const enabledMultiFactorAuthMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
+      if (shouldSendEmailCodeOnLogin(user)) {
+        const enabledMultiFactorAuthMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
 
-      const emailMethod = enabledMultiFactorAuthMethods.find((method) => method.type === 'email');
+        const emailMethod = enabledMultiFactorAuthMethods.find((method) => method.type === 'email');
 
-      if (emailMethod) {
-        await EmailModel.createAndSendCode(emailMethod.id, user);
+        if (emailMethod) {
+          await EmailModel.createAndSendCode(emailMethod.id, user);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -94,17 +106,35 @@ export class MultiFactorAuthModel {
     return responseWithCookie;
   }
 
+  static async markEmailCodeAsSent(
+    request: Request,
+    user: User,
+    response: Response,
+    { expiresAt }: { expiresAt?: Date } = {},
+  ) {
+    return await this.createSessionCookie(request, user, response, { isEmailCodeSent: true, expiresAt });
+  }
+
   private static async createSessionCookie(
     request: Request,
     user: User,
     response: Response,
+    { isEmailCodeSent = false, expiresAt = new Date(Date.now() + 1000 * 60 * 30) }: {
+      isEmailCodeSent?: boolean;
+      expiresAt?: Date; // defaults to 30 minutes
+    } = {},
   ) {
-    const token = await generateToken({ user_id: user.id, session_id: MFA_SESSION_ID });
+    const token = await generateToken<MultiFactorAuthJwtData['data']>({
+      user_id: user.id,
+      session_id: MFA_SESSION_ID,
+      expires_at: expiresAt.getTime(),
+      ...(isEmailCodeSent ? { is_email_code_sent: true } : {}),
+    });
 
     const cookie: Cookie = {
       name: COOKIE_NAME,
       value: token,
-      expires: new Date(Date.now() + 1000 * 60 * 30), // 30 minutes
+      expires: expiresAt,
       path: '/',
       secure: isRunningLocally(request) ? false : true,
       httpOnly: true,
@@ -121,7 +151,9 @@ export class MultiFactorAuthModel {
     return response;
   }
 
-  static async getDataFromRequest(request: Request): Promise<{ user: User } | null> {
+  static async getDataFromRequest(
+    request: Request,
+  ): Promise<{ user: User; isEmailCodeSent: boolean; expiresAt?: Date } | null> {
     const cookies = getCookies(request.headers);
 
     if (cookies[COOKIE_NAME]) {
@@ -135,7 +167,9 @@ export class MultiFactorAuthModel {
     return null;
   }
 
-  private static async getDataFromCookie(cookieValue: string): Promise<{ user: User } | null> {
+  private static async getDataFromCookie(
+    cookieValue: string,
+  ): Promise<{ user: User; isEmailCodeSent: boolean; expiresAt?: Date } | null> {
     if (!cookieValue) {
       return null;
     }
@@ -143,7 +177,7 @@ export class MultiFactorAuthModel {
     const key = await generateKey(JWT_SECRET);
 
     try {
-      const token = await verifyAuthJwt(key, cookieValue) as JwtData;
+      const token = await verifyAuthJwt<MultiFactorAuthJwtData>(key, cookieValue);
 
       const user = await UserModel.getById(token.data.user_id);
 
@@ -151,7 +185,15 @@ export class MultiFactorAuthModel {
         throw new Error('Not Found');
       }
 
-      return { user };
+      if (token.data.expires_at && token.data.expires_at <= Date.now()) {
+        throw new Error('Expired');
+      }
+
+      return {
+        user,
+        isEmailCodeSent: token.data.is_email_code_sent === true,
+        expiresAt: token.data.expires_at ? new Date(token.data.expires_at) : undefined,
+      };
     } catch (error) {
       console.error(error);
     }

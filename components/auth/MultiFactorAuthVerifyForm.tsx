@@ -5,11 +5,12 @@ interface MultiFactorAuthVerifyFormProps {
   email: string;
   redirectUrl: string;
   availableMethods: MultiFactorAuthMethodType[];
+  isEmailCodeSent: boolean;
   error?: { title: string; message: string };
 }
 
 export default function MultiFactorAuthVerifyForm(
-  { email, redirectUrl, availableMethods, error }: MultiFactorAuthVerifyFormProps,
+  { email, redirectUrl, availableMethods, isEmailCodeSent, error }: MultiFactorAuthVerifyFormProps,
 ) {
   const hasPasskey = availableMethods.includes('passkey');
   const hasTotp = availableMethods.includes('totp');
@@ -31,48 +32,6 @@ export default function MultiFactorAuthVerifyForm(
           <section class='notification-error'>
             <h3>{error.title}</h3>
             <p>{error.message}</p>
-          </section>
-        )
-        : null}
-
-      {hasEmail
-        ? (
-          <form
-            class='mb-6'
-            method='POST'
-            action={`/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`}
-          >
-            <fieldset class='block mb-4'>
-              <label class='text-slate-300 block pb-1' for='token'>
-                Email Verification Code
-              </label>
-              <input
-                type='text'
-                id='code'
-                name='code'
-                placeholder='123456'
-                class='mt-1 input-field'
-                autocomplete='off'
-                required
-              />
-            </fieldset>
-
-            <section class='flex justify-center mt-8 mb-4'>
-              <button
-                type='submit'
-                class='button'
-              >
-                Verify Code
-              </button>
-            </section>
-          </form>
-        )
-        : null}
-
-      {hasEmail && hasTotp
-        ? (
-          <section class='text-center -mt-10 mb-6 block'>
-            <p class='text-gray-400 text-sm'>or</p>
           </section>
         )
         : null}
@@ -105,6 +64,69 @@ export default function MultiFactorAuthVerifyForm(
                 class='button'
               >
                 Verify Code
+              </button>
+            </section>
+          </form>
+        )
+        : null}
+
+      {hasTotp && hasEmail
+        ? (
+          <section class='text-center -mt-10 mb-6 block'>
+            <p class='text-gray-400 text-sm'>or</p>
+          </section>
+        )
+        : null}
+
+      {hasEmail && isEmailCodeSent
+        ? (
+          <form
+            class='mb-6'
+            method='POST'
+            action={`/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`}
+          >
+            <fieldset class='block mb-4'>
+              <label class='text-slate-300 block pb-1' for='code'>
+                Email Verification Code
+              </label>
+              <input
+                type='text'
+                id='code'
+                name='code'
+                placeholder='123456'
+                class='mt-1 input-field'
+                autocomplete='off'
+                required
+              />
+            </fieldset>
+
+            <section class='flex justify-center mt-8 mb-4'>
+              <button
+                type='submit'
+                class='button'
+              >
+                Verify Code
+              </button>
+            </section>
+          </form>
+        )
+        : null}
+
+      {hasEmail && !isEmailCodeSent
+        ? (
+          <form
+            class='mb-6'
+            method='POST'
+            action={`/mfa-verify?redirect=${encodeURIComponent(redirectUrl)}`}
+          >
+            <input type='hidden' name='send_email_code' value='true' />
+
+            <section class='flex justify-center mt-8 mb-4'>
+              <button
+                type='submit'
+                class='button-secondary'
+              >
+                Send 2FA code by email
               </button>
             </section>
           </form>

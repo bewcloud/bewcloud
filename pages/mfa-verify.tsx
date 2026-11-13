@@ -11,6 +11,7 @@ import { MultiFactorAuthModel } from '/lib/models/multi-factor-auth.ts';
 import {
   getEnabledMultiFactorAuthMethodsFromUser,
   isMultiFactorAuthEnabledForUser,
+  shouldSendEmailCodeOnLogin,
 } from '/public/ts/utils/multi-factor-auth.ts';
 import { TOTPModel } from '/lib/models/multi-factor-auth/totp.ts';
 import { EmailModel } from '/lib/models/multi-factor-auth/email.ts';
@@ -30,7 +31,7 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
   const searchParams = new URL(request.url).searchParams;
   const redirectUrl = getSafeRedirectUrl(searchParams.get('redirect'));
 
-  const { user } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
+  const { user, isEmailCodeSent: wasEmailCodeSent } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 
   if (!user) {
     return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
@@ -49,6 +50,7 @@ async function get({ request, match, session, isRunningLocally }: RequestHandler
     email: user.email,
     redirectUrl,
     availableMethods,
+    isEmailCodeSent: shouldSendEmailCodeOnLogin(user) || Boolean(wasEmailCodeSent),
   });
 
   return basicLayoutResponse(htmlContent, {
@@ -71,7 +73,8 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   const searchParams = new URL(request.url).searchParams;
   const redirectUrl = getSafeRedirectUrl(searchParams.get('redirect'));
 
-  const { user } = (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
+  const { user, isEmailCodeSent: wasEmailCodeSent, expiresAt } =
+    (await MultiFactorAuthModel.getDataFromRequest(request)) || {};
 
   if (!user) {
     return new Response('Redirect', { status: 303, headers: { 'Location': '/login' } });
@@ -86,10 +89,50 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   const enabledMethods = getEnabledMultiFactorAuthMethodsFromUser(user);
   const availableMethods = enabledMethods.map((method) => method.type);
 
+  let isEmailCodeSent = shouldSendEmailCodeOnLogin(user) || Boolean(wasEmailCodeSent);
+
+  const renderPage = (error?: { title: string; message: string }) => {
+    const htmlContent = defaultHtmlContent({
+      error,
+      email: user.email,
+      redirectUrl,
+      availableMethods,
+      isEmailCodeSent,
+    });
+
+    return basicLayoutResponse(htmlContent, {
+      currentPath: match.pathname.input,
+      titlePrefix,
+      match,
+      request,
+      session,
+      isRunningLocally,
+    });
+  };
+
   try {
     const formData = await request.formData();
     const code = getFormDataField(formData, 'code');
     const token = getFormDataField(formData, 'token');
+    const shouldSendEmailCode = getFormDataField(formData, 'send_email_code') === 'true';
+
+    if (shouldSendEmailCode) {
+      const emailMethod = enabledMethods.find((method) => method.type === 'email');
+
+      if (!emailMethod) {
+        throw new Error('Email verification is not enabled');
+      }
+
+      await EmailModel.createAndSendCode(emailMethod.id, user);
+
+      isEmailCodeSent = true;
+
+      return await MultiFactorAuthModel.markEmailCodeAsSent(request, user, await renderPage(), { expiresAt });
+    }
+
+    if (code) {
+      isEmailCodeSent = true;
+    }
 
     if (!code && !token) {
       throw new Error('Authentication code/token is required');
@@ -138,28 +181,14 @@ async function post({ request, match, session, isRunningLocally }: RequestHandle
   } catch (error) {
     console.error('Multi-factor authentication verification error:', error);
 
-    const htmlContent = defaultHtmlContent({
-      error: {
-        title: 'Verification Failed',
-        message: (error as Error).message,
-      },
-      email: user.email,
-      redirectUrl,
-      availableMethods,
-    });
-
-    return basicLayoutResponse(htmlContent, {
-      currentPath: match.pathname.input,
-      titlePrefix,
-      match,
-      request,
-      session,
-      isRunningLocally,
+    return renderPage({
+      title: 'Verification Failed',
+      message: (error as Error).message,
     });
   }
 }
 
-function defaultHtmlContent({ email, redirectUrl, availableMethods, error }: {
+function defaultHtmlContent({ email, redirectUrl, availableMethods, isEmailCodeSent, error }: {
   error?: {
     title: string;
     message: string;
@@ -167,12 +196,14 @@ function defaultHtmlContent({ email, redirectUrl, availableMethods, error }: {
   email?: string;
   redirectUrl?: string;
   availableMethods?: MultiFactorAuthMethodType[];
+  isEmailCodeSent?: boolean;
 }) {
   const multiFactorAuthVerifyFormReactNode = (
     <MultiFactorAuthVerifyForm
       email={email || ''}
       redirectUrl={redirectUrl || '/'}
       availableMethods={availableMethods || []}
+      isEmailCodeSent={isEmailCodeSent || false}
       error={error}
     />
   );

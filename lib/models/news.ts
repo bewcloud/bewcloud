@@ -294,7 +294,21 @@ export class ArticleModel {
     );
   }
 
-  static async markAllRead(userId: string) {
+  static async markAllRead(userId: string, feedId?: string) {
+    if (feedId) {
+      await db.query(
+        sql`UPDATE "bewcloud_news_feed_articles" SET
+            "is_read" = TRUE
+          WHERE "user_id" = $1 AND "feed_id" = $2`,
+        [
+          userId,
+          feedId,
+        ],
+      );
+
+      return;
+    }
+
     await db.query(
       sql`UPDATE "bewcloud_news_feed_articles" SET
           "is_read" = TRUE

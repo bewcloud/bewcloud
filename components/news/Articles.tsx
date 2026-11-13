@@ -6,18 +6,20 @@ import { RequestBody as ReadRequestBody, ResponseBody as ReadResponseBody } from
 
 interface ArticlesProps {
   initialArticles: NewsFeedArticle[];
+  feeds: { id: string; title: string }[];
 }
 
 interface Filter {
   status: 'all' | 'unread';
+  feedId: 'all' | string;
 }
 
 let hasFetchedAllArticlesOnce = false;
 
-export default function Articles({ initialArticles }: ArticlesProps) {
+export default function Articles({ initialArticles, feeds }: ArticlesProps) {
   const isRefreshing = useSignal<boolean>(false);
   const articles = useSignal<NewsFeedArticle[]>(initialArticles);
-  const filter = useSignal<Filter>({ status: 'unread' });
+  const filter = useSignal<Filter>({ status: 'unread', feedId: 'all' });
   const sessionReadArticleIds = useSignal<Set<string>>(new Set());
   const isFilterDropdownOpen = useSignal<boolean>(false);
 
@@ -57,6 +59,10 @@ export default function Articles({ initialArticles }: ArticlesProps) {
   }
 
   const filteredArticles = articles.value.filter((article) => {
+    if (filter.value.feedId !== 'all' && article.feed_id !== filter.value.feedId) {
+      return false;
+    }
+
     if (filter.value.status === 'unread') {
       if (article.is_read && !sessionReadArticleIds.value.has(article.id)) {
         return false;
@@ -108,7 +114,13 @@ export default function Articles({ initialArticles }: ArticlesProps) {
   }
 
   async function onClickMarkAllRead() {
+    const feedId = filter.value.feedId;
+
     const newArticles = [...articles.value].map((article) => {
+      if (feedId !== 'all' && article.feed_id !== feedId) {
+        return article;
+      }
+
       article.is_read = true;
 
       sessionReadArticleIds.value.add(article.id);
@@ -119,7 +131,7 @@ export default function Articles({ initialArticles }: ArticlesProps) {
     articles.value = [...newArticles];
 
     try {
-      const requestBody: ReadRequestBody = { articleId: 'all' };
+      const requestBody: ReadRequestBody = { articleId: 'all', feedId: feedId === 'all' ? undefined : feedId };
       const response = await fetch(`/api/news/mark-read`, {
         method: 'POST',
         body: JSON.stringify(requestBody),
@@ -156,9 +168,25 @@ export default function Articles({ initialArticles }: ArticlesProps) {
 
   return (
     <>
-      <section class='flex flex-row items-center justify-between mb-4'>
+      <section class='flex flex-row flex-wrap items-center justify-between gap-y-2 mb-4'>
         <a href='/news/feeds' class='mr-2'>Manage feeds</a>
-        <section class='flex items-center'>
+        <section class='flex flex-wrap items-center'>
+          {feeds.length > 1
+            ? (
+              <select
+                class='input-field w-auto! max-w-48 sm:max-w-xs ml-2'
+                name='feed'
+                id='feed'
+                title='Filter by feed'
+                aria-label='Filter by feed'
+                value={filter.value.feedId}
+                onChange={(event) => setNewFilter({ feedId: event.currentTarget.value })}
+              >
+                <option value='all'>All feeds</option>
+                {feeds.map((feed) => <option key={feed.id} value={feed.id}>{feed.title}</option>)}
+              </select>
+            )
+            : null}
           <section class='relative inline-block text-left ml-2'>
             <div>
               <button
@@ -251,6 +279,7 @@ export default function Articles({ initialArticles }: ArticlesProps) {
             <section class='divide-y divide-slate-800 shadow-sm rounded-md'>
               {filteredArticles.map((article) => (
                 <details
+                  key={article.id}
                   class={`group order-first mx-auto max-w-full relative bg-slate-700 duration-150 first:rounded-tl-md first:rounded-tr-md last:rounded-bl-md last:rounded-br-md`}
                 >
                   <summary

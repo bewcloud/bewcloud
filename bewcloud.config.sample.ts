@@ -11,10 +11,13 @@ const config: PartialDeep<Config> = {
     // allowedCookieDomains: ['example.com', 'example.net'], // Can be set to allow more than the baseUrl's domain for session cookies
     // skipCookieDomainSecurity: true, // If true, the cookie domain will not be strictly set and checked against. This skipping slightly reduces security, but is usually necessary for reverse proxies like Cloudflare Tunnel
     // enableSingleSignOn: false, // If true, single sign-on will be enabled
-    // allowSignupsViaSingleSignOn: false, // If true, signups via single sign-on will be allowed, overriding allowSignups
+    // allowSignupsViaSingleSignOn: false, // If true, signups via single sign-on (OIDC or reverse proxy authentication) will be allowed, overriding allowSignups
     // singleSignOnUrl: '', // The Discovery URL (AKA Issuer) of the identity/single sign-on provider
     // singleSignOnEmailAttribute: 'email', // The attribute to prefer as email of the identity/single sign-on provider
     // singleSignOnScopes: ['openid', 'email'], // The scopes to request from the identity/single sign-on provider
+    // enableReverseProxyAuth: false, // If true, requests will be authenticated by the email in the header below, set by an authenticating reverse proxy (like Authelia or Authentik). Only enable this if the app can't be reached without going through that proxy, and the proxy always overwrites or removes that header, otherwise anyone can login as anyone
+    // reverseProxyAuthEmailHeader: 'Remote-Email', // The request header containing the authenticated user's email, set by the reverse proxy
+    // reverseProxyAuthLogoutUrl: '', // The URL to redirect to after logging out, usually the reverse proxy's logout URL (i.e. "https://auth.example.com/logout"). Empty will redirect to the home page
   },
   // files: {
   //   rootPath: 'data-files',

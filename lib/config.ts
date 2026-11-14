@@ -20,6 +20,9 @@ export class AppConfig {
         singleSignOnUrl: '',
         singleSignOnEmailAttribute: 'email',
         singleSignOnScopes: ['openid', 'email'],
+        enableReverseProxyAuth: false,
+        reverseProxyAuthEmailHeader: 'Remote-Email',
+        reverseProxyAuthLogoutUrl: '',
       },
       files: {
         rootPath: 'data-files',
@@ -183,6 +186,12 @@ export class AppConfig {
     await this.loadConfig();
 
     return this.config.auth.enableSingleSignOn;
+  }
+
+  static async isReverseProxyAuthEnabled(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.auth.enableReverseProxyAuth;
   }
 
   static async isPublicFileSharingAllowed(): Promise<boolean> {

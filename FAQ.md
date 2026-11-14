@@ -18,6 +18,18 @@ You can simply `ln -s /<absolute-path-to-data-files>/<owner-user-id>/<directory-
 > [!NOTE]
 > If you're running the app with docker, the symlink needs to point to the container's directory, usually starting with `/app` if you didn't change the `Dockerfile`, otherwise the container will fail to load the linked directory.
 
+## How does reverse proxy authentication work?
+
+If you already authenticate users with a reverse proxy, like [Authelia](https://www.authelia.com) or [Authentik](https://goauthentik.io) (via "forward auth"), you can set `config.auth.enableReverseProxyAuth=true` and bewCloud will trust the email in the `config.auth.reverseProxyAuthEmailHeader` request header (`Remote-Email` by default, which is what Authelia sends) to know who's logged in, instead of asking for a password.
+
+> [!WARNING]
+> Only enable this if bewCloud can't be reached without going through that proxy (i.e. don't publish its port), and the proxy always overwrites or removes that header from incoming requests. Otherwise, anyone can login as anyone by sending that header themselves.
+
+- Users that don't exist yet are created with the email from the header if `config.auth.allowSignupsViaSingleSignOn` (or `config.auth.allowSignups`) is `true`, or if there's no admin yet (the first user always becomes an admin).
+- Requests without the header still work with the login form or basic auth, so you can skip the proxy's authentication for `/dav`, `/carddav`, and `/caldav`, and use a DAV password from the Settings page for those clients, or let the proxy handle their basic auth, as [described for Authelia](https://www.authelia.com/integration/guides/securing-apps-with-basic-auth/).
+- Multi-factor authentication is up to the proxy, as bewCloud's own is only used when logging in with a password.
+- Set `config.auth.reverseProxyAuthLogoutUrl` to the proxy's logout URL (i.e. `https://auth.example.com/logout`), so logging out of bewCloud logs you out of the proxy, too. Otherwise, the next request would just log you right back in.
+
 ## How can I use .env for configuration?
 
 During [v1](https://github.com/bewcloud/bewcloud/releases/tag/v1.0.0), bewCloud was entirely configured with a `.env` file, but since [v2](https://github.com/bewcloud/bewcloud/releases/tag/v2.0.0) it was swapped to being used exclusively for "secrets", and having a more robust `bewcloud.config.ts` file for configuration. While it's unlikely `.env`-only configuration will be supported again in the future, the advantage of a `bewcloud.config.ts` file is that it's more dynamic and powerful, which means you can "hack" your way into using a `.env` file for configuration, like how it was suggested [in this comment](https://github.com/bewcloud/bewcloud/issues/90#issuecomment-3450344972). It's copied below for reference, and it's a bit outdated, but should serve as a good starting point, and you can make a PR to update it:

@@ -2,11 +2,12 @@ import { decodeBase64, decodeBase64Url, encodeBase64Url } from '@std/encoding';
 import { Cookie, getCookies, setCookie } from '@std/http';
 import '@std/dotenv/load';
 
-import { generateHash, isRunningLocally } from '/public/ts/utils/misc.ts';
+import { generateHash, isRunningLocally, validateEmail } from '/public/ts/utils/misc.ts';
 import { getSafeRedirectUrl } from '/public/ts/utils/redirect.ts';
 import { User, UserSession } from '/lib/types.ts';
 import { UserModel, UserSessionModel, validateUserAndSession } from '/lib/models/user.ts';
 import { AppConfig } from '/lib/config.ts';
+import Locker from '/lib/interfaces/locker.ts';
 
 export const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
 export const PASSWORD_SALT = Deno.env.get('PASSWORD_SALT') || '';
@@ -70,6 +71,14 @@ export async function resolveCookieDomain(request: Request) {
 export async function getDataFromRequest(
   request: Request,
 ): Promise<{ user: User; session: UserSession | undefined; tokenData?: JwtData['data'] } | null> {
+  if (await AppConfig.isReverseProxyAuthEnabled()) {
+    const result = await getDataFromReverseProxyHeader(request);
+
+    if (result) {
+      return result;
+    }
+  }
+
   try {
     const cookies = getCookies(request.headers);
 
@@ -93,6 +102,53 @@ export async function getDataFromRequest(
     if (result) {
       return result;
     }
+  }
+
+  return null;
+}
+
+async function getDataFromReverseProxyHeader(request: Request) {
+  const config = await AppConfig.getConfig();
+  const emailHeader = config.auth.reverseProxyAuthEmailHeader;
+
+  try {
+    const email = (request.headers.get(emailHeader) || '').trim().toLowerCase();
+
+    if (!email) {
+      return null;
+    }
+
+    if (!validateEmail(email)) {
+      throw new Error(`Invalid email in the "${emailHeader}" header.`);
+    }
+
+    let user = await UserModel.getByEmail(email);
+
+    if (!user) {
+      // Pages fire a few requests at once, which would otherwise all sign up the same new user
+      const lock = new Locker(`users:reverse-proxy-signup:${email}`);
+
+      await lock.acquire();
+
+      try {
+        user = await UserModel.getByEmail(email);
+
+        if (!user && await AppConfig.isSignupAllowed({ viaSingleSignOn: true })) {
+          // An empty password will always be impossible to login with
+          user = await UserModel.create(email, '');
+        }
+      } finally {
+        lock.release();
+      }
+    }
+
+    if (!user) {
+      throw new Error(`Sign up via reverse proxy authentication is not allowed for "${email}".`);
+    }
+
+    return { user, session: undefined };
+  } catch (error) {
+    console.error(error);
   }
 
   return null;
@@ -187,7 +243,21 @@ export async function logoutUser(request: Request) {
 
   const result = await getDataFromCookie(cookies[COOKIE_NAME] ?? '');
 
+  const config = await AppConfig.getConfig();
+  const isReverseProxyAuthEnabled = await AppConfig.isReverseProxyAuthEnabled();
+
+  // Logging out of the reverse proxy is what ends a session authenticated by it
+  const urlToRedirectTo = (isReverseProxyAuthEnabled && config.auth.reverseProxyAuthLogoutUrl) || '/';
+
   if (!result || !result.tokenData?.session_id || !result.user) {
+    // Requests authenticated by the reverse proxy have no session here to clear
+    if (isReverseProxyAuthEnabled) {
+      return new Response('Logged Out', {
+        status: 303,
+        headers: { 'Location': urlToRedirectTo, 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
+
     throw new Error('Invalid session');
   }
 
@@ -215,7 +285,7 @@ export async function logoutUser(request: Request) {
 
   const response = new Response('Logged Out', {
     status: 303,
-    headers: { 'Location': '/', 'Content-Type': 'text/html; charset=utf-8' },
+    headers: { 'Location': urlToRedirectTo, 'Content-Type': 'text/html; charset=utf-8' },
   });
 
   setCookie(response.headers, cookie);

@@ -163,7 +163,7 @@ export interface Config {
     skipCookieDomainSecurity: boolean;
     /** If true, single sign-on will be enabled */
     enableSingleSignOn: boolean;
-    /** If true, signups via single sign-on will be allowed, overriding allowSignups */
+    /** If true, signups via single sign-on (OIDC or reverse proxy authentication) will be allowed, overriding allowSignups */
     allowSignupsViaSingleSignOn: boolean;
     /** The Discovery URL (AKA Issuer) of the identity/single sign-on provider */
     singleSignOnUrl: string;
@@ -171,6 +171,12 @@ export interface Config {
     singleSignOnEmailAttribute: string;
     /** The scopes to request from the identity/single sign-on provider */
     singleSignOnScopes: string[];
+    /** If true, requests will be authenticated by the email in the reverseProxyAuthEmailHeader request header, set by an authenticating reverse proxy (like Authelia or Authentik). Only enable this if the app can't be reached without going through that proxy, and the proxy always overwrites or removes that header from incoming requests, otherwise anyone can login as anyone */
+    enableReverseProxyAuth: boolean;
+    /** The request header containing the authenticated user's email, set by the reverse proxy */
+    reverseProxyAuthEmailHeader: string;
+    /** The URL to redirect to after logging out, usually the reverse proxy's logout URL (i.e. "https://auth.example.com/logout"). Empty will redirect to the home page */
+    reverseProxyAuthLogoutUrl: string;
   };
   files: {
     /** The root-relative root path for files, i.e. "data-files" */

@@ -6,6 +6,7 @@ import {
   cacheDirectorySize,
   DirectoryModel,
   FileModel,
+  getAttachmentContentDisposition,
   getDirectorySize,
   getDirectorySizes,
 } from '/lib/models/files.ts';
@@ -450,4 +451,19 @@ Deno.test('that the directory size cache evicts the oldest measurement once full
     assertEquals(await getDirectorySize(oldestPath), bytesFromHumanFileSize('12 KB'));
     assertEquals(await readLog(logPath), ['started', 'finished']);
   });
+});
+
+Deno.test('that attachment file names keep their characters while staying valid header values', () => {
+  const contentDisposition = getAttachmentContentDisposition(`Fotos "2024" (O'Neil) 日本.zip`);
+
+  assertEquals(
+    contentDisposition,
+    `attachment; filename="Fotos _2024_ (O'Neil) __.zip"; filename*=UTF-8''Fotos%20%222024%22%20%28O%27Neil%29%20%E6%97%A5%E6%9C%AC.zip`,
+  );
+
+  // Response headers throw on non-Latin-1 characters
+  assertEquals(
+    new Headers({ 'content-disposition': contentDisposition }).get('content-disposition'),
+    contentDisposition,
+  );
 });

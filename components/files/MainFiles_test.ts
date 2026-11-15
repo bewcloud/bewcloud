@@ -25,6 +25,7 @@ function renderAndCollectDropHandlers(fileShareId?: string) {
       baseUrl: 'http://localhost:8000',
       isFileSharingAllowed: true,
       areDirectoryDownloadsAllowed: true,
+      areMultipleFileDownloadsAllowed: true,
       fileShareId,
     }));
   } finally {

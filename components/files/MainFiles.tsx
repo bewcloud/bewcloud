@@ -53,6 +53,7 @@ interface MainFilesProps {
   baseUrl: string;
   isFileSharingAllowed: boolean;
   areDirectoryDownloadsAllowed: boolean;
+  areMultipleFileDownloadsAllowed: boolean;
   fileShareId?: string;
   initialSortBy?: SortColumn;
   initialSortOrder?: SortOrder;
@@ -67,6 +68,7 @@ export default function MainFiles(
     baseUrl,
     isFileSharingAllowed,
     areDirectoryDownloadsAllowed,
+    areMultipleFileDownloadsAllowed,
     fileShareId,
     initialSortBy = 'name',
     initialSortOrder = 'asc',
@@ -85,6 +87,9 @@ export default function MainFiles(
   const chosenFiles = useSignal<Pick<DirectoryFile, 'parent_path' | 'file_name'>[]>([]);
   const isAnyItemChosen = chosenDirectories.value.length > 0 || chosenFiles.value.length > 0;
   const bulkItemsCount = chosenDirectories.value.length + chosenFiles.value.length;
+  // Chosen directories can only be included in the zip if they can be downloaded on their own, too
+  const canBulkDownload = !fileShareId && areMultipleFileDownloadsAllowed &&
+    (chosenDirectories.value.length === 0 || areDirectoryDownloadsAllowed);
   const areNewOptionsOpen = useSignal<boolean>(false);
   const areBulkOptionsOpen = useSignal<boolean>(false);
   const isNewDirectoryModalOpen = useSignal<boolean>(false);
@@ -622,6 +627,28 @@ export default function MainFiles(
     }
   }
 
+  function onClickBulkDownload() {
+    areBulkOptionsOpen.value = false;
+
+    const searchParams = new URLSearchParams({ parentPath: path.value });
+
+    for (const directory of chosenDirectories.value) {
+      searchParams.append('name', directory.directory_name);
+    }
+
+    for (const file of chosenFiles.value) {
+      searchParams.append('name', file.file_name);
+    }
+
+    // Create a temporary anchor element to trigger download (the zip's file name comes from the response)
+    const link = document.createElement('a');
+    link.href = `/api/files/download-multiple?${searchParams.toString()}`;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   async function onClickBulkDelete() {
     if (
       confirm(
@@ -870,6 +897,17 @@ export default function MainFiles(
                     tabindex={-1}
                   >
                     <div class='py-1'>
+                      {canBulkDownload
+                        ? (
+                          <button
+                            class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
+                            onClick={() => onClickBulkDownload()}
+                            type='button'
+                          >
+                            Download {bulkItemsCount} item{bulkItemsCount === 1 ? '' : 's'}
+                          </button>
+                        )
+                        : null}
                       <button
                         class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                         onClick={() => onClickBulkDelete()}

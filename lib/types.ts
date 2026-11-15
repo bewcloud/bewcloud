@@ -179,6 +179,8 @@ export interface Config {
     allowPublicSharing: boolean;
     /** If true, directories can be downloaded as zip files */
     allowDirectoryDownloads: boolean;
+    /** If true, multiple chosen files can be downloaded together as a zip file (chosen directories are only included if allowDirectoryDownloads is also true) */
+    allowMultipleFileDownloads: boolean;
     /** The maximum upload size in megabytes. Overrides the core.maxRequestSizeInMegabytes setting on /dav and /api/files/upload endpoints. */
     maxUploadSizeInMegabytes: number;
   };

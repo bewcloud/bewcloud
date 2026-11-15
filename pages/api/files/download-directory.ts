@@ -2,10 +2,11 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { join } from '@std/path';
 
 import { AppConfig } from '/lib/config.ts';
-import { ensureUserPathIsValidAndSecurelyAccessible, getDirectorySize } from '/lib/models/files.ts';
-
-// -1 (fastest compression) trades compression ratio for CPU time, so only use it once the directory is big enough for that to matter
-const FAST_COMPRESSION_MIN_SIZE_IN_BYTES = 10 * 1024 * 1024; // 10MB
+import {
+  createZipArchiveResponse,
+  ensureUserPathIsValidAndSecurelyAccessible,
+  getDirectorySize,
+} from '/lib/models/files.ts';
 
 async function get({ request, user }: RequestHandlerParams) {
   const config = await AppConfig.getConfig();
@@ -54,88 +55,13 @@ async function get({ request, user }: RequestHandlerParams) {
     }
 
     const directorySizeInBytes = await getDirectorySize(fullDirectoryPath);
-    // An unknown size means it could not be calculated quickly, so the directory is likely big
-    const compressionArgs = directorySizeInBytes === null || directorySizeInBytes > FAST_COMPRESSION_MIN_SIZE_IN_BYTES
-      ? ['-1']
-      : [];
 
-    // Use the zip command to create the archive, streaming its stdout straight to the client instead of buffering the whole archive in memory
-    let child: Deno.ChildProcess;
-    try {
-      child = new Deno.Command('zip', {
-        args: ['-r', ...compressionArgs, '-', '.'],
-        cwd: fullDirectoryPath,
-        stdout: 'piped',
-        stderr: 'piped',
-      }).spawn();
-    } catch (error) {
-      console.error('zip command is not available:', error);
-      return new Response('Error creating zip archive', { status: 500 });
-    }
-
-    let stderrText = '';
-
-    // Consume stderr in the background so a full stderr buffer can't block the child
-    const consumeStderr = async () => {
-      try {
-        stderrText = await new Response(child.stderr).text();
-
-        if (stderrText.trim()) {
-          console.error('Zip command stderr:', stderrText);
-        }
-      } catch (error) {
-        console.error('Failed to read zip stderr:', error);
-      }
-    };
-    const stderrPromise = consumeStderr();
-
-    // Kill the child if the client disconnects mid-download, to avoid an orphaned `zip` process
-    request.signal.addEventListener('abort', () => {
-      try {
-        child.kill();
-      } catch {
-        // Already exited, ignore
-      }
-    });
-
-    // Wrap stdout so a non-zero zip exit propagates as a stream error instead of a silently-truncated "successful" download
-    const stdoutReader = child.stdout.getReader();
-    const stream = new ReadableStream<Uint8Array>({
-      async pull(controller) {
-        const { done, value } = await stdoutReader.read();
-
-        if (done) {
-          const [status] = await Promise.all([child.status, stderrPromise]);
-
-          if (!status.success) {
-            console.error(`Zip command exited with code ${status.code}: ${stderrText}`);
-            controller.error(new Error(`zip exited with code ${status.code}`));
-            return;
-          }
-
-          controller.close();
-          return;
-        }
-
-        controller.enqueue(value);
-      },
-      cancel(reason) {
-        stdoutReader.cancel(reason).catch(() => {});
-        try {
-          child.kill();
-        } catch {
-          // Already exited, ignore
-        }
-      },
-    });
-
-    return new Response(stream, {
-      status: 200,
-      headers: {
-        'content-type': 'application/zip',
-        'content-disposition': `attachment; filename="${name}.zip"`,
-        'cache-control': 'no-cache, no-store, must-revalidate',
-      },
+    return createZipArchiveResponse({
+      request,
+      workingDirectoryPath: fullDirectoryPath,
+      entryNames: ['.'],
+      sizeInBytes: directorySizeInBytes,
+      archiveFileName: `${name}.zip`,
     });
   } catch (error) {
     console.error('Error creating directory zip:', error);

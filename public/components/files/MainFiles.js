@@ -471,21 +471,27 @@ export default function MainFiles({
   }
   function onClickBulkDownload() {
     areBulkOptionsOpen.value = false;
-    const searchParams = new URLSearchParams({
-      parentPath: path.value
-    });
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/files/download-multiple';
+    form.style.display = 'none';
+    const appendField = (name, value) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+    appendField('parentPath', path.value);
     for (const directory of chosenDirectories.value) {
-      searchParams.append('name', directory.directory_name);
+      appendField('name', directory.directory_name);
     }
     for (const file of chosenFiles.value) {
-      searchParams.append('name', file.file_name);
+      appendField('name', file.file_name);
     }
-    const link = document.createElement('a');
-    link.href = `/api/files/download-multiple?${searchParams.toString()}`;
-    link.download = '';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   }
   async function onClickBulkDelete() {
     if (confirm(`Are you sure you want to delete ${bulkItemsCount === 1 ? 'this' : 'these'} ${bulkItemsCount} item${bulkItemsCount === 1 ? '' : 's'}?`)) {

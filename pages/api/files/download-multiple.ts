@@ -8,7 +8,7 @@ import {
   getDirectorySizes,
 } from '/lib/models/files.ts';
 
-async function get({ request, user }: RequestHandlerParams) {
+async function post({ request, user }: RequestHandlerParams) {
   const config = await AppConfig.getConfig();
 
   // Check if multiple file downloads are enabled
@@ -23,9 +23,16 @@ async function get({ request, user }: RequestHandlerParams) {
     return new Response('Forbidden', { status: 403 });
   }
 
-  const searchParams = new URL(request.url).searchParams;
-  const parentPath = searchParams.get('parentPath') || '/';
-  const names = [...new Set(searchParams.getAll('name'))];
+  let formData: FormData;
+  try {
+    formData = await request.clone().formData();
+  } catch {
+    return new Response('Bad Request', { status: 400 });
+  }
+
+  const parentPathField = formData.get('parentPath');
+  const parentPath = typeof parentPathField === 'string' && parentPathField ? parentPathField : '/';
+  const names = [...new Set(formData.getAll('name').filter((name): name is string => typeof name === 'string'))];
 
   if (names.length === 0) {
     return new Response('At least one name is required', { status: 400 });
@@ -34,7 +41,7 @@ async function get({ request, user }: RequestHandlerParams) {
   // Only direct children of the parent path can be chosen
   if (
     !parentPath.startsWith('/') || parentPath.split('/').includes('..') ||
-    names.some((name) => !name || name === '.' || name === '..' || basename(name) !== name)
+    names.some((name) => !name || name === '.' || name === '..' || name.startsWith('/') || basename(name) !== name)
   ) {
     return new Response('Bad Request', { status: 400 });
   }
@@ -87,7 +94,8 @@ async function get({ request, user }: RequestHandlerParams) {
     return createZipArchiveResponse({
       request,
       workingDirectoryPath: fullParentPath,
-      entryNames: names,
+      entryNames: names.map((name) => `./${name}`),
+      includeDirectoryContents: directoryPaths.length > 0,
       sizeInBytes: totalSizeInBytes,
       archiveFileName: `${archiveName}.zip`,
     });
@@ -103,6 +111,6 @@ async function get({ request, user }: RequestHandlerParams) {
 }
 
 export default page({
-  get,
+  post,
   accessMode: 'user',
 });

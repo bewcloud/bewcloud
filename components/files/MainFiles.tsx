@@ -630,23 +630,33 @@ export default function MainFiles(
   function onClickBulkDownload() {
     areBulkOptionsOpen.value = false;
 
-    const searchParams = new URLSearchParams({ parentPath: path.value });
+    // A form POST keeps the selection out of the URL (which has length limits) and still streams the zip straight to the browser
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/files/download-multiple';
+    form.style.display = 'none';
+
+    const appendField = (name: string, value: string) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+
+    appendField('parentPath', path.value);
 
     for (const directory of chosenDirectories.value) {
-      searchParams.append('name', directory.directory_name);
+      appendField('name', directory.directory_name);
     }
 
     for (const file of chosenFiles.value) {
-      searchParams.append('name', file.file_name);
+      appendField('name', file.file_name);
     }
 
-    // Create a temporary anchor element to trigger download (the zip's file name comes from the response)
-    const link = document.createElement('a');
-    link.href = `/api/files/download-multiple?${searchParams.toString()}`;
-    link.download = '';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   }
 
   async function onClickBulkDelete() {

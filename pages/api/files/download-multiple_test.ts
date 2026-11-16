@@ -1,7 +1,8 @@
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertRejects } from '@std/assert';
 import { join } from '@std/path';
 
 import { AppConfig } from '/lib/config.ts';
+import { createZipArchiveResponse } from '/lib/models/files.ts';
 import { User } from '/lib/types.ts';
 
 import downloadMultiplePage from './download-multiple.ts';
@@ -63,19 +64,23 @@ async function withUserFiles(test: (user: User, userRootPath: string) => Promise
 }
 
 async function downloadMultiple(user: User, parentPath: string | null, names: string[]): Promise<Response> {
-  const searchParams = new URLSearchParams();
+  const formData = new URLSearchParams();
 
   if (parentPath !== null) {
-    searchParams.set('parentPath', parentPath);
+    formData.set('parentPath', parentPath);
   }
 
   for (const name of names) {
-    searchParams.append('name', name);
+    formData.append('name', name);
   }
 
-  const request = new Request(`http://localhost:8000/api/files/download-multiple?${searchParams.toString()}`);
+  const request = new Request('http://localhost:8000/api/files/download-multiple', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: formData.toString(),
+  });
 
-  return await downloadMultiplePage.get!({
+  return await downloadMultiplePage.post!({
     request,
     match: { pathname: { groups: {} } } as unknown as URLPatternResult,
     user,
@@ -184,6 +189,55 @@ Deno.test('that chosen directories are rejected unless directory downloads are e
   });
 });
 
+Deno.test('that a chosen file named like an option is archived with its own content', async () => {
+  await withUserFiles(async (user, userRootPath) => {
+    await Deno.writeTextFile(join(userRootPath, 'Documents', '-'), 'dash');
+
+    const response = await withDownloadsConfig(
+      { allowMultipleFileDownloads: true, allowDirectoryDownloads: false },
+      () => downloadMultiple(user, '/Documents/', ['-', 'notes.txt']),
+    );
+
+    assertEquals(response.status, 200);
+    assertEquals(await listZipEntries(response), ['-', 'notes.txt']);
+  });
+});
+
+Deno.test('that the contents of a directory are not archived unless directories are meant to be included', async () => {
+  await withUserFiles(async (_user, userRootPath) => {
+    const workingDirectoryPath = join(userRootPath, 'Documents');
+    const request = new Request('http://localhost:8000/api/files/download-multiple', { method: 'POST' });
+
+    const response = createZipArchiveResponse({
+      request,
+      workingDirectoryPath,
+      entryNames: ['./notes.txt', './Reports'],
+      includeDirectoryContents: false,
+      sizeInBytes: 0,
+      archiveFileName: 'Documents.zip',
+    });
+
+    assertEquals(await listZipEntries(response), ['Reports/', 'notes.txt']);
+  });
+});
+
+Deno.test('that the download fails if a chosen entry is gone by the time it is archived', async () => {
+  await withUserFiles(async (_user, userRootPath) => {
+    const request = new Request('http://localhost:8000/api/files/download-multiple', { method: 'POST' });
+
+    const response = createZipArchiveResponse({
+      request,
+      workingDirectoryPath: join(userRootPath, 'Documents'),
+      entryNames: ['./notes.txt', './missing.txt'],
+      includeDirectoryContents: false,
+      sizeInBytes: 0,
+      archiveFileName: 'Documents.zip',
+    });
+
+    await assertRejects(() => response.arrayBuffer());
+  });
+});
+
 Deno.test('that a missing chosen file is not found', async () => {
   await withUserFiles(async (user) => {
     const response = await withDownloadsConfig(
@@ -202,6 +256,8 @@ Deno.test('that names outside of the parent path are rejected', async () => {
       ['/Documents/', []],
       ['/Documents/', ['']],
       ['/Documents/', ['..']],
+      ['/Documents/', ['/']],
+      ['/Documents/', ['/notes.txt']],
       ['/Documents/', ['Reports/q1.txt']],
       ['/Documents/', ['../notes.txt']],
       ['/Documents/../../', ['notes.txt']],

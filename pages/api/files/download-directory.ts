@@ -60,6 +60,7 @@ async function get({ request, user }: RequestHandlerParams) {
       request,
       workingDirectoryPath: fullDirectoryPath,
       entryNames: ['.'],
+      includeDirectoryContents: true,
       sizeInBytes: directorySizeInBytes,
       archiveFileName: `${name}.zip`,
     });

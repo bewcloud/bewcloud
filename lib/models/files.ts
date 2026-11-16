@@ -1035,19 +1035,16 @@ export function getAttachmentContentDisposition(fileName: string): string {
 }
 
 /**
- * Streams a zip archive of the given files and directories (added recursively) to the client, instead of buffering the whole archive in memory.
+ * Streams a zip archive of the given entries to the client, instead of buffering the whole archive in memory.
  *
- * @param request - The request being responded to, so `zip` is stopped if the client disconnects
- * @param workingDirectoryPath - The full, already validated, path that `entryNames` are relative to
- * @param entryNames - The names of the files and directories to add to the archive, relative to `workingDirectoryPath`
- * @param sizeInBytes - The total size of the entries, or null if it's unknown
- * @param archiveFileName - The file name of the archive, as the client should save it
+ * `entryNames` must be validated relative paths (like `./name`), as they are passed to `zip` as-is.
  */
 export function createZipArchiveResponse(
-  { request, workingDirectoryPath, entryNames, sizeInBytes, archiveFileName }: {
+  { request, workingDirectoryPath, entryNames, includeDirectoryContents, sizeInBytes, archiveFileName }: {
     request: Request;
     workingDirectoryPath: string;
     entryNames: string[];
+    includeDirectoryContents: boolean;
     sizeInBytes: number | null;
     archiveFileName: string;
   },
@@ -1057,10 +1054,20 @@ export function createZipArchiveResponse(
 
   // Use the zip command to create the archive, streaming its stdout straight to the client.
   // "-nw" stops zip from expanding wildcards in names (like "[1].jpg"), and "--" from treating names starting with "-" as options.
+  // "-MM" makes a missing entry fail the archive, "-q" keeps zip from logging every added file, and "-r" is only used if directories are meant to be included.
   let child: Deno.ChildProcess;
   try {
     child = new Deno.Command('zip', {
-      args: ['-r', '-nw', ...compressionArgs, '-', '--', ...entryNames],
+      args: [
+        ...(includeDirectoryContents ? ['-r'] : []),
+        '-nw',
+        '-MM',
+        '-q',
+        ...compressionArgs,
+        '-',
+        '--',
+        ...entryNames,
+      ],
       cwd: workingDirectoryPath,
       stdout: 'piped',
       stderr: 'piped',

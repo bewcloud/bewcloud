@@ -25,6 +25,7 @@ export class AppConfig {
         rootPath: 'data-files',
         allowPublicSharing: false,
         allowDirectoryDownloads: false,
+        allowMultipleFileDownloads: false,
         maxUploadSizeInMegabytes: 100,
       },
       core: {
@@ -195,6 +196,12 @@ export class AppConfig {
     await this.loadConfig();
 
     return this.config.files.allowDirectoryDownloads;
+  }
+
+  static async areMultipleFileDownloadsAllowed(): Promise<boolean> {
+    await this.loadConfig();
+
+    return this.config.files.allowMultipleFileDownloads;
   }
 
   static async getFilesRootPath(): Promise<string> {

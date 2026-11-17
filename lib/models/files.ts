@@ -1016,3 +1016,129 @@ export async function getDirectorySizes(paths: string[]): Promise<(number | null
 
   return directorySizes;
 }
+
+// -1 (fastest compression) trades compression ratio for CPU time, so only use it once the content is big enough for that to matter
+const FAST_ZIP_COMPRESSION_MIN_SIZE_IN_BYTES = 10 * 1024 * 1024; // 10MB
+
+/**
+ * Builds a Content-Disposition header value for downloading a file with the given name.
+ * Header values can't contain non-Latin-1 characters, so the real name is sent via RFC 6266's `filename*`, with an ASCII-only `filename` fallback.
+ */
+export function getAttachmentContentDisposition(fileName: string): string {
+  const asciiFileName = fileName.replace(/[^\x20-\x7e]|["\\]/g, '_');
+  const encodedFileName = encodeURIComponent(fileName).replace(
+    /['()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
+  return `attachment; filename="${asciiFileName}"; filename*=UTF-8''${encodedFileName}`;
+}
+
+/**
+ * Streams a zip archive of the given entries to the client, instead of buffering the whole archive in memory.
+ *
+ * `entryNames` must be validated relative paths (like `./name`), as they are passed to `zip` as-is.
+ */
+export function createZipArchiveResponse(
+  { request, workingDirectoryPath, entryNames, includeDirectoryContents, sizeInBytes, archiveFileName }: {
+    request: Request;
+    workingDirectoryPath: string;
+    entryNames: string[];
+    includeDirectoryContents: boolean;
+    sizeInBytes: number | null;
+    archiveFileName: string;
+  },
+): Response {
+  // An unknown size means it could not be calculated quickly, so the content is likely big
+  const compressionArgs = sizeInBytes === null || sizeInBytes > FAST_ZIP_COMPRESSION_MIN_SIZE_IN_BYTES ? ['-1'] : [];
+
+  // Use the zip command to create the archive, streaming its stdout straight to the client.
+  // "-nw" stops zip from expanding wildcards in names (like "[1].jpg"), and "--" from treating names starting with "-" as options.
+  // "-MM" makes a missing entry fail the archive, "-q" keeps zip from logging every added file, and "-r" is only used if directories are meant to be included.
+  let child: Deno.ChildProcess;
+  try {
+    child = new Deno.Command('zip', {
+      args: [
+        ...(includeDirectoryContents ? ['-r'] : []),
+        '-nw',
+        '-MM',
+        '-q',
+        ...compressionArgs,
+        '-',
+        '--',
+        ...entryNames,
+      ],
+      cwd: workingDirectoryPath,
+      stdout: 'piped',
+      stderr: 'piped',
+    }).spawn();
+  } catch (error) {
+    console.error('zip command is not available:', error);
+    return new Response('Error creating zip archive', { status: 500 });
+  }
+
+  let stderrText = '';
+
+  // Consume stderr in the background so a full stderr buffer can't block the child
+  const consumeStderr = async () => {
+    try {
+      stderrText = await new Response(child.stderr).text();
+
+      if (stderrText.trim()) {
+        console.error('Zip command stderr:', stderrText);
+      }
+    } catch (error) {
+      console.error('Failed to read zip stderr:', error);
+    }
+  };
+  const stderrPromise = consumeStderr();
+
+  // Kill the child if the client disconnects mid-download, to avoid an orphaned `zip` process
+  request.signal.addEventListener('abort', () => {
+    try {
+      child.kill();
+    } catch {
+      // Already exited, ignore
+    }
+  });
+
+  // Wrap stdout so a non-zero zip exit propagates as a stream error instead of a silently-truncated "successful" download
+  const stdoutReader = child.stdout.getReader();
+  const stream = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      const { done, value } = await stdoutReader.read();
+
+      if (done) {
+        const [status] = await Promise.all([child.status, stderrPromise]);
+
+        if (!status.success) {
+          console.error(`Zip command exited with code ${status.code}: ${stderrText}`);
+          controller.error(new Error(`zip exited with code ${status.code}`));
+          return;
+        }
+
+        controller.close();
+        return;
+      }
+
+      controller.enqueue(value);
+    },
+    cancel(reason) {
+      stdoutReader.cancel(reason).catch(() => {});
+      try {
+        child.kill();
+      } catch {
+        // Already exited, ignore
+      }
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      'content-type': 'application/zip',
+      'content-disposition': getAttachmentContentDisposition(archiveFileName),
+      'cache-control': 'no-cache, no-store, must-revalidate',
+    },
+  });
+}

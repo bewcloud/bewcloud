@@ -20,6 +20,7 @@ const config: PartialDeep<Config> = {
   //   rootPath: 'data-files',
   //   allowPublicSharing: false, // If true, public file sharing will be allowed (still requires a user to enable sharing for a given file or directory)
   //   allowDirectoryDownloads: false, // If true, directories can be downloaded as zip files
+  //   allowMultipleFileDownloads: false, // If true, multiple chosen files can be downloaded together as a zip file (chosen directories are only included if allowDirectoryDownloads is also true)
   //   maxUploadSizeInMegabytes: 100, // The maximum upload size in megabytes. Overrides the core.maxRequestSizeInMegabytes setting on /dav and /api/files/upload endpoints.
   // },
   // core: {

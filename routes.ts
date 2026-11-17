@@ -377,6 +377,7 @@ const routes: Routes = {
   apiFilesDeleteShare: createPageRouteHandler('api/files/delete-share.ts', '/api/files/delete-share'),
   apiFilesDelete: createPageRouteHandler('api/files/delete.ts', '/api/files/delete'),
   apiFilesDownloadDirectory: createPageRouteHandler('api/files/download-directory.ts', '/api/files/download-directory'),
+  apiFilesDownloadMultiple: createPageRouteHandler('api/files/download-multiple.ts', '/api/files/download-multiple'),
   apiFilesGetDirectories: createPageRouteHandler('api/files/get-directories.ts', '/api/files/get-directories'),
   apiFilesGetShare: createPageRouteHandler('api/files/get-share.ts', '/api/files/get-share'),
   apiFilesGet: createPageRouteHandler('api/files/get.ts', '/api/files/get'),

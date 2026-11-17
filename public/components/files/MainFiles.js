@@ -20,6 +20,7 @@ export default function MainFiles({
   baseUrl,
   isFileSharingAllowed,
   areDirectoryDownloadsAllowed,
+  areMultipleFileDownloadsAllowed,
   fileShareId,
   initialSortBy = 'name',
   initialSortOrder = 'asc',
@@ -37,6 +38,7 @@ export default function MainFiles({
   const chosenFiles = useSignal([]);
   const isAnyItemChosen = chosenDirectories.value.length > 0 || chosenFiles.value.length > 0;
   const bulkItemsCount = chosenDirectories.value.length + chosenFiles.value.length;
+  const canBulkDownload = !fileShareId && areMultipleFileDownloadsAllowed && (chosenDirectories.value.length === 0 || areDirectoryDownloadsAllowed);
   const areNewOptionsOpen = useSignal(false);
   const areBulkOptionsOpen = useSignal(false);
   const isNewDirectoryModalOpen = useSignal(false);
@@ -467,6 +469,45 @@ export default function MainFiles({
       chosenFiles.value = [...newChosenFiles];
     }
   }
+  function onClickBulkDownload() {
+    areBulkOptionsOpen.value = false;
+    const frameName = 'bulk-download-frame';
+    let frame = document.querySelector(`iframe[name="${frameName}"]`);
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.name = frameName;
+      frame.style.display = 'none';
+      frame.addEventListener('load', () => {
+        const message = frame?.contentDocument?.body?.innerText?.trim();
+        if (message) {
+          alert(`Failed to download the chosen items. ${message}`);
+        }
+      });
+      document.body.appendChild(frame);
+    }
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/files/download-multiple';
+    form.target = frameName;
+    form.style.display = 'none';
+    const appendField = (name, value) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+    appendField('parentPath', path.value);
+    for (const directory of chosenDirectories.value) {
+      appendField('name', directory.directory_name);
+    }
+    for (const file of chosenFiles.value) {
+      appendField('name', file.file_name);
+    }
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  }
   async function onClickBulkDelete() {
     if (confirm(`Are you sure you want to delete ${bulkItemsCount === 1 ? 'this' : 'these'} ${bulkItemsCount} item${bulkItemsCount === 1 ? '' : 's'}?`)) {
       if (isDeleting.value) {
@@ -657,7 +698,11 @@ export default function MainFiles({
     tabindex: -1
   }, h("div", {
     class: "py-1"
-  }, h("button", {
+  }, canBulkDownload ? h("button", {
+    class: `text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`,
+    onClick: () => onClickBulkDownload(),
+    type: "button"
+  }, "Download ", bulkItemsCount, " item", bulkItemsCount === 1 ? '' : 's') : null, h("button", {
     class: `text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`,
     onClick: () => onClickBulkDelete(),
     type: "button"

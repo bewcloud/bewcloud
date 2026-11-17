@@ -191,6 +191,7 @@ function defaultHtmlContent(
         baseUrl: ${JSON.stringify(baseUrl)},
         isFileSharingAllowed: true,
         areDirectoryDownloadsAllowed: false,
+        areMultipleFileDownloadsAllowed: false,
         fileShareId: ${JSON.stringify(fileShareId)},
         initialSortBy: ${JSON.stringify(initialSortBy)},
         initialSortOrder: ${JSON.stringify(initialSortOrder)},

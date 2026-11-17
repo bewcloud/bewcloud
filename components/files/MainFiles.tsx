@@ -53,6 +53,7 @@ interface MainFilesProps {
   baseUrl: string;
   isFileSharingAllowed: boolean;
   areDirectoryDownloadsAllowed: boolean;
+  areMultipleFileDownloadsAllowed: boolean;
   fileShareId?: string;
   initialSortBy?: SortColumn;
   initialSortOrder?: SortOrder;
@@ -67,6 +68,7 @@ export default function MainFiles(
     baseUrl,
     isFileSharingAllowed,
     areDirectoryDownloadsAllowed,
+    areMultipleFileDownloadsAllowed,
     fileShareId,
     initialSortBy = 'name',
     initialSortOrder = 'asc',
@@ -85,6 +87,9 @@ export default function MainFiles(
   const chosenFiles = useSignal<Pick<DirectoryFile, 'parent_path' | 'file_name'>[]>([]);
   const isAnyItemChosen = chosenDirectories.value.length > 0 || chosenFiles.value.length > 0;
   const bulkItemsCount = chosenDirectories.value.length + chosenFiles.value.length;
+  // Chosen directories can only be included in the zip if they can be downloaded on their own, too
+  const canBulkDownload = !fileShareId && areMultipleFileDownloadsAllowed &&
+    (chosenDirectories.value.length === 0 || areDirectoryDownloadsAllowed);
   const areNewOptionsOpen = useSignal<boolean>(false);
   const areBulkOptionsOpen = useSignal<boolean>(false);
   const isNewDirectoryModalOpen = useSignal<boolean>(false);
@@ -622,6 +627,57 @@ export default function MainFiles(
     }
   }
 
+  function onClickBulkDownload() {
+    areBulkOptionsOpen.value = false;
+
+    // The zip is streamed by a form POST into a hidden iframe, so the selection stays out of the URL (which has length limits)
+    // and the Files view stays open. A successful download is an attachment, which never fires `load`; an error page does.
+    const frameName = 'bulk-download-frame';
+    let frame = document.querySelector<HTMLIFrameElement>(`iframe[name="${frameName}"]`);
+
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.name = frameName;
+      frame.style.display = 'none';
+      frame.addEventListener('load', () => {
+        const message = frame?.contentDocument?.body?.innerText?.trim();
+
+        if (message) {
+          alert(`Failed to download the chosen items. ${message}`);
+        }
+      });
+      document.body.appendChild(frame);
+    }
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/files/download-multiple';
+    form.target = frameName;
+    form.style.display = 'none';
+
+    const appendField = (name: string, value: string) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+
+    appendField('parentPath', path.value);
+
+    for (const directory of chosenDirectories.value) {
+      appendField('name', directory.directory_name);
+    }
+
+    for (const file of chosenFiles.value) {
+      appendField('name', file.file_name);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  }
+
   async function onClickBulkDelete() {
     if (
       confirm(
@@ -870,6 +926,17 @@ export default function MainFiles(
                     tabindex={-1}
                   >
                     <div class='py-1'>
+                      {canBulkDownload
+                        ? (
+                          <button
+                            class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
+                            onClick={() => onClickBulkDownload()}
+                            type='button'
+                          >
+                            Download {bulkItemsCount} item{bulkItemsCount === 1 ? '' : 's'}
+                          </button>
+                        )
+                        : null}
                       <button
                         class={`text-white block px-4 py-2 text-sm w-full text-left hover:bg-slate-600`}
                         onClick={() => onClickBulkDelete()}

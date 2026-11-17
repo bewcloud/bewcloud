@@ -61,6 +61,7 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
 
   const isPublicFileSharingAllowed = await AppConfig.isPublicFileSharingAllowed();
   const areDirectoryDownloadsAllowed = await AppConfig.areDirectoryDownloadsAllowed();
+  const areMultipleFileDownloadsAllowed = await AppConfig.areMultipleFileDownloadsAllowed();
 
   const htmlContent = defaultHtmlContent({
     userDirectories,
@@ -69,6 +70,7 @@ async function get({ request, user, match, session, isRunningLocally }: RequestH
     baseUrl,
     isFileSharingAllowed: isPublicFileSharingAllowed,
     areDirectoryDownloadsAllowed,
+    areMultipleFileDownloadsAllowed,
     initialSortBy,
     initialSortOrder,
     uploadSessionTag: await generateUploadSessionTag(session?.tokenData?.session_id),
@@ -93,6 +95,7 @@ function defaultHtmlContent(
     baseUrl,
     isFileSharingAllowed,
     areDirectoryDownloadsAllowed,
+    areMultipleFileDownloadsAllowed,
     initialSortBy,
     initialSortOrder,
     uploadSessionTag,
@@ -103,6 +106,7 @@ function defaultHtmlContent(
     baseUrl: string;
     isFileSharingAllowed: boolean;
     areDirectoryDownloadsAllowed: boolean;
+    areMultipleFileDownloadsAllowed: boolean;
     initialSortBy: string;
     initialSortOrder: string;
     uploadSessionTag: string;
@@ -135,6 +139,7 @@ function defaultHtmlContent(
         baseUrl: ${JSON.stringify(baseUrl)},
         isFileSharingAllowed: ${JSON.stringify(isFileSharingAllowed)},
         areDirectoryDownloadsAllowed: ${JSON.stringify(areDirectoryDownloadsAllowed)},
+        areMultipleFileDownloadsAllowed: ${JSON.stringify(areMultipleFileDownloadsAllowed)},
         initialSortBy: ${JSON.stringify(initialSortBy)},
         initialSortOrder: ${JSON.stringify(initialSortOrder)},
         uploadSessionTag: ${JSON.stringify(uploadSessionTag)},

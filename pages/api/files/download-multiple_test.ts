@@ -89,20 +89,39 @@ async function downloadMultiple(user: User, parentPath: string | null, names: st
   });
 }
 
-async function listZipEntries(response: Response): Promise<string[]> {
+async function withZipFile<T>(response: Response, callback: (zipFilePath: string) => Promise<T>): Promise<T> {
   const zipFilePath = await Deno.makeTempFile({ prefix: 'bewcloud-download-', suffix: '.zip' });
 
   try {
     await Deno.writeFile(zipFilePath, new Uint8Array(await response.arrayBuffer()));
 
+    return await callback(zipFilePath);
+  } finally {
+    await Deno.remove(zipFilePath);
+  }
+}
+
+async function listZipEntries(response: Response): Promise<string[]> {
+  return await withZipFile(response, async (zipFilePath) => {
     const { success, stdout } = await new Deno.Command('unzip', { args: ['-Z1', zipFilePath] }).output();
 
     assertEquals(success, true);
 
     return new TextDecoder().decode(stdout).split('\n').filter(Boolean).sort();
-  } finally {
-    await Deno.remove(zipFilePath);
-  }
+  });
+}
+
+async function readZipEntry(response: Response, entryName: string): Promise<string> {
+  return await withZipFile(response, async (zipFilePath) => {
+    // `-p` extracts to stdout, and `unzip` has no `--`, so the name is escaped to not be read as an option or pattern
+    const { success, stdout } = await new Deno.Command('unzip', {
+      args: ['-p', zipFilePath, entryName.replace(/[-\\[\]*?]/g, '\\$&')],
+    }).output();
+
+    assertEquals(success, true);
+
+    return new TextDecoder().decode(stdout);
+  });
 }
 
 Deno.test('that multiple chosen files and directories are downloaded as a single zip', async () => {
@@ -199,7 +218,11 @@ Deno.test('that a chosen file named like an option is archived with its own cont
     );
 
     assertEquals(response.status, 200);
+
+    const zipResponse = response.clone();
+
     assertEquals(await listZipEntries(response), ['-', 'notes.txt']);
+    assertEquals(await readZipEntry(zipResponse, '-'), 'dash');
   });
 });
 

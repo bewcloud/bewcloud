@@ -630,10 +630,29 @@ export default function MainFiles(
   function onClickBulkDownload() {
     areBulkOptionsOpen.value = false;
 
-    // A form POST keeps the selection out of the URL (which has length limits) and still streams the zip straight to the browser
+    // The zip is streamed by a form POST into a hidden iframe, so the selection stays out of the URL (which has length limits)
+    // and the Files view stays open. A successful download is an attachment, which never fires `load`; an error page does.
+    const frameName = 'bulk-download-frame';
+    let frame = document.querySelector<HTMLIFrameElement>(`iframe[name="${frameName}"]`);
+
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.name = frameName;
+      frame.style.display = 'none';
+      frame.addEventListener('load', () => {
+        const message = frame?.contentDocument?.body?.innerText?.trim();
+
+        if (message) {
+          alert(`Failed to download the chosen items. ${message}`);
+        }
+      });
+      document.body.appendChild(frame);
+    }
+
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/api/files/download-multiple';
+    form.target = frameName;
     form.style.display = 'none';
 
     const appendField = (name: string, value: string) => {

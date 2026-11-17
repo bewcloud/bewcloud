@@ -471,9 +471,24 @@ export default function MainFiles({
   }
   function onClickBulkDownload() {
     areBulkOptionsOpen.value = false;
+    const frameName = 'bulk-download-frame';
+    let frame = document.querySelector(`iframe[name="${frameName}"]`);
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.name = frameName;
+      frame.style.display = 'none';
+      frame.addEventListener('load', () => {
+        const message = frame?.contentDocument?.body?.innerText?.trim();
+        if (message) {
+          alert(`Failed to download the chosen items. ${message}`);
+        }
+      });
+      document.body.appendChild(frame);
+    }
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/api/files/download-multiple';
+    form.target = frameName;
     form.style.display = 'none';
     const appendField = (name, value) => {
       const input = document.createElement('input');

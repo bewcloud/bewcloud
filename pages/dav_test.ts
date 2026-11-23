@@ -69,6 +69,18 @@ Deno.test('that GET returns a file that exists', async () => {
   assertEquals(await response.text(), 'hello world');
 });
 
+Deno.test('that GET downloads HTML files instead of rendering them', async () => {
+  const { user, userRootPath } = await setUpUser();
+  await Deno.writeTextFile(join(userRootPath, 'page.html'), '<script>alert(1)</script>');
+
+  const response = await callDav('GET', 'page.html', user);
+
+  assertEquals(response.status, 200);
+  assertEquals(response.headers.get('content-disposition')?.startsWith('attachment;'), true);
+  assertEquals(response.headers.get('content-security-policy')?.includes('sandbox'), true);
+  await response.body?.cancel();
+});
+
 Deno.test('that GET returns 404 for a file that does not exist', async () => {
   const { user } = await setUpUser();
 

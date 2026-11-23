@@ -3,6 +3,7 @@ import { join } from '@std/path';
 
 import { AppConfig } from '/lib/config.ts';
 import { ensureUserPathIsValidAndSecurelyAccessible, getDirectorySize } from '/lib/models/files.ts';
+import { getContentDispositionHeader } from '/lib/utils/misc.ts';
 
 // -1 (fastest compression) trades compression ratio for CPU time, so only use it once the directory is big enough for that to matter
 const FAST_COMPRESSION_MIN_SIZE_IN_BYTES = 10 * 1024 * 1024; // 10MB
@@ -133,7 +134,7 @@ async function get({ request, user }: RequestHandlerParams) {
       status: 200,
       headers: {
         'content-type': 'application/zip',
-        'content-disposition': `attachment; filename="${name}.zip"`,
+        'content-disposition': getContentDispositionHeader('attachment', `${name}.zip`),
         'cache-control': 'no-cache, no-store, must-revalidate',
       },
     });

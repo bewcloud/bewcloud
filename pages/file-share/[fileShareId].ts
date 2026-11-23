@@ -9,7 +9,7 @@ import {
   FileShareModel,
 } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import Loading from '/components/Loading.ts';
 import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
@@ -185,15 +185,15 @@ function defaultHtmlContent(
 
     if (mainFilesElement) {
       const mainFilesApp = h(MainFiles, {
-        initialDirectories: ${JSON.stringify(shareDirectories)},
-        initialFiles: ${JSON.stringify(shareFiles)},
-        initialPath: ${JSON.stringify(currentPath)},
-        baseUrl: ${JSON.stringify(baseUrl)},
+        initialDirectories: ${serializeForInlineScript(shareDirectories)},
+        initialFiles: ${serializeForInlineScript(shareFiles)},
+        initialPath: ${serializeForInlineScript(currentPath)},
+        baseUrl: ${serializeForInlineScript(baseUrl)},
         isFileSharingAllowed: true,
         areDirectoryDownloadsAllowed: false,
-        fileShareId: ${JSON.stringify(fileShareId)},
-        initialSortBy: ${JSON.stringify(initialSortBy)},
-        initialSortOrder: ${JSON.stringify(initialSortOrder)},
+        fileShareId: ${serializeForInlineScript(fileShareId)},
+        initialSortBy: ${serializeForInlineScript(initialSortBy)},
+        initialSortOrder: ${serializeForInlineScript(initialSortOrder)},
       });
 
       render(mainFilesApp, mainFilesElement);

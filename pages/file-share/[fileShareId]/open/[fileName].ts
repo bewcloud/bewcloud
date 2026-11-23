@@ -3,6 +3,7 @@ import { join } from '@std/path';
 
 import { ensureFileSharePathIsValidAndSecurelyAccessible, FileModel, FileShareModel } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
+import { getUserFileResponseHeaders } from '/lib/utils/misc.ts';
 
 async function get({ request, match }: RequestHandlerParams): Promise<Response> {
   const { fileShareId, fileName } = match.pathname.groups;
@@ -104,11 +105,11 @@ async function get({ request, match }: RequestHandlerParams): Promise<Response> 
 
   return new Response(fileResult.contents! as BodyInit, {
     status: 200,
-    headers: {
-      'cache-control': 'no-cache, no-store, must-revalidate',
-      'content-type': fileResult.contentType!,
-      'content-length': fileResult.byteSize!.toString(),
-    },
+    headers: getUserFileResponseHeaders({
+      contentType: fileResult.contentType!,
+      byteSize: fileResult.byteSize!,
+      fileName: decodedFileName,
+    }),
   });
 }
 

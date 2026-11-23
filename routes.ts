@@ -240,10 +240,10 @@ const routes: Routes = {
         }
 
         // Compiled component JS imports other compiled files by path, so a stale cached copy can reference a file that no longer exists after a rebuild (e.g. a renamed/removed component); same risk for the service worker script itself. 'no-cache' still lets the browser reuse the cached body via a 304 (serveFile sets an ETag), it just forces a revalidation request first.
-        const isServedFromComponentsPath = relativePath.startsWith('components/');
+        const isAppCodePath = relativePath.startsWith('components/') || relativePath.startsWith('ts/');
         response.headers.set(
           'cache-control',
-          (relativePath === 'sw.js' || isServedFromComponentsPath) ? 'no-cache' : `max-age=${oneDayInSeconds}, public`,
+          (relativePath === 'sw.js' || isAppCodePath) ? 'no-cache' : `max-age=${oneDayInSeconds}, public`,
         );
         return response;
       } catch (error) {

@@ -1,5 +1,5 @@
 import { generateFieldHtml, getFormDataField } from '/public/ts/utils/form.ts';
-import { convertObjectToFormData, currencyMap, escapeHtml, html } from '/public/ts/utils/misc.ts';
+import { convertObjectToFormData, currencyMap, escapeHtml, html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { getEnabledMultiFactorAuthMethodsFromUser } from '/public/ts/utils/multi-factor-auth.ts';
 import { getTimeZones } from '/public/ts/utils/calendar.ts';
 import Loading from "/public/components/Loading.js";
@@ -194,7 +194,7 @@ export default function Settings({
       <h2 class="text-2xl mb-4 text-left px-4 max-w-3xl mx-auto lg:min-w-96">Delete your account</h2>
       <p class="text-left mt-2 mb-6 px-4 max-w-3xl mx-auto lg:min-w-96">
         Deleting your account is instant and deletes all your data. ${helpEmail !== '' ? html`
-            If you need help, please <a href="${`mailto:${helpEmail}`}">reach out</a>.
+            If you need help, please <a href="${`mailto:${escapeHtml(helpEmail)}`}">reach out</a>.
           ` : ''}
       </p>
 
@@ -218,7 +218,7 @@ export default function Settings({
 
     if (multiFactorAuthSettingsElement) {
       const multiFactorAuthSettingsApp = h(MultiFactorAuthSettings, {
-        methods: ${JSON.stringify(multiFactorAuthMethods.map(method => ({
+        methods: ${serializeForInlineScript(multiFactorAuthMethods.map(method => ({
     type: method.type,
     id: method.id,
     name: method.name,

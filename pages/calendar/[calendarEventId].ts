@@ -1,7 +1,7 @@
 import page, { RequestHandlerParams } from '/lib/page.ts';
 
 import { Calendar, CalendarEvent, CalendarEventModel, CalendarModel } from '/lib/models/calendar.ts';
-import { convertFormDataToObject, html } from '/public/ts/utils/misc.ts';
+import { convertFormDataToObject, html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { updateIcs } from '/public/ts/utils/calendar.ts';
 import { getFormDataField } from '/public/ts/utils/form.ts';
 import { formFields } from '/components/calendar/ViewCalendarEvent.tsx';
@@ -194,11 +194,11 @@ function defaultHtmlContent({ calendarEvent, calendars, error, notice, formData 
 
     if (viewCalendarEventElement) {
       const viewCalendarEventApp = h(ViewCalendarEvent, {
-        initialCalendarEvent: ${JSON.stringify(calendarEvent)},
-        calendars: ${JSON.stringify(calendars)},
-        formData: ${JSON.stringify(formData)},
-        error: ${JSON.stringify(error)},
-        notice: ${JSON.stringify(notice)},
+        initialCalendarEvent: ${serializeForInlineScript(calendarEvent)},
+        calendars: ${serializeForInlineScript(calendars)},
+        formData: ${serializeForInlineScript(formData)},
+        error: ${serializeForInlineScript(error)},
+        notice: ${serializeForInlineScript(notice)},
       });
 
       render(viewCalendarEventApp, viewCalendarEventElement);

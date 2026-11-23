@@ -3,7 +3,7 @@ import { renderToString } from 'preact-render-to-string';
 import denoConfig from '/deno.json' with { type: 'json' };
 import { RequestHandlerParams } from '/lib/page.ts';
 import { AppConfig } from '/lib/config.ts';
-import { escapeHtml, html } from '/public/ts/utils/misc.ts';
+import { escapeHtml, html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 
 import Header from '/components/Header.tsx';
 
@@ -52,7 +52,7 @@ async function basicLayout(
       </head>
 
       <script type="importmap">
-      ${JSON.stringify(importMap)}
+      ${serializeForInlineScript(importMap)}
       </script>
 
       <body class="h-full">

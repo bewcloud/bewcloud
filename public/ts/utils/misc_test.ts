@@ -28,6 +28,12 @@ Deno.test('that serializeForInlineScript escapes angle brackets', () => {
   assertEquals(JSON.parse(serialized.replace(/\\u003c/g, '<')), payload);
 });
 
+Deno.test('that serializeForInlineScript handles undefined like JSON.stringify did inside a template', () => {
+  assertEquals(serializeForInlineScript(undefined), 'undefined');
+  assertEquals(serializeForInlineScript(null), 'null');
+  assertEquals(serializeForInlineScript({ a: undefined, b: 1 }), '{"b":1}');
+});
+
 Deno.test('that escapeHtml works', () => {
   const tests: { input: string; expected: string }[] = [
     {

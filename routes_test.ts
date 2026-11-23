@@ -59,3 +59,22 @@ Deno.test('that stale /public/scss/*.scss requests are served as the css file', 
   assertEquals(response.status, 200);
   assertEquals(response.headers.get('content-type')?.includes('text/css'), true);
 });
+
+Deno.test('that app code under /public is always revalidated', async () => {
+  for (const path of ['ts/utils/form.ts', 'components/Loading.js']) {
+    const url = `http://localhost:8000/public/${path}`;
+    const match = routes.public.pattern.exec(url)!;
+    const response = await routes.public.handler(new Request(url), match);
+
+    assertEquals(response.status, 200, path);
+    assertEquals(response.headers.get('cache-control'), 'no-cache', path);
+    assertEquals(Boolean(response.headers.get('etag')), true, path);
+    await response.body?.cancel();
+  }
+
+  const imageUrl = 'http://localhost:8000/public/images/favicon-dark.png';
+  const imageResponse = await routes.public.handler(new Request(imageUrl), routes.public.pattern.exec(imageUrl)!);
+
+  assertEquals(imageResponse.headers.get('cache-control'), `max-age=${24 * 60 * 60}, public`);
+  await imageResponse.body?.cancel();
+});

@@ -5,7 +5,7 @@ import { AppConfig } from '/lib/config.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { PHOTO_EXTENSIONS } from '/public/ts/utils/photos.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import Loading from '/components/Loading.ts';
 import { generateUploadSessionTag } from '/lib/auth.ts';
 
@@ -83,10 +83,10 @@ function defaultHtmlContent({ userDirectories, userPhotos, currentPath, uploadSe
 
     if (mainPhotosElement) {
       const mainPhotosApp = h(MainPhotos, {
-        initialDirectories: ${JSON.stringify(userDirectories || [])},
-        initialFiles: ${JSON.stringify(userPhotos || [])},
-        initialPath: ${JSON.stringify(currentPath)},
-        uploadSessionTag: ${JSON.stringify(uploadSessionTag)},
+        initialDirectories: ${serializeForInlineScript(userDirectories || [])},
+        initialFiles: ${serializeForInlineScript(userPhotos || [])},
+        initialPath: ${serializeForInlineScript(currentPath)},
+        uploadSessionTag: ${serializeForInlineScript(uploadSessionTag)},
       });
 
       render(mainPhotosApp, mainPhotosElement);

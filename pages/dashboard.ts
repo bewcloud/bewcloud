@@ -3,7 +3,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { Dashboard } from '/lib/types.ts';
 import { DashboardModel } from '/lib/models/dashboard.ts';
 import { AppConfig } from '/lib/config.ts';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import Loading from '/components/Loading.ts';
 
@@ -57,13 +57,13 @@ function defaultHtmlContent({ userDashboard }: { userDashboard: Dashboard }) {
     const notesElement = document.getElementById('notes');
 
     if (linksElement) {
-      const linksApp = h(Links, { initialLinks: ${JSON.stringify(userDashboard?.data?.links || [])} });
+      const linksApp = h(Links, { initialLinks: ${serializeForInlineScript(userDashboard?.data?.links || [])} });
 
       render(linksApp, linksElement);
     }
 
     if (notesElement) {
-      const notesApp = h(Notes, { initialNotes: ${JSON.stringify(initialNotes)} });
+      const notesApp = h(Notes, { initialNotes: ${serializeForInlineScript(initialNotes)} });
 
       render(notesApp, notesElement);
     }

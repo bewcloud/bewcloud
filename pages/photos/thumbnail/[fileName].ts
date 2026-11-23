@@ -3,6 +3,7 @@ import { Jimp } from 'jimp';
 
 import { FileModel } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
+import { getUserFileResponseHeaders } from '/lib/utils/misc.ts';
 
 const MIN_WIDTH = 25;
 const MIN_HEIGHT = 25;
@@ -34,7 +35,15 @@ async function get({ request, user, match }: RequestHandlerParams): Promise<Resp
     currentPath = `${currentPath}/`;
   }
 
-  const fileResult = await FileModel.get(user!.id, currentPath, decodeURIComponent(fileName));
+  let decodedFileName: string;
+
+  try {
+    decodedFileName = decodeURIComponent(fileName);
+  } catch {
+    throw new Error('NotFound');
+  }
+
+  const fileResult = await FileModel.get(user!.id, currentPath, decodedFileName);
 
   if (!fileResult.success) {
     throw new Error('NotFound');
@@ -77,9 +86,12 @@ async function get({ request, user, match }: RequestHandlerParams): Promise<Resp
     return new Response(fileResult.contents! as BodyInit, {
       status: 200,
       headers: {
+        ...getUserFileResponseHeaders({
+          contentType: fileResult.contentType!,
+          byteSize: fileResult.contents!.byteLength,
+          fileName: decodedFileName,
+        }),
         'cache-control': `max-age=${604_800}`, // Tell browsers to cache for 1 week (60 * 60 * 24 * 7 = 604_800)
-        'content-type': fileResult.contentType!,
-        'content-length': fileResult.contents!.byteLength.toString(),
       },
     });
   }

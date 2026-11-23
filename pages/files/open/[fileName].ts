@@ -2,6 +2,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 
 import { AppConfig } from '/lib/config.ts';
 import { FileModel } from '/lib/models/files.ts';
+import { getUserFileResponseHeaders } from '/lib/utils/misc.ts';
 
 async function get({ request, user, match }: RequestHandlerParams): Promise<Response> {
   const { fileName } = match.pathname.groups;
@@ -28,7 +29,15 @@ async function get({ request, user, match }: RequestHandlerParams): Promise<Resp
     currentPath = `${currentPath}/`;
   }
 
-  const fileResult = await FileModel.get(user!.id, currentPath, decodeURIComponent(fileName));
+  let decodedFileName: string;
+
+  try {
+    decodedFileName = decodeURIComponent(fileName);
+  } catch {
+    throw new Error('NotFound');
+  }
+
+  const fileResult = await FileModel.get(user!.id, currentPath, decodedFileName);
 
   if (!fileResult.success) {
     throw new Error('NotFound');
@@ -36,11 +45,11 @@ async function get({ request, user, match }: RequestHandlerParams): Promise<Resp
 
   return new Response(fileResult.contents! as BodyInit, {
     status: 200,
-    headers: {
-      'cache-control': 'no-cache, no-store, must-revalidate',
-      'content-type': fileResult.contentType!,
-      'content-length': fileResult.byteSize!.toString(),
-    },
+    headers: getUserFileResponseHeaders({
+      contentType: fileResult.contentType!,
+      byteSize: fileResult.byteSize!,
+      fileName: decodedFileName,
+    }),
   });
 }
 

@@ -3,7 +3,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { Budget, Expense, SupportedCurrencySymbol } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
 import { BudgetModel, ExpenseModel, generateMonthlyBudgetsAndExpenses } from '/lib/models/expenses.ts';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import Loading from '/components/Loading.ts';
 
@@ -84,10 +84,10 @@ function defaultHtmlContent({ userBudgets, userExpenses, initialMonth, currency 
 
     if (mainExpensesElement) {
       const mainExpensesApp = h(MainExpenses, {
-        initialBudgets: ${JSON.stringify(userBudgets || [])},
-        initialExpenses: ${JSON.stringify(userExpenses || [])},
-        initialMonth: ${JSON.stringify(initialMonth)},
-        currency: ${JSON.stringify(currency)},
+        initialBudgets: ${serializeForInlineScript(userBudgets || [])},
+        initialExpenses: ${serializeForInlineScript(userExpenses || [])},
+        initialMonth: ${serializeForInlineScript(initialMonth)},
+        currency: ${serializeForInlineScript(currency)},
       });
 
       render(mainExpensesApp, mainExpensesElement);

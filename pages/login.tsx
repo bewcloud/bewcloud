@@ -245,14 +245,14 @@ function defaultHtmlContent(
           ? html`
             <section class="notification-error">
               <h3>Failed to login!</h3>
-              <p>${error}</p>
+              <p>${escapeHtml(error)}</p>
             </section>
           `
           : ''} ${notice
           ? html`
             <section class="notification-success">
               <h3>${isEmailVerificationEnabled ? 'Verify your email!' : 'Account created!'}</h3>
-              <p>${notice}</p>
+              <p>${escapeHtml(notice)}</p>
             </section>
           `
           : ''}

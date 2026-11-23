@@ -108,13 +108,13 @@ function defaultHtmlContent({ addressBookId, userContacts, userAddressBooks, pag
 
     if (contactsElement) {
       const contactsApp = h(Contacts, {
-        initialAddressBookId: ${JSON.stringify(addressBookId || [])},
-        initialContacts: ${JSON.stringify(userContacts || [])},
+        initialAddressBookId: ${serializeForInlineScript(addressBookId || [])},
+        initialContacts: ${serializeForInlineScript(userContacts || [])},
         initialAddressBooks: ${serializeForInlineScript(userAddressBooks || [])},
-        baseUrl: ${JSON.stringify(baseUrl)},
-        page: ${JSON.stringify(page || 1)},
-        contactsCount: ${JSON.stringify(contactsCount || 0)},
-        search: ${JSON.stringify(search || '')},
+        baseUrl: ${serializeForInlineScript(baseUrl)},
+        page: ${serializeForInlineScript(page || 1)},
+        contactsCount: ${serializeForInlineScript(contactsCount || 0)},
+        search: ${serializeForInlineScript(search || '')},
       });
 
       render(contactsApp, contactsElement);

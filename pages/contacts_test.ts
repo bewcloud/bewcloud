@@ -63,3 +63,52 @@ Deno.test('that address book names cannot inject scripts into the contacts page'
     ContactModel.list = originalList;
   }
 });
+
+Deno.test('that the search query cannot inject scripts into the contacts page', async () => {
+  const config = await AppConfig.getConfig();
+  const previousCardDav = config.contacts.enableCardDavServer;
+  const previousApps = config.core.enabledApps;
+  const originalListAddressBooks = ContactModel.listAddressBooks;
+  const originalList = ContactModel.list;
+  const search = '</script><script id=search-injection>window.__xss=document.domain</script><!--';
+
+  config.contacts.enableCardDavServer = true;
+  config.core.enabledApps = ['contacts'];
+  ContactModel.listAddressBooks = () =>
+    Promise.resolve([{ uid: 'contacts', url: 'http://radicale:5232/user/contacts/', displayName: 'Contacts' }]);
+  ContactModel.list = () => Promise.resolve([]);
+
+  try {
+    const request = new Request(`http://localhost:8000/contacts?search=${encodeURIComponent(search)}`);
+    const match = new URLPattern({ pathname: '/contacts' }).exec(request.url)!;
+    const user: User = {
+      id: 'user',
+      email: 'contacts@example.com',
+      hashed_password: '',
+      subscription: { external: {}, expires_at: '', updated_at: '' },
+      status: 'active',
+      extra: { is_email_verified: true },
+      created_at: new Date(),
+    };
+    const response = await contactsPage.get!({ request, match, user, isRunningLocally: true });
+    const responseHtml = await response.text();
+    const document = new DOMParser().parseFromString(responseHtml, 'text/html')!;
+
+    assertEquals(response.status, 200);
+    assertEquals(responseHtml.includes('</script><script id=search-injection>'), false);
+    assertEquals(document.querySelector('#search-injection'), null);
+
+    const contactsScript = Array.from(document.querySelectorAll('script')).find((script) =>
+      script.textContent.includes('search:')
+    );
+    const serializedSearch = contactsScript?.textContent.match(/search: (.*),/);
+
+    assert(serializedSearch);
+    assertEquals(JSON.parse(serializedSearch[1]), search);
+  } finally {
+    config.contacts.enableCardDavServer = previousCardDav;
+    config.core.enabledApps = previousApps;
+    ContactModel.listAddressBooks = originalListAddressBooks;
+    ContactModel.list = originalList;
+  }
+});

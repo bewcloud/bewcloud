@@ -79,3 +79,53 @@ export async function serveFileWithTs(request: Request, filePath: string, extraH
     ...(extraHeaders || {}),
   });
 }
+
+function isInlineSafeMimeType(mimeType: string): boolean {
+  if (mimeType.includes('html') || mimeType.includes('xml') || mimeType.includes('svg') || mimeType.includes('xsl')) {
+    return false;
+  }
+
+  if (/^(image|audio|video)\//.test(mimeType)) {
+    return true;
+  }
+
+  if (mimeType.startsWith('text/') || mimeType === 'application/json' || mimeType === 'application/pdf') {
+    return true;
+  }
+
+  return false;
+}
+
+export function getContentDispositionHeader(type: 'inline' | 'attachment', fileName: string): string {
+  const asciiFallbackFileName = fileName.replace(/[^\x20-\x7e]|["\\]/g, '_');
+  const encodedFileName = encodeURIComponent(fileName).replace(
+    /['()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
+  return `${type}; filename="${asciiFallbackFileName}"; filename*=UTF-8''${encodedFileName}`;
+}
+
+export function getUserFileResponseHeaders(
+  { contentType, byteSize, fileName }: { contentType: string; byteSize: number; fileName: string },
+): Record<string, string> {
+  const mimeType = contentType.split(';')[0].trim().toLowerCase();
+  const isInlineSafe = isInlineSafeMimeType(mimeType);
+
+  const headers: Record<string, string> = {
+    'cache-control': 'no-cache, no-store, must-revalidate',
+    // Kept as-is so `<img src="file.svg">` still works, since images ignore the disposition and don't run scripts
+    'content-type': contentType,
+    'content-length': byteSize.toString(),
+    'content-disposition': getContentDispositionHeader(isInlineSafe ? 'inline' : 'attachment', fileName),
+    'x-content-type-options': 'nosniff',
+  };
+
+  // Browsers refuse to render PDFs in a sandboxed document
+  if (mimeType !== 'application/pdf') {
+    headers['content-security-policy'] =
+      "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; sandbox";
+  }
+
+  return headers;
+}

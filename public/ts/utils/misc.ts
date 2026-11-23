@@ -53,7 +53,7 @@ export function escapeXml(unsafe: string) {
 }
 
 export function serializeForInlineScript(value: unknown): string {
-  return JSON.stringify(value).replace(/</g, '\\u003c');
+  return (JSON.stringify(value) ?? 'undefined').replace(/</g, '\\u003c');
 }
 
 export function generateRandomCode(length = 6) {

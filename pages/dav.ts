@@ -14,6 +14,7 @@ import {
   handleWebDavError,
 } from '/lib/utils/webdav.ts';
 import { ensureUserPathIsValidAndSecurelyAccessible, FileModel } from '/lib/models/files.ts';
+import { getUserFileResponseHeaders } from '/lib/utils/misc.ts';
 
 async function handler({ request, user, match }: RequestHandlerParams): Promise<Response> {
   if (!user) {
@@ -64,11 +65,11 @@ async function handler({ request, user, match }: RequestHandlerParams): Promise<
 
       return new Response(fileResult.contents! as BodyInit, {
         status: 200,
-        headers: {
-          'cache-control': 'no-cache, no-store, must-revalidate',
-          'content-type': fileResult.contentType!,
-          'content-length': fileResult.byteSize!.toString(),
-        },
+        headers: getUserFileResponseHeaders({
+          contentType: fileResult.contentType!,
+          byteSize: fileResult.byteSize!,
+          fileName: filePath.split('/').filter(Boolean).pop() || 'file',
+        }),
       });
     } catch (error) {
       return handleWebDavError(error);

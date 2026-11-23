@@ -3,7 +3,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { FileModel } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import Loading from '/components/Loading.ts';
 
 async function get({ request, user, match, session, isRunningLocally }: RequestHandlerParams): Promise<Response> {
@@ -82,9 +82,9 @@ function defaultHtmlContent(
 
     if (noteElement) {
       const noteApp = h(Note, {
-        fileName: ${JSON.stringify(fileName)},
-        currentPath: ${JSON.stringify(currentPath)},
-        contents: ${JSON.stringify(contents)},
+        fileName: ${serializeForInlineScript(fileName)},
+        currentPath: ${serializeForInlineScript(currentPath)},
+        contents: ${serializeForInlineScript(contents)},
       });
 
       render(noteApp, noteElement);

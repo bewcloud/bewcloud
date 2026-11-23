@@ -140,10 +140,10 @@ function generateInputHtml(
             (option) =>
               html`
                 <option
-                  value="${option.value}"
+                  value="${escapeHtml(option.value)}"
                   ${option.value === value || (multiple && (value || [])?.includes(option.value)) ? 'selected' : ''}
                 >
-                  ${option.label}
+                  ${escapeHtml(option.label)}
                 </option>
               `,
           )

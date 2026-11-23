@@ -214,3 +214,51 @@ Deno.test("that a public share does not open another user's file", async () => {
     await Deno.remove(otherRoot, { recursive: true }).catch(() => {});
   }
 });
+
+Deno.test('that a public share downloads active content (HTML, SVG) instead of rendering it', async () => {
+  const filesRoot = await AppConfig.getFilesRootPath();
+  const userId = crypto.randomUUID();
+  const userRoot = join(filesRoot, userId);
+
+  try {
+    await Deno.mkdir(join(userRoot, 'Public'), { recursive: true });
+    await Deno.writeTextFile(join(userRoot, 'Public', 'evil.html'), '<script>alert(document.domain)</script>');
+    await Deno.writeTextFile(
+      join(userRoot, 'Public', 'evil.svg'),
+      '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+    );
+
+    for (const fileName of ['evil.html', 'evil.svg']) {
+      const response = await withPublicFiles(() => openShare(shareFor(userId, '/Public/'), fileName));
+
+      assertEquals(response.status, 200);
+      assertEquals(response.headers.get('content-disposition')?.startsWith('attachment;'), true);
+      assertEquals(response.headers.get('x-content-type-options'), 'nosniff');
+      assertEquals(response.headers.get('content-security-policy')?.includes('sandbox'), true);
+      await response.body?.cancel();
+    }
+  } finally {
+    await Deno.remove(userRoot, { recursive: true }).catch(() => {});
+  }
+});
+
+Deno.test('that a public share still shows plain text and images inline, sandboxed', async () => {
+  const filesRoot = await AppConfig.getFilesRootPath();
+  const userId = crypto.randomUUID();
+  const userRoot = join(filesRoot, userId);
+
+  try {
+    await Deno.mkdir(join(userRoot, 'Public'), { recursive: true });
+    await Deno.writeTextFile(join(userRoot, 'Public', 'shared.txt'), '<script>alert(1)</script>');
+
+    const response = await withPublicFiles(() => openShare(shareFor(userId, '/Public/'), 'shared.txt'));
+
+    assertEquals(response.status, 200);
+    assertEquals(response.headers.get('content-type'), 'text/plain');
+    assertEquals(response.headers.get('content-disposition')?.startsWith('inline;'), true);
+    assertEquals(response.headers.get('content-security-policy')?.includes('sandbox'), true);
+    assertEquals(await response.text(), '<script>alert(1)</script>');
+  } finally {
+    await Deno.remove(userRoot, { recursive: true }).catch(() => {});
+  }
+});

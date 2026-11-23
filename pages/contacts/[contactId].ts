@@ -1,6 +1,6 @@
 import page, { RequestHandlerParams } from '/lib/page.ts';
 
-import { convertFormDataToObject, html } from '/public/ts/utils/misc.ts';
+import { convertFormDataToObject, html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { Contact, ContactModel } from '/lib/models/contacts.ts';
 import { getFormDataField } from '/public/ts/utils/form.ts';
 import { updateVCard } from '/public/ts/utils/contacts.ts';
@@ -172,12 +172,12 @@ function defaultHtmlContent({ contact, error, notice, formData, addressBookId }:
 
     if (viewContactElement) {
       const viewContactApp = h(ViewContact, {
-        initialAddressBookId: ${JSON.stringify(addressBookId)},
-        initialContact: ${JSON.stringify(contact)},
-        formData: ${JSON.stringify(formData)},
-        error: ${JSON.stringify(error)},
-        notice: ${JSON.stringify(notice)},
-        addressBookId: ${JSON.stringify(addressBookId)},
+        initialAddressBookId: ${serializeForInlineScript(addressBookId)},
+        initialContact: ${serializeForInlineScript(contact)},
+        formData: ${serializeForInlineScript(formData)},
+        error: ${serializeForInlineScript(error)},
+        notice: ${serializeForInlineScript(notice)},
+        addressBookId: ${serializeForInlineScript(addressBookId)},
       });
 
       render(viewContactApp, viewContactElement);

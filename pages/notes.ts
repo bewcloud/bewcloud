@@ -4,7 +4,7 @@ import { Directory, DirectoryFile } from '/lib/types.ts';
 import { AppConfig } from '/lib/config.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import Loading from '/components/Loading.ts';
 import { generateUploadSessionTag } from '/lib/auth.ts';
 
@@ -78,10 +78,10 @@ function defaultHtmlContent({ userDirectories, userNotes, currentPath, uploadSes
 
     if (mainNotesElement) {
       const mainNotesApp = h(MainNotes, {
-        initialDirectories: ${JSON.stringify(userDirectories || [])},
-        initialFiles: ${JSON.stringify(userNotes || [])},
-        initialPath: ${JSON.stringify(currentPath)},
-        uploadSessionTag: ${JSON.stringify(uploadSessionTag)},
+        initialDirectories: ${serializeForInlineScript(userDirectories || [])},
+        initialFiles: ${serializeForInlineScript(userNotes || [])},
+        initialPath: ${serializeForInlineScript(currentPath)},
+        uploadSessionTag: ${serializeForInlineScript(uploadSessionTag)},
       });
 
       render(mainNotesApp, mainNotesElement);

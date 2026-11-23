@@ -2,7 +2,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 
 import { Calendar, CalendarModel } from '/lib/models/calendar.ts';
 import { AppConfig } from '/lib/config.ts';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import Loading from '/components/Loading.ts';
 
@@ -55,7 +55,7 @@ function defaultHtmlContent({ userCalendars }: { userCalendars: Calendar[] }) {
 
     if (calendarsElement) {
       const calendarsApp = h(Calendars, {
-        initialCalendars: ${JSON.stringify(userCalendars || [])},
+        initialCalendars: ${serializeForInlineScript(userCalendars || [])},
       });
 
       render(calendarsApp, calendarsElement);

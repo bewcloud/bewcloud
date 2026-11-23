@@ -4,7 +4,7 @@ import { Calendar, CalendarEvent, CalendarEventModel, CalendarModel } from '/lib
 import { AppConfig } from '/lib/config.ts';
 import { CALENDAR_COLOR_OPTIONS, getColorAsHex, getDateRangeForCalendarView } from '/public/ts/utils/calendar.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import Loading from '/components/Loading.ts';
 
 type CalendarView = 'day' | 'week' | 'month';
@@ -98,13 +98,13 @@ function defaultHtmlContent(
 
     if (mainCalendarElement) {
       const mainCalendarApp = h(MainCalendar, {
-        initialCalendars: ${JSON.stringify(userCalendars || [])},
-        initialCalendarEvents: ${JSON.stringify(userCalendarEvents || [])},
-        baseUrl: ${JSON.stringify(baseUrl)},
-        view: ${JSON.stringify(view)},
-        startDate: ${JSON.stringify(startDate)},
-        timezoneId: ${JSON.stringify(timezoneId)},
-        timezoneUtcOffset: ${JSON.stringify(timezoneUtcOffset)},
+        initialCalendars: ${serializeForInlineScript(userCalendars || [])},
+        initialCalendarEvents: ${serializeForInlineScript(userCalendarEvents || [])},
+        baseUrl: ${serializeForInlineScript(baseUrl)},
+        view: ${serializeForInlineScript(view)},
+        startDate: ${serializeForInlineScript(startDate)},
+        timezoneId: ${serializeForInlineScript(timezoneId)},
+        timezoneUtcOffset: ${serializeForInlineScript(timezoneUtcOffset)},
       });
 
       render(mainCalendarApp, mainCalendarElement);

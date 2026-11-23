@@ -3,7 +3,7 @@ import page, { RequestHandlerParams } from '/lib/page.ts';
 import { Directory, DirectoryFile } from '/lib/types.ts';
 import { DirectoryModel, FileModel } from '/lib/models/files.ts';
 import { AppConfig } from '/lib/config.ts';
-import { html } from '/public/ts/utils/misc.ts';
+import { html, serializeForInlineScript } from '/public/ts/utils/misc.ts';
 import { basicLayoutResponse } from '/lib/utils/layout.tsx';
 import Loading from '/components/Loading.ts';
 import { SortColumn, sortDirectories, sortFiles, SortOrder } from '/public/ts/utils/files.ts';
@@ -129,15 +129,15 @@ function defaultHtmlContent(
 
     if (mainFilesElement) {
       const mainFilesApp = h(MainFiles, {
-        initialDirectories: ${JSON.stringify(userDirectories)},
-        initialFiles: ${JSON.stringify(userFiles)},
-        initialPath: ${JSON.stringify(currentPath)},
-        baseUrl: ${JSON.stringify(baseUrl)},
-        isFileSharingAllowed: ${JSON.stringify(isFileSharingAllowed)},
-        areDirectoryDownloadsAllowed: ${JSON.stringify(areDirectoryDownloadsAllowed)},
-        initialSortBy: ${JSON.stringify(initialSortBy)},
-        initialSortOrder: ${JSON.stringify(initialSortOrder)},
-        uploadSessionTag: ${JSON.stringify(uploadSessionTag)},
+        initialDirectories: ${serializeForInlineScript(userDirectories)},
+        initialFiles: ${serializeForInlineScript(userFiles)},
+        initialPath: ${serializeForInlineScript(currentPath)},
+        baseUrl: ${serializeForInlineScript(baseUrl)},
+        isFileSharingAllowed: ${serializeForInlineScript(isFileSharingAllowed)},
+        areDirectoryDownloadsAllowed: ${serializeForInlineScript(areDirectoryDownloadsAllowed)},
+        initialSortBy: ${serializeForInlineScript(initialSortBy)},
+        initialSortOrder: ${serializeForInlineScript(initialSortOrder)},
+        uploadSessionTag: ${serializeForInlineScript(uploadSessionTag)},
       });
 
       render(mainFilesApp, mainFilesElement);
